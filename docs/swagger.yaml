@@ -1,0 +1,525 @@
+definitions:
+  api.BasicCostStatList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/store.CostStat'
+        type: array
+      total:
+        type: integer
+    type: object
+  api.BusinessError:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
+  api.CostInfo:
+    properties:
+      basicCost:
+        type: string
+      tokenInfo:
+        $ref: '#/definitions/api.TokenInfo'
+    type: object
+  api.Dashboard:
+    properties:
+      averageUplinkRate:
+        type: string
+      storageBasicCost:
+        $ref: '#/definitions/api.StorageBasicCost'
+    type: object
+  api.DataStatList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/store.SubmitStat'
+        type: array
+      total:
+        type: integer
+    type: object
+  api.StorageBasicCost:
+    properties:
+      address:
+        type: string
+      basicCostTotal:
+        type: string
+      decimals:
+        type: integer
+      name:
+        type: string
+      symbol:
+        type: string
+    type: object
+  api.StorageTx:
+    properties:
+      address:
+        type: string
+      blockNum:
+        type: integer
+      method:
+        type: string
+      rootHash:
+        type: string
+      status:
+        type: integer
+      timestamp:
+        type: integer
+      txHash:
+        type: string
+      txSeq:
+        type: integer
+    type: object
+  api.SubmissionNode:
+    properties:
+      height:
+        $ref: '#/definitions/big.Int'
+      root:
+        type: string
+    type: object
+  api.TokenInfo:
+    properties:
+      address:
+        type: string
+      decimals:
+        type: integer
+      name:
+        type: string
+      symbol:
+        type: string
+    type: object
+  api.TxBrief:
+    properties:
+      blockNumber:
+        type: integer
+      costInfo:
+        $ref: '#/definitions/api.CostInfo'
+      dataSize:
+        type: integer
+      expiration:
+        type: integer
+      from:
+        type: string
+      gasFee:
+        type: integer
+      gasLimit:
+        type: integer
+      gasUsed:
+        type: integer
+      method:
+        type: string
+      rootHash:
+        type: string
+      status:
+        type: integer
+      timestamp:
+        type: integer
+      txHash:
+        type: string
+      txSeq:
+        type: string
+    type: object
+  api.TxDetail:
+    properties:
+      endPos:
+        type: integer
+      pieceCounts:
+        type: integer
+      pieces:
+        items:
+          $ref: '#/definitions/api.SubmissionNode'
+        type: array
+      rootHash:
+        type: string
+      startPos:
+        type: integer
+      txSeq:
+        type: string
+    type: object
+  api.TxList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/api.StorageTx'
+        type: array
+      total:
+        type: integer
+    type: object
+  api.TxStatList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/store.TxStat'
+        type: array
+      total:
+        type: integer
+    type: object
+  big.Int:
+    type: object
+  store.CostStat:
+    properties:
+      basicCost:
+        description: The basic cost for storage
+        type: integer
+      basicCostTotal:
+        description: The total basic cost for storage
+        type: integer
+      statTime:
+        type: string
+    type: object
+  store.SubmitStat:
+    properties:
+      dataSize:
+        description: Size of storage data in a specific time interval
+        type: integer
+      dataTotal:
+        description: Total Size of storage data by a certain time
+        type: integer
+      fileCount:
+        description: Number of files in a specific time interval
+        type: integer
+      fileTotal:
+        description: Total number of files by a certain time
+        type: integer
+      statTime:
+        type: string
+    type: object
+  store.TxStat:
+    properties:
+      statTime:
+        type: string
+      txCount:
+        type: integer
+      txTotal:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: Use any http client to fetch data from the ZeroGStorage Scan.
+  title: ZeroGStorage Scan API
+  version: "1.0"
+paths:
+  /statistic/cost/basic/list:
+    get:
+      consumes:
+      - application/json
+      description: Query basic cost statistics, including incremental and full data,
+        and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.BasicCostStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Basic cost statistics
+      tags:
+      - statistic
+  /statistic/dashboard:
+    get:
+      description: Query statistics dashboard includes `average uplink rate` and `storage
+        basic cost`
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.Dashboard'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Statistics dashboard
+      tags:
+      - statistic
+  /statistic/storage/list:
+    get:
+      consumes:
+      - application/json
+      description: Query data storage statistics, including incremental and full data,
+        and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.DataStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Data storage statistics
+      tags:
+      - statistic
+  /statistic/transaction/list:
+    get:
+      consumes:
+      - application/json
+      description: Query transaction statistics, including incremental and full data,
+        and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.TxStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Transaction statistics
+      tags:
+      - statistic
+  /transaction/brief:
+    get:
+      consumes:
+      - application/json
+      description: Query layer2 transaction overview by txSeq
+      parameters:
+      - description: Lay2 transaction sequence number
+        in: query
+        name: txSeq
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.TxBrief'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Layer2 transaction overview
+      tags:
+      - transaction
+  /transaction/detail:
+    get:
+      consumes:
+      - application/json
+      description: Query layer2 transaction advanced info by txSeq
+      parameters:
+      - description: Lay2 transaction sequence number
+        in: query
+        name: txSeq
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.TxDetail'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Layer2 transaction advanced info
+      tags:
+      - transaction
+  /transaction/list:
+    get:
+      consumes:
+      - application/json
+      description: Query layer2 transactions, support address and root hash filter
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: The submitter address of the uploaded file
+        in: query
+        name: address
+        type: string
+      - description: The merkle root hash of the uploaded file
+        in: query
+        name: rootHash
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.TxList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Layer2 transaction list
+      tags:
+      - transaction
+swagger: "2.0"

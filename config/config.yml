@@ -1,0 +1,86 @@
+# EVM space SDK client configurations
+eth:
+  # Fullnode HTTP endpoint
+  url: https://evmtestnet.confluxrpc.com/
+  # Retry times if failure, if 0 never
+  # retry: 0
+  # Interval duration before each retry
+  # retryInterval: 1s
+  # Request timeout duration
+  # requestTimeout: 3s
+  # Max connections allowed per fullnode
+  # maxConnsPerHost: 1024
+
+# storage SDK client configurations
+storage:
+  # Storage node rpc url
+  url: :5678
+  # Retry times if failure, if 0 never
+  # retry: 0
+  # Interval duration before each retry
+  # retryInterval: 1s
+  # Request timeout duration
+  # requestTimeout: 3s
+  # Max connections allowed per storage node
+  # maxConnsPerHost: 1024
+
+# Blockchain sync configurations
+sync:
+  # The block number from which to sync flow submit
+  blockWhenFlowCreated: 134253185
+  # To avoid pivot switch frequently, skip some blocks ahead of the latest block
+  # delayBlocksAgainstLatest: 30
+  # The number of blocks to query at a time during catchup, 0 means no limit
+  # batchBlocksOnCatchup: 0
+  # The number of blocks to query at a batch all
+  # batchBlocksOnBatchCall: 1000
+  # The number of txs to query at a batch all
+  # batchTxsOnBatchCall: 1000
+
+# Flow contract info configurations
+flow:
+  # Flow contract address
+  address: 0xcb7afff6f048ec1fb033aa7b495ed0dd932c8656
+  # Flow submit event signature
+  submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
+
+# Charge info configurations
+charge:
+  # Charge in ERC20 token address
+  erc20TokenAddress: 0x7d682e65efc5c13bf4e394b8f376c48e6bae0355
+  # ERC20 transfer event signature
+  erc20TransferEventSignature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+
+# MySQL database configurations
+store:
+  mysql:
+    host: :3306
+    username:
+    password:
+    database:
+    # connMaxLifeTime: 3m
+    # maxOpenConns: 10
+    # maxIdleConns: 10
+
+stat:
+  # The block number from which to stat
+  blockOnStatBegin: 134253185
+  # The minimum interval for tx stat
+  # minStatIntervalDailyTx: 10m
+  # The minimum interval for submit stat
+  # minStatIntervalDailySubmit: 10m
+  # The interval for data uplink rate stat
+  # statIntervalDataUplinkRate: 1s
+
+# Api configurations
+api:
+  endpoint: :12345
+  # recoveryDisabled: false
+  # corsOrigins: []
+  # logger: false
+
+# Logs configurations
+log:
+  # Available levels are `trace`, `debug`, `info`, `error` and `fatal`
+  level: info
+  forceColor: false

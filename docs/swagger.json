@@ -1,0 +1,802 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Use any http client to fetch data from the ZeroGStorage Scan.",
+        "title": "ZeroGStorage Scan API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/statistic/cost/basic/list": {
+            "get": {
+                "description": "Query basic cost statistics, including incremental and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Basic cost statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.BasicCostStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/statistic/dashboard": {
+            "get": {
+                "description": "Query statistics dashboard includes `average uplink rate` and `storage basic cost`",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Statistics dashboard",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.Dashboard"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/statistic/storage/list": {
+            "get": {
+                "description": "Query data storage statistics, including incremental and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Data storage statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.DataStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/statistic/transaction/list": {
+            "get": {
+                "description": "Query transaction statistics, including incremental and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Transaction statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.TxStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/brief": {
+            "get": {
+                "description": "Query layer2 transaction overview by txSeq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Layer2 transaction overview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Lay2 transaction sequence number",
+                        "name": "txSeq",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.TxBrief"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/detail": {
+            "get": {
+                "description": "Query layer2 transaction advanced info by txSeq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Layer2 transaction advanced info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Lay2 transaction sequence number",
+                        "name": "txSeq",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.TxDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/transaction/list": {
+            "get": {
+                "description": "Query layer2 transactions, support address and root hash filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Layer2 transaction list",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The submitter address of the uploaded file",
+                        "name": "address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The merkle root hash of the uploaded file",
+                        "name": "rootHash",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.TxList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.BasicCostStatList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/store.CostStat"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.BusinessError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.CostInfo": {
+            "type": "object",
+            "properties": {
+                "basicCost": {
+                    "type": "string"
+                },
+                "tokenInfo": {
+                    "$ref": "#/definitions/api.TokenInfo"
+                }
+            }
+        },
+        "api.Dashboard": {
+            "type": "object",
+            "properties": {
+                "averageUplinkRate": {
+                    "type": "string"
+                },
+                "storageBasicCost": {
+                    "$ref": "#/definitions/api.StorageBasicCost"
+                }
+            }
+        },
+        "api.DataStatList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/store.SubmitStat"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.StorageBasicCost": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "basicCostTotal": {
+                    "type": "string"
+                },
+                "decimals": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.StorageTx": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "blockNum": {
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "rootHash": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "txHash": {
+                    "type": "string"
+                },
+                "txSeq": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.SubmissionNode": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "$ref": "#/definitions/big.Int"
+                },
+                "root": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TokenInfo": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "decimals": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TxBrief": {
+            "type": "object",
+            "properties": {
+                "blockNumber": {
+                    "type": "integer"
+                },
+                "costInfo": {
+                    "$ref": "#/definitions/api.CostInfo"
+                },
+                "dataSize": {
+                    "type": "integer"
+                },
+                "expiration": {
+                    "type": "integer"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "gasFee": {
+                    "type": "integer"
+                },
+                "gasLimit": {
+                    "type": "integer"
+                },
+                "gasUsed": {
+                    "type": "integer"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "rootHash": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "type": "integer"
+                },
+                "txHash": {
+                    "type": "string"
+                },
+                "txSeq": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TxDetail": {
+            "type": "object",
+            "properties": {
+                "endPos": {
+                    "type": "integer"
+                },
+                "pieceCounts": {
+                    "type": "integer"
+                },
+                "pieces": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.SubmissionNode"
+                    }
+                },
+                "rootHash": {
+                    "type": "string"
+                },
+                "startPos": {
+                    "type": "integer"
+                },
+                "txSeq": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.TxList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.StorageTx"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.TxStatList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/store.TxStat"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "big.Int": {
+            "type": "object"
+        },
+        "store.CostStat": {
+            "type": "object",
+            "properties": {
+                "basicCost": {
+                    "description": "The basic cost for storage",
+                    "type": "integer"
+                },
+                "basicCostTotal": {
+                    "description": "The total basic cost for storage",
+                    "type": "integer"
+                },
+                "statTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "store.SubmitStat": {
+            "type": "object",
+            "properties": {
+                "dataSize": {
+                    "description": "Size of storage data in a specific time interval",
+                    "type": "integer"
+                },
+                "dataTotal": {
+                    "description": "Total Size of storage data by a certain time",
+                    "type": "integer"
+                },
+                "fileCount": {
+                    "description": "Number of files in a specific time interval",
+                    "type": "integer"
+                },
+                "fileTotal": {
+                    "description": "Total number of files by a certain time",
+                    "type": "integer"
+                },
+                "statTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "store.TxStat": {
+            "type": "object",
+            "properties": {
+                "statTime": {
+                    "type": "string"
+                },
+                "txCount": {
+                    "type": "integer"
+                },
+                "txTotal": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

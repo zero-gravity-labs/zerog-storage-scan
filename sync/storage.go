@@ -1,0 +1,73 @@
+package sync
+
+import (
+	"context"
+	"github.com/zero-gravity-labs/zerog-storage-client/node"
+	"github.com/zero-gravity-labs/zerog-storage-scan/store"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"time"
+)
+
+var (
+	ErrNoRootHashToSync = errors.New("No root hash to sync")
+	ErrFileInfoNotReady = errors.New("File info not ready")
+)
+
+type StorageSyncer struct {
+	l2Sdk *node.Client
+	db    *store.MysqlStore
+}
+
+func MustNewStorageSyncer(l2Sdk *node.Client, db *store.MysqlStore) *StorageSyncer {
+	return &StorageSyncer{
+		l2Sdk: l2Sdk,
+		db:    db,
+	}
+}
+
+func (s *StorageSyncer) Sync(ctx context.Context) {
+	logrus.Info("Storage syncer starting to sync data")
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		if err := s.syncRootHash(); err != nil {
+			if !errors.Is(err, ErrNoRootHashToSync) {
+				logrus.WithError(err).Error("Sync root hash")
+			}
+			time.Sleep(time.Second * 10)
+		}
+	}
+}
+
+func (s *StorageSyncer) syncRootHash() error {
+	submit, err := s.db.SubmitStore.FirstWithoutRootHash()
+	if err != nil {
+		return err
+	}
+	if submit == nil {
+		return ErrNoRootHashToSync
+	}
+
+	info, err := s.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(submit.SubmissionIndex)
+	if err != nil {
+		return err
+	}
+	if info == nil {
+		return ErrFileInfoNotReady
+	}
+
+	updateSubmit := store.Submit{
+		ID:       submit.ID,
+		RootHash: info.Tx.DataMerkleRoot.String()[2:],
+	}
+	if err := s.db.SubmitStore.Update(&updateSubmit); err != nil {
+		return err
+	}
+
+	return nil
+}

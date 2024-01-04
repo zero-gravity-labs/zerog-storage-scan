@@ -1,0 +1,31 @@
+version: '3.3'
+
+services:
+  sync:
+    build: .
+    image: zerog_storage:latest
+    command: sync
+    restart: unless-stopped
+    environment:
+      - ZEROG_STORAGE_LOG_LEVEL=info
+    network_mode: host
+    container_name: zerog-storage-sync
+
+  stat:
+    image: zerog_storage:latest
+    command: stat
+    restart: unless-stopped
+    environment:
+      - ZEROG_STORAGE_LOG_LEVEL=info
+    network_mode: host
+    container_name: zerog-storage-stat
+
+  api:
+    image: zerog_storage:latest
+    command: api
+    restart: unless-stopped
+    environment:
+      - ZEROG_STORAGE_LOG_LEVEL=info
+      - ZEROG_STORAGE_API_ENDPOINT=:16451
+    network_mode: host
+    container_name: zerog-storage-api
