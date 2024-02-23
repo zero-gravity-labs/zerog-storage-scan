@@ -4,12 +4,11 @@ go 1.21.0
 
 require (
 	github.com/Conflux-Chain/go-conflux-util v0.1.0
-	github.com/zero-gravity-labs/zerog-storage-client v0.0.0-20230821082129-cd21dfba33a1
 	github.com/deckarep/golang-set v1.8.0
 	github.com/ethereum/go-ethereum v1.12.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/openweb3/go-rpc-provider v1.1.1
-	github.com/openweb3/web3go v0.2.6-0.20230830102903-1d3a0f667cb5
+	github.com/openweb3/web3go v0.2.6
 	github.com/pkg/errors v0.9.1
 	github.com/shopspring/decimal v1.3.1
 	github.com/sirupsen/logrus v1.9.3
@@ -17,6 +16,7 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.2
+	github.com/zero-gravity-labs/zerog-storage-client v0.1.12
 	gorm.io/gorm v1.25.4
 )
 
@@ -112,7 +112,6 @@ require (
 	github.com/prometheus/procfs v0.9.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/royeo/dingrobot v1.0.1-0.20191230075228-c90a788ca8fd // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
@@ -131,7 +130,6 @@ require (
 	github.com/urfave/cli/v2 v2.25.7 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.49.0 // indirect
-	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/arch v0.5.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
@@ -149,5 +147,4 @@ require (
 	gorm.io/driver/mysql v1.3.6 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
