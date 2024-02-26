@@ -7,7 +7,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/ethereum/go-ethereum v1.12.2
 	github.com/gin-gonic/gin v1.9.1
-	github.com/openweb3/go-rpc-provider v1.1.1
+	github.com/openweb3/go-rpc-provider v0.3.2
 	github.com/openweb3/web3go v0.2.6
 	github.com/pkg/errors v0.9.1
 	github.com/shopspring/decimal v1.3.1
