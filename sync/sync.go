@@ -17,7 +17,6 @@ import (
 
 type SyncConfig struct {
 	BlockWhenFlowCreated     uint64
-	SyncFromConflux          bool   `default:"false"`
 	DelayBlocksAgainstLatest uint64 `default:"30"`
 	BatchBlocksOnCatchup     uint64 `default:"0"`
 	BatchBlocksOnBatchCall   uint64 `default:"1000"`
@@ -145,6 +144,11 @@ func (s *Syncer) doTicker(ticker *time.Ticker) error {
 	return nil
 }
 
+var (
+	checkParityAPIAlready bool
+	syncDataByLogs        bool
+)
+
 func (s *Syncer) syncOnce() (bool, error) {
 	// get latest block
 	latestBlock, err := s.sdk.Eth.BlockNumber()
@@ -158,12 +162,21 @@ func (s *Syncer) syncOnce() (bool, error) {
 		return true, nil
 	}
 
-	// get eth data
+	// check parity api available
 	var data *store.EthData
-	if s.conf.SyncFromConflux {
+	if !checkParityAPIAlready {
 		data, err = getEthDataByReceipts(s.sdk, curBlock)
-	} else {
+		if err != nil && strings.Contains(err.Error(), "parity_getBlockReceipts") {
+			syncDataByLogs = true
+		}
+		checkParityAPIAlready = true
+	}
+
+	// get eth data
+	if syncDataByLogs {
 		data, err = getEthDataByLogs(s.sdk, curBlock, common.HexToAddress(s.flowAddr), common.HexToHash(s.flowSubmitSig))
+	} else {
+		data, err = getEthDataByReceipts(s.sdk, curBlock)
 	}
 	if err != nil {
 		return false, err
@@ -283,7 +296,21 @@ func (s *Syncer) parseEthData(data *store.EthData) (*storeData, error) {
 	blockTime := time.Unix(int64(data.Block.Timestamp), 0)
 	var submits []*store.Submit
 
-	if s.conf.SyncFromConflux {
+	if syncDataByLogs {
+		for _, log := range data.Logs {
+			if log.Removed {
+				continue
+			}
+
+			submit, err := s.decodeSubmit(blockTime, &log)
+			if err != nil {
+				return nil, err
+			}
+			if submit != nil {
+				submits = append(submits, submit)
+			}
+		}
+	} else {
 		for _, t := range data.Block.Transactions.Transactions() {
 			rcpt := data.Receipts[t.Hash]
 			if rcpt == nil || !isTxExecutedInBlock(&t, rcpt) {
@@ -298,20 +325,6 @@ func (s *Syncer) parseEthData(data *store.EthData) (*storeData, error) {
 				if submit != nil {
 					submits = append(submits, submit)
 				}
-			}
-		}
-	} else {
-		for _, log := range data.Logs {
-			if log.Removed {
-				continue
-			}
-
-			submit, err := s.decodeSubmit(blockTime, &log)
-			if err != nil {
-				return nil, err
-			}
-			if submit != nil {
-				submits = append(submits, submit)
 			}
 		}
 	}
