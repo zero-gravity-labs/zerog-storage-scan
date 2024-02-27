@@ -2,10 +2,10 @@ package sync
 
 import (
 	"context"
-	"github.com/zero-gravity-labs/zerog-storage-client/node"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/zero-gravity-labs/zerog-storage-client/node"
+	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"time"
 )
 
@@ -44,6 +44,7 @@ func (s *StorageSyncer) Sync(ctx context.Context) {
 	}
 }
 
+// TODO add finality filed when refactor db domains, recalculate root by cli tool
 func (s *StorageSyncer) syncRootHash() error {
 	submit, err := s.db.SubmitStore.FirstWithoutRootHash()
 	if err != nil {

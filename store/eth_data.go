@@ -9,4 +9,5 @@ type EthData struct {
 	Number   uint64
 	Block    *types.Block
 	Receipts map[common.Hash]*types.Receipt
+	Logs     []types.Log
 }
