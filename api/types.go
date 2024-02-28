@@ -1,9 +1,10 @@
 package api
 
 import (
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
+	"github.com/shopspring/decimal"
 	"math/big"
 	"strings"
+	"time"
 )
 
 type PageParam struct {
@@ -34,14 +35,16 @@ type queryTxParam struct {
 }
 
 type StorageTx struct {
-	TxSeq     uint64 `json:"txSeq"`
-	BlockNum  uint64 `json:"blockNum"`
-	TxHash    string `json:"txHash"`
-	RootHash  string `json:"rootHash"`
-	Address   string `json:"address"`
-	Method    string `json:"method"`
-	Status    uint64 `json:"status"`
-	Timestamp int64  `json:"timestamp"`
+	TxSeq     uint64          `json:"txSeq"`
+	BlockNum  uint64          `json:"blockNum"`
+	TxHash    string          `json:"txHash"`
+	RootHash  string          `json:"rootHash"`
+	Address   string          `json:"address"`
+	Method    string          `json:"method"`
+	Status    uint64          `json:"status"`
+	Timestamp int64           `json:"timestamp"`
+	DataSize  uint64          `json:"dataSize"`
+	BaseFee   decimal.Decimal `json:"baseFee"`
 }
 
 type TokenInfo struct {
@@ -89,10 +92,10 @@ type TxDetail struct {
 	TxSeq    string `json:"txSeq"`
 	RootHash string `json:"rootHash"`
 
-	StartPos    uint64            `json:"startPos"`
-	EndPos      uint64            `json:"endPos"`
-	PieceCounts uint64            `json:"pieceCounts"`
-	Pieces      []*SubmissionNode `json:"pieces"`
+	StartPos    uint64           `json:"startPos"`
+	EndPos      uint64           `json:"endPos"`
+	PieceCounts uint64           `json:"pieceCounts"`
+	Pieces      []SubmissionNode `json:"pieces"`
 }
 
 type StorageBasicCost struct {
@@ -101,11 +104,40 @@ type StorageBasicCost struct {
 }
 
 type Dashboard struct {
-	StorageBasicCost  `json:"storageBasicCost"`
-	AverageUplinkRate string `json:"averageUplinkRate"`
+	StorageBasicCost `json:"storageBasicCost"`
 }
 
 type DataStatList struct {
-	Total int64              `json:"total"`
-	List  []store.SubmitStat `json:"list"`
+	Total int64      `json:"total"`
+	List  []DataStat `json:"list"`
+}
+
+type TxStatList struct {
+	Total int64    `json:"total"`
+	List  []TxStat `json:"list"`
+}
+
+type BaseFeeStatList struct {
+	Total int64         `json:"total"`
+	List  []BaseFeeStat `json:"list"`
+}
+
+type DataStat struct {
+	StatTime  *time.Time `json:"statTime"`
+	FileCount uint64     `json:"fileCount"`
+	FileTotal uint64     `json:"fileTotal"`
+	DataSize  uint64     `json:"dataSize"`
+	DataTotal uint64     `json:"dataTotal"`
+}
+
+type TxStat struct {
+	StatTime *time.Time `json:"statTime"`
+	TxCount  uint64     `json:"txCount"`
+	TxTotal  uint64     `json:"txTotal"`
+}
+
+type BaseFeeStat struct {
+	StatTime     *time.Time `json:"statTime"`
+	BaseFee      uint64     `json:"baseFee"`
+	BaseFeeTotal uint64     `json:"baseFeeTotal"`
 }

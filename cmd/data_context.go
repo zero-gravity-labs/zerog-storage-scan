@@ -42,9 +42,9 @@ type L2SdkConfig struct {
 var migrationModels = []interface{}{
 	&store.Address{},
 	&store.Block{},
+	&store.Config{},
 	&store.Submit{},
 	&store.SubmitStat{},
-	&store.Config{},
 }
 
 func MustInitDataContext() DataContext {

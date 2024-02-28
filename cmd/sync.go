@@ -3,9 +3,9 @@ package cmd
 import (
 	"context"
 	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
-	nhSync "github.com/zero-gravity-labs/zerog-storage-scan/sync"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	nhSync "github.com/zero-gravity-labs/zerog-storage-scan/sync"
 	"sync"
 )
 

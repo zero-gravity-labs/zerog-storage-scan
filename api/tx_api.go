@@ -1,19 +1,19 @@
 package api
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
-	"time"
 )
 
-// TO add logic when refactor submit db domain
 func listTx(c *gin.Context) (interface{}, error) {
 	var param listTxParam
 	if err := c.ShouldBind(&param); err != nil {
@@ -30,7 +30,7 @@ func listTx(c *gin.Context) (interface{}, error) {
 		if !exist {
 			return TxList{}, nil
 		}
-		conds = append(conds, SenderId(addr.Id))
+		conds = append(conds, SenderID(addr.Id))
 	}
 	if param.RootHash != "" {
 		conds = append(conds, RootHash(param.RootHash))
@@ -44,10 +44,8 @@ func listTx(c *gin.Context) (interface{}, error) {
 	}
 
 	addrIds := make([]uint64, 0)
-	txHashes := make([]string, 0)
 	for _, submit := range *submits {
 		addrIds = append(addrIds, submit.SenderID)
-		txHashes = append(txHashes, submit.TxHash)
 	}
 	addrMap, err := db.BatchGetAddresses(addrIds)
 	if err != nil {
@@ -57,12 +55,18 @@ func listTx(c *gin.Context) (interface{}, error) {
 	storageTxs := make([]StorageTx, 0)
 	for _, submit := range *submits {
 		storageTx := StorageTx{
-			TxSeq:    submit.SubmissionIndex,
-			BlockNum: submit.BlockNumber,
-			TxHash:   "0x" + submit.TxHash,
-			RootHash: "0x" + submit.RootHash,
-			Address:  addrMap[submit.SenderID].Address,
-			Method:   "submit",
+			TxSeq:     submit.SubmissionIndex,
+			BlockNum:  submit.BlockNumber,
+			TxHash:    submit.TxHash,
+			RootHash:  submit.RootHash,
+			Address:   addrMap[submit.SenderID].Address,
+			Method:    "submit",
+			Timestamp: submit.BlockTime.Unix(),
+			DataSize:  submit.Length,
+			BaseFee:   submit.Value,
+		}
+		if submit.Finalized {
+			storageTx.Status = 1
 		}
 		storageTxs = append(storageTxs, storageTx)
 	}
@@ -80,35 +84,17 @@ func getTxBrief(c *gin.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	var submit struct {
-		SubmissionIndex  uint64
-		SubmissionLength uint64
-		SenderId         uint64
-		RootHash         string
-		BlockNumber      uint64
-		Hash             string
-		CreatedAt        *time.Time
-		Value            *decimal.Decimal
-		Status           uint64
-		GasFee           uint64
-		GasUsed          uint64
-		GasLimit         uint64
-	}
-
-	err := db.DB.Raw(`select s.submission_index, s.submission_length, s.sender_id, s.root_hash, t.block_number, 
-       t.hash, t.created_at, t.status, t.gas_fee, t.gas_used, t.gas_limit, ts.value from submits s 
-       left join txs t on s.tx_hash = t.hash 
-       left join erc20_transfers ts on t.hash = ts.tx_hash 
-       where s.submission_index =?`, param.TxSeq).Take(&submit).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.Errorf("Record not found, txSeq %v", *param.TxSeq)
-	}
+	var submit store.Submit
+	exist, err := db.Store.Exists(&submit, "submission_index = ?", param.TxSeq)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to query databases")
 		return nil, errors.Errorf("Biz error, txSeq %v", *param.TxSeq)
 	}
+	if !exist {
+		return nil, errors.Errorf("Record not found, txSeq %v", *param.TxSeq)
+	}
 
-	addrIds := []uint64{submit.SenderId}
+	addrIds := []uint64{submit.SenderID}
 	addrMap, err := db.BatchGetAddresses(addrIds)
 	if err != nil {
 		return nil, err
@@ -116,27 +102,38 @@ func getTxBrief(c *gin.Context) (interface{}, error) {
 
 	result := TxBrief{
 		TxSeq:    strconv.FormatUint(submit.SubmissionIndex, 10),
-		From:     addrMap[submit.SenderId].Address,
+		From:     addrMap[submit.SenderID].Address,
 		Method:   "submit",
-		RootHash: "0x" + submit.RootHash,
-		DataSize: submit.SubmissionLength,
+		RootHash: submit.RootHash,
+		DataSize: submit.Length,
 		CostInfo: &CostInfo{
 			TokenInfo: *chargeToken,
 			BasicCost: submit.Value.String(),
 		},
 		BlockNumber: submit.BlockNumber,
-		TxHash:      "0x" + submit.Hash,
-		Timestamp:   uint64(submit.CreatedAt.Unix()),
-		Status:      submit.Status,
-		GasFee:      submit.GasFee,
-		GasUsed:     submit.GasUsed,
-		GasLimit:    submit.GasLimit,
+		TxHash:      submit.TxHash,
+		Timestamp:   uint64(submit.BlockTime.Unix()),
 	}
+
+	hash := common.HexToHash(submit.TxHash)
+	tx, err := sdk.Eth.TransactionByHash(hash)
+	if err != nil {
+		logrus.WithError(err).WithField("txSeq", param.TxSeq).Error("Failed to get transaction")
+		return nil, errors.Errorf("Get tx error, txSeq %v", param.TxSeq)
+	}
+	rcpt, err := sdk.Eth.TransactionReceipt(hash)
+	if err != nil {
+		logrus.WithError(err).WithField("txSeq", param.TxSeq).Error("Failed to get receipt")
+		return nil, errors.Errorf("Get receitp error, txSeq %v", param.TxSeq)
+	}
+	result.Status = *rcpt.Status
+	result.GasFee = tx.GasPrice.Uint64() * rcpt.GasUsed
+	result.GasUsed = rcpt.GasUsed
+	result.GasLimit = tx.Gas
 
 	return result, nil
 }
 
-// TODO add StartPos, EndPos and PieceCounts when refactor api module
 func getTxDetail(c *gin.Context) (interface{}, error) {
 	var param queryTxParam
 	if err := c.ShouldBind(&param); err != nil {
@@ -153,24 +150,33 @@ func getTxDetail(c *gin.Context) (interface{}, error) {
 		return nil, errors.Errorf("Record not found, txSeq %v", *param.TxSeq)
 	}
 
-	nodes, err := getSubmitEvent("0x" + submit.TxHash)
-	if err != nil {
-		return nil, err
+	var extra store.SubmitExtra
+	if err := json.Unmarshal(submit.Extra, &extra); err != nil {
+		logrus.WithError(err).Error("Failed to unmarshal submit extra")
+		return nil, errors.Errorf("Unmarshal submit extra error, txSeq %v", *param.TxSeq)
+	}
+
+	var nodes []SubmissionNode
+	for _, n := range extra.Submission.Nodes {
+		nodes = append(nodes, SubmissionNode{
+			Root:   "0x" + hex.EncodeToString(n.Root[:]),
+			Height: n.Height,
+		})
 	}
 
 	result := TxDetail{
-		TxSeq:    strconv.FormatUint(submit.SubmissionIndex, 10),
-		RootHash: "0x" + submit.RootHash,
-		//StartPos:    submit.StartPos,
-		//EndPos:      submit.StartPos + submit.Length,
-		//PieceCounts: submit.Nodes,
-		Pieces: nodes,
+		TxSeq:       strconv.FormatUint(submit.SubmissionIndex, 10),
+		RootHash:    submit.RootHash,
+		StartPos:    extra.StartPos.Uint64(),
+		EndPos:      extra.StartPos.Uint64() + submit.Length,
+		PieceCounts: uint64(len(nodes)),
+		Pieces:      nodes,
 	}
 
 	return result, nil
 }
 
-func SenderId(si uint64) func(db *gorm.DB) *gorm.DB {
+func SenderID(si uint64) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("sender_id = ?", si)
 	}

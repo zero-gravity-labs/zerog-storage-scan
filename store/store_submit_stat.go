@@ -15,8 +15,8 @@ type SubmitStat struct {
 	FileTotal    uint64     `gorm:"not null;default:0" json:"fileTotal"`    // Total number of files by a certain time
 	DataSize     uint64     `gorm:"not null;default:0" json:"dataSize"`     // Size of storage data in a specific time interval
 	DataTotal    uint64     `gorm:"not null;default:0" json:"dataTotal"`    // Total Size of storage data by a certain time
-	BaseFee      uint64     `gorm:"not null;default:0" json:"baseFee"`      // The basic cost for storage
-	BaseFeeTotal uint64     `gorm:"not null;default:0" json:"baseFeeTotal"` // The total basic cost for storage
+	BaseFee      uint64     `gorm:"not null;default:0" json:"baseFee"`      // The base fee for storage
+	BaseFeeTotal uint64     `gorm:"not null;default:0" json:"baseFeeTotal"` // The total base fee for storage
 }
 
 func (SubmitStat) TableName() string {
