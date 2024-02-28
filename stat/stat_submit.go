@@ -1,9 +1,9 @@
 package stat
 
 import (
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"github.com/openweb3/web3go"
 	"github.com/pkg/errors"
+	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
 	"time"
 )
@@ -83,6 +83,7 @@ func (ts *StatSubmit) calculateStat(tr *TimeRange) error {
 	})
 }
 
+// TODO add stat for cost and cost total when refactor db domains
 func (ts *StatSubmit) statBasicRange(tr *TimeRange) (*store.SubmitStat, error) {
 	fileCount, dataSize, err := ts.Db.SubmitStore.Count(tr.start, tr.end)
 	if err != nil {
@@ -103,6 +104,7 @@ func (ts *StatSubmit) statBasicRange(tr *TimeRange) (*store.SubmitStat, error) {
 	}, nil
 }
 
+// TODO add stat for cost and cost total when refactor db domains
 func (ts *StatSubmit) statRange(rangEnd *time.Time, srcStatType, descStatType string, latestStat *store.SubmitStat) (*store.SubmitStat, error) {
 	rangeStart, err := ts.calStatRangeStart(rangEnd, descStatType)
 	if err != nil {
