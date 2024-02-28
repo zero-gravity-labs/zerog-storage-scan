@@ -117,9 +117,9 @@ type TxStatList struct {
 	List  []TxStat `json:"list"`
 }
 
-type BaseFeeStatList struct {
-	Total int64         `json:"total"`
-	List  []BaseFeeStat `json:"list"`
+type FeeStatList struct {
+	Total int64     `json:"total"`
+	List  []FeeStat `json:"list"`
 }
 
 type DataStat struct {
@@ -136,7 +136,7 @@ type TxStat struct {
 	TxTotal  uint64     `json:"txTotal"`
 }
 
-type BaseFeeStat struct {
+type FeeStat struct {
 	StatTime     *time.Time `json:"statTime"`
 	BaseFee      uint64     `json:"baseFee"`
 	BaseFeeTotal uint64     `json:"baseFeeTotal"`

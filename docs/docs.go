@@ -15,9 +15,47 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/statistic/cost/basic/list": {
+        "/statistic/dashboard": {
             "get": {
-                "description": "Query basic cost statistics, including incremental and full data, and support querying at hourly or daily time intervals",
+                "description": "Query statistics dashboard includes ` + "`" + `average uplink rate` + "`" + ` and ` + "`" + `storage base fee` + "`" + `",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Statistics dashboard",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.Dashboard"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/statistic/fee/list": {
+            "get": {
+                "description": "Query fee statistics, including incremental and full data, and support querying at hourly or daily time intervals",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +65,7 @@ const docTemplate = `{
                 "tags": [
                     "statistic"
                 ],
-                "summary": "Basic cost statistics",
+                "summary": "fee statistics",
                 "parameters": [
                     {
                         "minimum": 0,
@@ -93,45 +131,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.BasicCostStatList"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/api.BusinessError"
-                        }
-                    }
-                }
-            }
-        },
-        "/statistic/dashboard": {
-            "get": {
-                "description": "Query statistics dashboard includes ` + "`" + `average uplink rate` + "`" + ` and ` + "`" + `storage basic cost` + "`" + `",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "statistic"
-                ],
-                "summary": "Statistics dashboard",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/api.Dashboard"
+                                            "$ref": "#/definitions/api.FeeStatList"
                                         }
                                     }
                                 }
@@ -509,20 +509,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.BasicCostStatList": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/store.CostStat"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
         "api.BusinessError": {
             "type": "object",
             "properties": {
@@ -549,11 +535,28 @@ const docTemplate = `{
         "api.Dashboard": {
             "type": "object",
             "properties": {
-                "averageUplinkRate": {
-                    "type": "string"
-                },
                 "storageBasicCost": {
                     "$ref": "#/definitions/api.StorageBasicCost"
+                }
+            }
+        },
+        "api.DataStat": {
+            "type": "object",
+            "properties": {
+                "dataSize": {
+                    "type": "integer"
+                },
+                "dataTotal": {
+                    "type": "integer"
+                },
+                "fileCount": {
+                    "type": "integer"
+                },
+                "fileTotal": {
+                    "type": "integer"
+                },
+                "statTime": {
+                    "type": "string"
                 }
             }
         },
@@ -563,7 +566,35 @@ const docTemplate = `{
                 "list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/store.SubmitStat"
+                        "$ref": "#/definitions/api.DataStat"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.FeeStat": {
+            "type": "object",
+            "properties": {
+                "baseFee": {
+                    "type": "integer"
+                },
+                "baseFeeTotal": {
+                    "type": "integer"
+                },
+                "statTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.FeeStatList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.FeeStat"
                     }
                 },
                 "total": {
@@ -597,7 +628,13 @@ const docTemplate = `{
                 "address": {
                     "type": "string"
                 },
+                "baseFee": {
+                    "type": "number"
+                },
                 "blockNum": {
+                    "type": "integer"
+                },
+                "dataSize": {
                     "type": "integer"
                 },
                 "method": {
@@ -735,64 +772,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TxStatList": {
-            "type": "object",
-            "properties": {
-                "list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/store.TxStat"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "big.Int": {
-            "type": "object"
-        },
-        "store.CostStat": {
-            "type": "object",
-            "properties": {
-                "basicCost": {
-                    "description": "The basic cost for storage",
-                    "type": "integer"
-                },
-                "basicCostTotal": {
-                    "description": "The total basic cost for storage",
-                    "type": "integer"
-                },
-                "statTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "store.SubmitStat": {
-            "type": "object",
-            "properties": {
-                "dataSize": {
-                    "description": "Size of storage data in a specific time interval",
-                    "type": "integer"
-                },
-                "dataTotal": {
-                    "description": "Total Size of storage data by a certain time",
-                    "type": "integer"
-                },
-                "fileCount": {
-                    "description": "Number of files in a specific time interval",
-                    "type": "integer"
-                },
-                "fileTotal": {
-                    "description": "Total number of files by a certain time",
-                    "type": "integer"
-                },
-                "statTime": {
-                    "type": "string"
-                }
-            }
-        },
-        "store.TxStat": {
+        "api.TxStat": {
             "type": "object",
             "properties": {
                 "statTime": {
@@ -805,6 +785,23 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "api.TxStatList": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.TxStat"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "big.Int": {
+            "type": "object"
         }
     }
 }`

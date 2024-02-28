@@ -114,6 +114,9 @@ func getTxBrief(c *gin.Context) (interface{}, error) {
 		TxHash:      submit.TxHash,
 		Timestamp:   uint64(submit.BlockTime.Unix()),
 	}
+	if submit.Finalized {
+		result.Status = 1
+	}
 
 	hash := common.HexToHash(submit.TxHash)
 	tx, err := sdk.Eth.TransactionByHash(hash)
@@ -126,7 +129,6 @@ func getTxBrief(c *gin.Context) (interface{}, error) {
 		logrus.WithError(err).WithField("txSeq", param.TxSeq).Error("Failed to get receipt")
 		return nil, errors.Errorf("Get receitp error, txSeq %v", param.TxSeq)
 	}
-	result.Status = *rcpt.Status
 	result.GasFee = tx.GasPrice.Uint64() * rcpt.GasUsed
 	result.GasUsed = rcpt.GasUsed
 	result.GasLimit = tx.Gas

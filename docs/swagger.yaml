@@ -1,13 +1,4 @@
 definitions:
-  api.BasicCostStatList:
-    properties:
-      list:
-        items:
-          $ref: '#/definitions/store.CostStat'
-        type: array
-      total:
-        type: integer
-    type: object
   api.BusinessError:
     properties:
       code:
@@ -25,16 +16,45 @@ definitions:
     type: object
   api.Dashboard:
     properties:
-      averageUplinkRate:
-        type: string
       storageBasicCost:
         $ref: '#/definitions/api.StorageBasicCost'
+    type: object
+  api.DataStat:
+    properties:
+      dataSize:
+        type: integer
+      dataTotal:
+        type: integer
+      fileCount:
+        type: integer
+      fileTotal:
+        type: integer
+      statTime:
+        type: string
     type: object
   api.DataStatList:
     properties:
       list:
         items:
-          $ref: '#/definitions/store.SubmitStat'
+          $ref: '#/definitions/api.DataStat'
+        type: array
+      total:
+        type: integer
+    type: object
+  api.FeeStat:
+    properties:
+      baseFee:
+        type: integer
+      baseFeeTotal:
+        type: integer
+      statTime:
+        type: string
+    type: object
+  api.FeeStatList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/api.FeeStat'
         type: array
       total:
         type: integer
@@ -56,7 +76,11 @@ definitions:
     properties:
       address:
         type: string
+      baseFee:
+        type: number
       blockNum:
+        type: integer
+      dataSize:
         type: integer
       method:
         type: string
@@ -146,46 +170,7 @@ definitions:
       total:
         type: integer
     type: object
-  api.TxStatList:
-    properties:
-      list:
-        items:
-          $ref: '#/definitions/store.TxStat'
-        type: array
-      total:
-        type: integer
-    type: object
-  big.Int:
-    type: object
-  store.CostStat:
-    properties:
-      basicCost:
-        description: The basic cost for storage
-        type: integer
-      basicCostTotal:
-        description: The total basic cost for storage
-        type: integer
-      statTime:
-        type: string
-    type: object
-  store.SubmitStat:
-    properties:
-      dataSize:
-        description: Size of storage data in a specific time interval
-        type: integer
-      dataTotal:
-        description: Total Size of storage data by a certain time
-        type: integer
-      fileCount:
-        description: Number of files in a specific time interval
-        type: integer
-      fileTotal:
-        description: Total number of files by a certain time
-        type: integer
-      statTime:
-        type: string
-    type: object
-  store.TxStat:
+  api.TxStat:
     properties:
       statTime:
         type: string
@@ -194,18 +179,52 @@ definitions:
       txTotal:
         type: integer
     type: object
+  api.TxStatList:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/api.TxStat'
+        type: array
+      total:
+        type: integer
+    type: object
+  big.Int:
+    type: object
 info:
   contact: {}
   description: Use any http client to fetch data from the ZeroGStorage Scan.
   title: ZeroGStorage Scan API
   version: "1.0"
 paths:
-  /statistic/cost/basic/list:
+  /statistic/dashboard:
+    get:
+      description: Query statistics dashboard includes `average uplink rate` and `storage
+        base fee`
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.Dashboard'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Statistics dashboard
+      tags:
+      - statistic
+  /statistic/fee/list:
     get:
       consumes:
       - application/json
-      description: Query basic cost statistics, including incremental and full data,
-        and support querying at hourly or daily time intervals
+      description: Query fee statistics, including incremental and full data, and
+        support querying at hourly or daily time intervals
       parameters:
       - default: 0
         description: The number of skipped records, usually it's pageSize * (pageNumber
@@ -255,36 +274,13 @@ paths:
             - $ref: '#/definitions/api.BusinessError'
             - properties:
                 Data:
-                  $ref: '#/definitions/api.BasicCostStatList'
+                  $ref: '#/definitions/api.FeeStatList'
               type: object
         "600":
           description: ""
           schema:
             $ref: '#/definitions/api.BusinessError'
-      summary: Basic cost statistics
-      tags:
-      - statistic
-  /statistic/dashboard:
-    get:
-      description: Query statistics dashboard includes `average uplink rate` and `storage
-        basic cost`
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/api.BusinessError'
-            - properties:
-                Data:
-                  $ref: '#/definitions/api.Dashboard'
-              type: object
-        "600":
-          description: ""
-          schema:
-            $ref: '#/definitions/api.BusinessError'
-      summary: Statistics dashboard
+      summary: fee statistics
       tags:
       - statistic
   /statistic/storage/list:

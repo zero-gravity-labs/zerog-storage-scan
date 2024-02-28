@@ -16,7 +16,7 @@ type Type int
 const (
 	StorageStatType Type = iota
 	TxStatType
-	BaseFeeStatType
+	FeeStatType
 )
 
 func dashboard(c *gin.Context) (interface{}, error) {
@@ -47,8 +47,8 @@ func listTxStat(c *gin.Context) (interface{}, error) {
 	return getSubmitStatByType(c, TxStatType)
 }
 
-func listBaseFeeStat(c *gin.Context) (interface{}, error) {
-	return getSubmitStatByType(c, BaseFeeStatType)
+func listFeeStat(c *gin.Context) (interface{}, error) {
+	return getSubmitStatByType(c, FeeStatType)
 }
 
 func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
@@ -111,10 +111,10 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 			})
 		}
 		result["list"] = list
-	case BaseFeeStatType:
-		list := make([]BaseFeeStat, 0)
+	case FeeStatType:
+		list := make([]FeeStat, 0)
 		for _, stat := range *records {
-			list = append(list, BaseFeeStat{
+			list = append(list, FeeStat{
 				StatTime:     stat.StatTime,
 				BaseFee:      stat.BaseFee,
 				BaseFeeTotal: stat.BaseFeeTotal,

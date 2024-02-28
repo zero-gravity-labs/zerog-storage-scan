@@ -3,7 +3,7 @@ version: '3.3'
 services:
   sync:
     build: .
-    image: zerog_storage:latest
+    image: zg-scan:latest
     command: sync
     restart: unless-stopped
     environment:
@@ -12,7 +12,7 @@ services:
     container_name: zerog-storage-sync
 
   stat:
-    image: zerog_storage:latest
+    image: zg-scan:latest
     command: stat
     restart: unless-stopped
     environment:
@@ -21,7 +21,7 @@ services:
     container_name: zerog-storage-stat
 
   api:
-    image: zerog_storage:latest
+    image: zg-scan:latest
     command: api
     restart: unless-stopped
     environment:
