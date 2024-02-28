@@ -105,17 +105,7 @@ type Dashboard struct {
 	AverageUplinkRate string `json:"averageUplinkRate"`
 }
 
-type TxStatList struct {
-	Total int64          `json:"total"`
-	List  []store.TxStat `json:"list"`
-}
-
 type DataStatList struct {
 	Total int64              `json:"total"`
 	List  []store.SubmitStat `json:"list"`
-}
-
-type BasicCostStatList struct {
-	Total int64            `json:"total"`
-	List  []store.CostStat `json:"list"`
 }

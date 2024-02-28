@@ -2,55 +2,37 @@ package api
 
 import (
 	"encoding/json"
-	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"strconv"
 )
 
+// TO add logic when refactor submit db domain
 func dashboard(c *gin.Context) (interface{}, error) {
-	dataUplinkRate, exist, err := db.ConfigStore.Get(store.CfgDataUplinkRate)
-	if err != nil {
-		return nil, commonApi.ErrInternal(err)
-	}
-	if !exist {
-		return nil, ErrConfigNotFound
-	}
-
-	costStat, err := db.CostStatStore.LastByType(stat.Day)
-	if err != nil {
-		return nil, err
-	}
-	if costStat == nil {
-		return nil, errors.New("Storage basic cost not stat.")
-	}
-
 	storageBasicCost := StorageBasicCost{
-		TokenInfo:      *chargeToken,
-		BasicCostTotal: strconv.FormatUint(costStat.BasicCostTotal, 10),
+		TokenInfo: *chargeToken,
 	}
 	result := Dashboard{
-		AverageUplinkRate: dataUplinkRate,
-		StorageBasicCost:  storageBasicCost,
+		StorageBasicCost: storageBasicCost,
 	}
 
 	return result, nil
 }
 
+// TO add logic when refactor submit db domain
 func listTxStat(c *gin.Context) (interface{}, error) {
-	return queryStat(c, db.DB.Model(&store.TxStat{}), new([]store.TxStat))
+	return nil, nil
 }
 
 func listDataStat(c *gin.Context) (interface{}, error) {
 	return queryStat(c, db.DB.Model(&store.SubmitStat{}), new([]store.SubmitStat))
 }
 
+// TO add logic when refactor submit db domain
 func listBasicCostStat(c *gin.Context) (interface{}, error) {
-	return queryStat(c, db.DB.Model(&store.CostStat{}), new([]store.CostStat))
+	return nil, nil
 }
 
 func queryStat(c *gin.Context, dbRaw *gorm.DB, records interface{}) (interface{}, error) {

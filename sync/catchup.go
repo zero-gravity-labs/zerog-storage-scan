@@ -98,8 +98,7 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 			return err
 		}
 
-		// TODO will remove txs and transfers params when refactor db domains
-		err = s.db.Push(block, nil, nil, submits)
+		err = s.db.Push(block, submits)
 		if err != nil {
 			return err
 		}

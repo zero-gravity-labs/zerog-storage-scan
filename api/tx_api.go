@@ -2,17 +2,18 @@ package api
 
 import (
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
+	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
 	"time"
 )
 
+// TO add logic when refactor submit db domain
 func listTx(c *gin.Context) (interface{}, error) {
 	var param listTxParam
 	if err := c.ShouldBind(&param); err != nil {
@@ -52,23 +53,16 @@ func listTx(c *gin.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	txMap, err := db.MapTxHashToTx(txHashes)
-	if err != nil {
-		return nil, err
-	}
 
 	storageTxs := make([]StorageTx, 0)
 	for _, submit := range *submits {
-		tx := txMap[submit.TxHash]
 		storageTx := StorageTx{
-			TxSeq:     submit.SubmissionIndex,
-			BlockNum:  submit.BlockNumber,
-			TxHash:    "0x" + submit.TxHash,
-			RootHash:  "0x" + submit.RootHash,
-			Address:   addrMap[submit.SenderId].Address,
-			Method:    "submit",
-			Status:    tx.Status,
-			Timestamp: tx.CreatedAt.Unix(),
+			TxSeq:    submit.SubmissionIndex,
+			BlockNum: submit.BlockNumber,
+			TxHash:   "0x" + submit.TxHash,
+			RootHash: "0x" + submit.RootHash,
+			Address:  addrMap[submit.SenderId].Address,
+			Method:   "submit",
 		}
 		storageTxs = append(storageTxs, storageTx)
 	}
