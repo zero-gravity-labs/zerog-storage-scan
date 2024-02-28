@@ -1,27 +1,21 @@
 package contract
 
 import (
-	"github.com/zero-gravity-labs/zerog-storage-client/contract"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
+	"github.com/zero-gravity-labs/zerog-storage-client/contract"
 )
 
 var (
-	flowFilterer       *contract.FlowFilterer
-	erc20TokenFilterer *Erc20TokenFilterer
+	flowFilterer *contract.FlowFilterer
 )
 
 func init() {
 	flowFilterer, _ = contract.NewFlowFilterer(common.HexToAddress(""), nil)
-	erc20TokenFilterer, _ = NewErc20TokenFilterer(common.HexToAddress(""), nil)
 }
 
 func DummyFlowFilterer() *contract.FlowFilterer {
 	return flowFilterer
-}
-
-func DummyErc20TokenFilterer() *Erc20TokenFilterer {
-	return erc20TokenFilterer
 }
 
 func TokenInfo(w3c *web3go.Client, address string) (string, string, uint8, error) {

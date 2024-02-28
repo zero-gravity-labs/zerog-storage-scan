@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"github.com/Conflux-Chain/go-conflux-util/api"
-	nhApi "github.com/zero-gravity-labs/zerog-storage-scan/api"
 	"github.com/spf13/cobra"
+	nhApi "github.com/zero-gravity-labs/zerog-storage-scan/api"
 )
 
 var (
