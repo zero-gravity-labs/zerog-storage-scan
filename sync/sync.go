@@ -338,17 +338,17 @@ func (s *Syncer) decodeSubmit(blkTime time.Time, log *types.Log) (*store.Submit,
 		return nil, nil
 	}
 
-	submit, err := store.NewSubmit(&blkTime, log, nhContract.DummyFlowFilterer())
+	submit, err := store.NewSubmit(blkTime, log, nhContract.DummyFlowFilterer())
 	if err != nil {
 		return nil, err
 	}
 
-	senderId, err := s.db.AddressStore.Add(nil, submit.Sender, blkTime)
+	senderID, err := s.db.AddressStore.Add(nil, submit.Sender, blkTime)
 	if err != nil {
 		return nil, err
 	}
 
-	submit.SenderId = senderId
+	submit.SenderID = senderID
 
 	return submit, nil
 }

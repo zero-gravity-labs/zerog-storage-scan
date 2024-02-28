@@ -210,7 +210,7 @@ func (s *CatchupSyncer) convertSubmits(logs []types.Log, blockNum2TimeMap map[ui
 	for _, log := range logs {
 		ts := blockNum2TimeMap[log.BlockNumber]
 		blockTime := time.Unix(int64(ts), 0)
-		submit, err := store.NewSubmit(&blockTime, &log, nhContract.DummyFlowFilterer())
+		submit, err := store.NewSubmit(blockTime, &log, nhContract.DummyFlowFilterer())
 		if err != nil {
 			return nil, err
 		}
@@ -220,7 +220,7 @@ func (s *CatchupSyncer) convertSubmits(logs []types.Log, blockNum2TimeMap map[ui
 			return nil, err
 		}
 
-		submit.SenderId = senderId
+		submit.SenderID = senderId
 		submits = append(submits, submit)
 	}
 

@@ -46,7 +46,7 @@ func listTx(c *gin.Context) (interface{}, error) {
 	addrIds := make([]uint64, 0)
 	txHashes := make([]string, 0)
 	for _, submit := range *submits {
-		addrIds = append(addrIds, submit.SenderId)
+		addrIds = append(addrIds, submit.SenderID)
 		txHashes = append(txHashes, submit.TxHash)
 	}
 	addrMap, err := db.BatchGetAddresses(addrIds)
@@ -61,7 +61,7 @@ func listTx(c *gin.Context) (interface{}, error) {
 			BlockNum: submit.BlockNumber,
 			TxHash:   "0x" + submit.TxHash,
 			RootHash: "0x" + submit.RootHash,
-			Address:  addrMap[submit.SenderId].Address,
+			Address:  addrMap[submit.SenderID].Address,
 			Method:   "submit",
 		}
 		storageTxs = append(storageTxs, storageTx)
@@ -136,6 +136,7 @@ func getTxBrief(c *gin.Context) (interface{}, error) {
 	return result, nil
 }
 
+// TODO add StartPos, EndPos and PieceCounts when refactor api module
 func getTxDetail(c *gin.Context) (interface{}, error) {
 	var param queryTxParam
 	if err := c.ShouldBind(&param); err != nil {
@@ -158,12 +159,12 @@ func getTxDetail(c *gin.Context) (interface{}, error) {
 	}
 
 	result := TxDetail{
-		TxSeq:       strconv.FormatUint(submit.SubmissionIndex, 10),
-		RootHash:    "0x" + submit.RootHash,
-		StartPos:    submit.StartPos,
-		EndPos:      submit.StartPos + submit.Length,
-		PieceCounts: submit.Nodes,
-		Pieces:      nodes,
+		TxSeq:    strconv.FormatUint(submit.SubmissionIndex, 10),
+		RootHash: "0x" + submit.RootHash,
+		//StartPos:    submit.StartPos,
+		//EndPos:      submit.StartPos + submit.Length,
+		//PieceCounts: submit.Nodes,
+		Pieces: nodes,
 	}
 
 	return result, nil
