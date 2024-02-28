@@ -8,15 +8,15 @@ import (
 )
 
 type SubmitStat struct {
-	ID             uint64     `gorm:"primaryKey" json:"-"`
-	StatTime       *time.Time `gorm:"not null;index:idx_statTime_statType,unique,priority:1" json:"statTime"`
-	StatType       string     `gorm:"type:char(3);not null;index:idx_statTime_statType,unique,priority:2" json:"-"`
-	FileCount      uint64     `gorm:"not null;default:0" json:"fileCount"`      // Number of files in a specific time interval
-	FileTotal      uint64     `gorm:"not null;default:0" json:"fileTotal"`      // Total number of files by a certain time
-	DataSize       uint64     `gorm:"not null;default:0" json:"dataSize"`       // Size of storage data in a specific time interval
-	DataTotal      uint64     `gorm:"not null;default:0" json:"dataTotal"`      // Total Size of storage data by a certain time
-	BasicCost      uint64     `gorm:"not null;default:0" json:"basicCost"`      // The basic cost for storage
-	BasicCostTotal uint64     `gorm:"not null;default:0" json:"basicCostTotal"` // The total basic cost for storage
+	ID           uint64     `gorm:"primaryKey" json:"-"`
+	StatTime     *time.Time `gorm:"not null;index:idx_statTime_statType,unique,priority:1" json:"statTime"`
+	StatType     string     `gorm:"type:char(3);not null;index:idx_statTime_statType,unique,priority:2" json:"-"`
+	FileCount    uint64     `gorm:"not null;default:0" json:"fileCount"`    // Number of files in a specific time interval
+	FileTotal    uint64     `gorm:"not null;default:0" json:"fileTotal"`    // Total number of files by a certain time
+	DataSize     uint64     `gorm:"not null;default:0" json:"dataSize"`     // Size of storage data in a specific time interval
+	DataTotal    uint64     `gorm:"not null;default:0" json:"dataTotal"`    // Total Size of storage data by a certain time
+	BaseFee      uint64     `gorm:"not null;default:0" json:"baseFee"`      // The basic cost for storage
+	BaseFeeTotal uint64     `gorm:"not null;default:0" json:"baseFeeTotal"` // The total basic cost for storage
 }
 
 func (SubmitStat) TableName() string {
@@ -48,7 +48,7 @@ func (t *SubmitStatStore) LastByType(statType string) (*SubmitStat, error) {
 type SubmitStatResult struct {
 	FileCount uint64
 	DataSize  uint64
-	BasicCost uint64
+	BaseFee   uint64
 }
 
 func (t *SubmitStatStore) Sum(startTime, endTime *time.Time, statType string) (*SubmitStatResult, error) {
@@ -57,7 +57,7 @@ func (t *SubmitStatStore) Sum(startTime, endTime *time.Time, statType string) (*
 	}
 
 	db := t.DB.Model(&SubmitStat{}).Select(`IFNULL(sum(file_count), 0) as file_count, 
-		IFNULL(sum(data_size), 0) as data_size, IFNULL(sum(basic_cost), 0) as basic_cost`)
+		IFNULL(sum(data_size), 0) as data_size, IFNULL(sum(base_fee), 0) as base_fee`)
 	if startTime != nil && endTime != nil {
 		db = db.Where("stat_time >= ? and stat_time < ? and stat_type = ?", startTime, endTime, statType)
 	}

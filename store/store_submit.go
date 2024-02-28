@@ -90,7 +90,7 @@ func (ss *SubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
 func (ss *SubmitStore) Count(startTime, endTime time.Time) (*SubmitStatResult, error) {
 	var result SubmitStatResult
 	err := ss.DB.Model(&Submit{}).Select(`count(id) as file_count, IFNULL(sum(length), 0) as data_size, 
-		IFNULL(sum(value), 0) as basic_cost`).Where("block_time >= ? and block_time < ?", startTime, endTime).
+		IFNULL(sum(value), 0) as base_fee`).Where("block_time >= ? and block_time < ?", startTime, endTime).
 		Find(&result).Error
 	if err != nil {
 		return nil, err

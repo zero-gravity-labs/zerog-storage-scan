@@ -94,14 +94,14 @@ func (ts *StatSubmit) statBasicRange(tr *TimeRange) (*store.SubmitStat, error) {
 	}
 
 	return &store.SubmitStat{
-		StatTime:       tr.start,
-		StatType:       ts.statType,
-		FileCount:      delta.FileCount,
-		FileTotal:      total.FileCount + delta.FileCount,
-		DataSize:       delta.DataSize,
-		DataTotal:      total.DataSize + delta.DataSize,
-		BasicCost:      delta.BasicCost,
-		BasicCostTotal: total.BasicCost + delta.BasicCost,
+		StatTime:     tr.start,
+		StatType:     ts.statType,
+		FileCount:    delta.FileCount,
+		FileTotal:    total.FileCount + delta.FileCount,
+		DataSize:     delta.DataSize,
+		DataTotal:    total.DataSize + delta.DataSize,
+		BaseFee:      delta.BaseFee,
+		BaseFeeTotal: total.BaseFee + delta.BaseFee,
 	}, nil
 }
 
@@ -123,17 +123,17 @@ func (ts *StatSubmit) statRange(rangEnd *time.Time, srcStatType, descStatType st
 	if latestStat != nil {
 		srcStat.FileCount += latestStat.FileCount
 		srcStat.DataSize += latestStat.DataSize
-		srcStat.BasicCost += latestStat.BasicCost
+		srcStat.BaseFee += latestStat.BaseFee
 	}
 
 	return &store.SubmitStat{
-		StatTime:       rangeStart,
-		StatType:       descStatType,
-		FileCount:      srcStat.FileCount,
-		FileTotal:      destStat.FileCount + srcStat.FileCount,
-		DataSize:       srcStat.DataSize,
-		DataTotal:      destStat.DataSize + srcStat.DataSize,
-		BasicCost:      srcStat.BasicCost,
-		BasicCostTotal: destStat.BasicCost + srcStat.BasicCost,
+		StatTime:     rangeStart,
+		StatType:     descStatType,
+		FileCount:    srcStat.FileCount,
+		FileTotal:    destStat.FileCount + srcStat.FileCount,
+		DataSize:     srcStat.DataSize,
+		DataTotal:    destStat.DataSize + srcStat.DataSize,
+		BaseFee:      srcStat.BaseFee,
+		BaseFeeTotal: destStat.BaseFee + srcStat.BaseFee,
 	}, nil
 }
