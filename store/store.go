@@ -14,9 +14,9 @@ type MysqlStore struct {
 	*mysql.Store
 	*AddressStore
 	*BlockStore
+	*ConfigStore
 	*SubmitStore
 	*SubmitStatStore
-	*ConfigStore
 }
 
 func MustNewStore(db *gorm.DB) *MysqlStore {
@@ -24,14 +24,13 @@ func MustNewStore(db *gorm.DB) *MysqlStore {
 		Store:           mysql.NewStore(db),
 		AddressStore:    newAddressStore(db),
 		BlockStore:      newBlockStore(db),
+		ConfigStore:     newConfigStore(db),
 		SubmitStore:     newSubmitStore(db),
 		SubmitStatStore: newSubmitStatStore(db),
-		ConfigStore:     newConfigStore(db),
 	}
 }
 
 func (ms *MysqlStore) Push(block *Block, submits []*Submit) error {
-
 	return ms.Store.DB.Transaction(func(dbTx *gorm.DB) error {
 		// save blocks
 		if err := ms.BlockStore.Add(dbTx, block); err != nil {

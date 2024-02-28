@@ -1,48 +1,65 @@
 package store
 
 import (
-	"encoding/hex"
+	"encoding/json"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
-	"github.com/zero-gravity-labs/zerog-storage-client/contract"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
+	"github.com/zero-gravity-labs/zerog-storage-client/contract"
 	"gorm.io/gorm"
+	"math/big"
 	"time"
 )
 
 type Submit struct {
-	ID               uint64     `gorm:"primaryKey;index:idx_sender_id,priority:2"`
-	BlockNumber      uint64     `gorm:"not null;index:idx_bn"`
-	TxHash           string     `gorm:"type:varchar(64);not null;index:idx_hash,length:10"`
-	CreatedAt        *time.Time `gorm:"not null;index:idx_createdAt,sort:desc"`
-	Sender           string     `gorm:"-"`
-	SenderId         uint64     `gorm:"not null;index:idx_sender_id,priority:1"`
-	RootHash         string     `gorm:"size:64;index:idx_root,length:10"`
-	Identity         string     `gorm:"size:64;not null"`
-	SubmissionIndex  uint64     `gorm:"not null"`
-	StartPos         uint64     `gorm:"not null"`
-	Length           uint64     `gorm:"not null"`
-	SubmissionLength uint64     `gorm:"not null"`
-	Nodes            uint64     `gorm:"not null"`
+	ID          uint64    `gorm:"index:idx_sender_id,priority:2"`
+	BlockNumber uint64    `gorm:"not null;index:idx_bn"`
+	BlockTime   time.Time `gorm:"not null;index:idx_blockTime,sort:desc"`
+	TxHash      string    `gorm:"size:66;not null;index:idx_hash"`
+
+	SubmissionIndex uint64          `gorm:"not null"`
+	RootHash        string          `gorm:"size:66;index:idx_root"`
+	Sender          string          `gorm:"-"`
+	SenderID        uint64          `gorm:"not null;index:idx_sender_id,priority:1"`
+	Length          uint64          `gorm:"not null"`
+	Finalized       bool            `gorm:"default:false"`
+	Value           decimal.Decimal `gorm:"type:varchar(78);not null"`
+
+	Extra []byte `gorm:"type:mediumText"` // json field
 }
 
-func NewSubmit(blockTime *time.Time, log *types.Log, filter *contract.FlowFilterer) (*Submit, error) {
+type SubmitExtra struct {
+	Identity   common.Hash         `json:"identity"`
+	StartPos   *big.Int            `json:"startPos"`
+	Submission contract.Submission `json:"submission"`
+}
+
+func NewSubmit(blockTime time.Time, log *types.Log, filter *contract.FlowFilterer) (*Submit, error) {
 	flowSubmit, err := filter.ParseSubmit(*log.ToEthLog())
 	if err != nil {
 		return nil, err
 	}
 
+	extra, err := json.Marshal(SubmitExtra{
+		Identity:   flowSubmit.Identity,
+		StartPos:   flowSubmit.StartPos,
+		Submission: flowSubmit.Submission,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	submit := &Submit{
-		BlockNumber:      log.BlockNumber,
-		TxHash:           log.TxHash.String()[2:],
-		CreatedAt:        blockTime,
-		Sender:           flowSubmit.Sender.String()[2:],
-		Identity:         hex.EncodeToString(flowSubmit.Identity[:]),
-		SubmissionIndex:  flowSubmit.SubmissionIndex.Uint64(),
-		StartPos:         flowSubmit.StartPos.Uint64(),
-		Length:           flowSubmit.Length.Uint64(),
-		SubmissionLength: flowSubmit.Submission.Length.Uint64(),
-		Nodes:            uint64(len(flowSubmit.Submission.Nodes)),
+		BlockNumber:     log.BlockNumber,
+		BlockTime:       blockTime,
+		TxHash:          log.TxHash.String(),
+		SubmissionIndex: flowSubmit.SubmissionIndex.Uint64(),
+		Sender:          flowSubmit.Sender.String(),
+		Length:          flowSubmit.Submission.Length.Uint64(),
+		Value:           decimal.NewFromBigInt(big.NewInt(0), 0),
+		Extra:           extra,
 	}
 
 	return submit, nil
@@ -70,18 +87,16 @@ func (ss *SubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
 	return dbTx.Where("block_number >= ?", block).Delete(&Submit{}).Error
 }
 
-func (ss *SubmitStore) Count(startTime, endTime *time.Time) (uint64, uint64, error) {
-	var result struct {
-		FileCount int64
-		DataSize  int64
-	}
-	err := ss.DB.Model(&Submit{}).Select("count(id) as file_count, IFNULL(sum(submission_length), 0) as data_size").
-		Where("created_at >= ? and created_at < ?", startTime, endTime).Find(&result).Error
+func (ss *SubmitStore) Count(startTime, endTime time.Time) (*SubmitStatResult, error) {
+	var result SubmitStatResult
+	err := ss.DB.Model(&Submit{}).Select(`count(id) as file_count, IFNULL(sum(length), 0) as data_size, 
+		IFNULL(sum(value), 0) as base_fee`).Where("block_time >= ? and block_time < ?", startTime, endTime).
+		Find(&result).Error
 	if err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 
-	return uint64(result.FileCount), uint64(result.DataSize), nil
+	return &result, nil
 }
 
 func (ss *SubmitStore) FirstWithoutRootHash() (*Submit, error) {
