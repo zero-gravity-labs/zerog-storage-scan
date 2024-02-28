@@ -4,11 +4,11 @@ import (
 	"context"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
-	"github.com/zero-gravity-labs/zerog-storage-client/node"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	providers "github.com/openweb3/go-rpc-provider/provider_wrapper"
 	"github.com/openweb3/web3go"
 	"github.com/sirupsen/logrus"
+	"github.com/zero-gravity-labs/zerog-storage-client/node"
+	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"os"
 	"os/signal"
 	"sync"
@@ -43,11 +43,7 @@ var migrationModels = []interface{}{
 	&store.Address{},
 	&store.Block{},
 	&store.Submit{},
-	&store.Tx{},
-	&store.TxStat{},
 	&store.SubmitStat{},
-	&store.Erc20Transfer{},
-	&store.CostStat{},
 	&store.Config{},
 }
 

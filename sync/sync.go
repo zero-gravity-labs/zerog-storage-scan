@@ -200,8 +200,7 @@ func (s *Syncer) syncOnce() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// TODO will remove txs and transfers params when refactor db domains
-	if err = s.db.Push(block, nil, nil, sd.submits); err != nil {
+	if err = s.db.Push(block, sd.submits); err != nil {
 		return false, err
 	}
 
