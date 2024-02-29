@@ -1,8 +1,11 @@
 package api
 
 import (
+	"encoding/json"
+
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
+	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
@@ -15,6 +18,19 @@ const (
 )
 
 func dashboard(_ *gin.Context) (interface{}, error) {
+	value, exist, err := db.ConfigStore.Get(store.KeyLogSyncInfo)
+	if err != nil {
+		return nil, commonApi.ErrInternal(err)
+	}
+	if !exist {
+		return nil, ErrConfigNotFound
+	}
+
+	var logSyncInfo stat.LogSyncInfo
+	if err := json.Unmarshal([]byte(value), &logSyncInfo); err != nil {
+		return nil, commonApi.ErrInternal(err)
+	}
+
 	submitStat, err := db.SubmitStatStore.LastByType(store.Day)
 	if err != nil {
 		return nil, commonApi.ErrInternal(err)
@@ -29,6 +45,7 @@ func dashboard(_ *gin.Context) (interface{}, error) {
 	}
 	result := Dashboard{
 		StorageBasicCost: storageBasicCost,
+		LogSyncInfo:      logSyncInfo,
 	}
 
 	return result, nil

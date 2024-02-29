@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
 )
 
 type PageParam struct {
@@ -111,6 +112,7 @@ type StorageBasicCost struct {
 
 type Dashboard struct {
 	StorageBasicCost `json:"storageBasicCost"`
+	stat.LogSyncInfo `json:"logSyncInfo"`
 }
 
 type DataStatList struct {

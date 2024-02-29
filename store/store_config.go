@@ -6,6 +6,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+const (
+	KeyLogSyncInfo = "LogSyncInfo"
+)
+
 type Config struct {
 	Name  string `gorm:"size:32;primaryKey"`
 	Value string `gorm:"size:512"`
