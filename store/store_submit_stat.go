@@ -1,16 +1,17 @@
 package store
 
 import (
+	"time"
+
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
-	"time"
 )
 
 type SubmitStat struct {
-	ID           uint64     `gorm:"primaryKey" json:"-"`
+	ID           uint64     `json:"-"`
 	StatTime     *time.Time `gorm:"not null;index:idx_statTime_statType,unique,priority:1" json:"statTime"`
-	StatType     string     `gorm:"type:char(3);not null;index:idx_statTime_statType,unique,priority:2" json:"-"`
+	StatType     string     `gorm:"size:3;not null;index:idx_statTime_statType,unique,priority:2" json:"-"`
 	FileCount    uint64     `gorm:"not null;default:0" json:"fileCount"`    // Number of files in a specific time interval
 	FileTotal    uint64     `gorm:"not null;default:0" json:"fileTotal"`    // Total number of files by a certain time
 	DataSize     uint64     `gorm:"not null;default:0" json:"dataSize"`     // Size of storage data in a specific time interval
