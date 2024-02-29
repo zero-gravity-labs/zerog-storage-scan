@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrNoRootHashToSync = errors.New("No root hash to sync")
-	ErrFileInfoNotReady = errors.New("File info not ready")
+	ErrNoFileInfoToSync         = errors.New("No file info to sync")
+	BatchGetSubmitsNotFinalized = 1000
 )
 
 type StorageSyncer struct {
@@ -27,7 +27,7 @@ func MustNewStorageSyncer(l2Sdk *node.Client, db *store.MysqlStore) *StorageSync
 	}
 }
 
-func (s *StorageSyncer) Sync(ctx context.Context) {
+func (ss *StorageSyncer) Sync(ctx context.Context) {
 	logrus.Info("Storage syncer starting to sync data")
 	for {
 		select {
@@ -36,39 +36,49 @@ func (s *StorageSyncer) Sync(ctx context.Context) {
 		default:
 		}
 
-		if err := s.syncRootHash(); err != nil {
-			if !errors.Is(err, ErrNoRootHashToSync) {
-				logrus.WithError(err).Error("Sync root hash")
+		if err := ss.syncFileInfo(); err != nil {
+			if !errors.Is(err, ErrNoFileInfoToSync) {
+				logrus.WithError(err).Error("Sync file info")
 			}
 			time.Sleep(time.Second * 10)
 		}
 	}
 }
 
-// TODO add finality filed when add code for recalculate root hash
-func (s *StorageSyncer) syncRootHash() error {
-	submit, err := s.db.SubmitStore.FirstWithoutRootHash()
+func (ss *StorageSyncer) syncFileInfo() error {
+	submits, err := ss.db.SubmitStore.BatchGetNotFinalized(BatchGetSubmitsNotFinalized)
 	if err != nil {
 		return err
 	}
-	if submit == nil {
-		return ErrNoRootHashToSync
+	if len(submits) == 0 {
+		return ErrNoFileInfoToSync
 	}
 
-	info, err := s.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(submit.SubmissionIndex)
-	if err != nil {
-		return err
-	}
-	if info == nil {
-		return ErrFileInfoNotReady
-	}
+	for _, s := range submits {
+		info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
+		if err != nil {
+			return err
+		}
+		if info == nil {
+			continue
+		}
 
-	updateSubmit := store.Submit{
-		SubmissionIndex: submit.SubmissionIndex,
-		RootHash:        info.Tx.DataMerkleRoot.String()[2:],
-	}
-	if err := s.db.SubmitStore.UpdateByPrimaryKey(&updateSubmit); err != nil {
-		return err
+		submit := store.Submit{
+			SubmissionIndex: s.SubmissionIndex,
+		}
+		if info.Finalized {
+			submit.Status = uint64(store.Finalized)
+		}
+
+		addressSubmit := store.AddressSubmit{
+			SenderID:        s.SenderID,
+			SubmissionIndex: s.SubmissionIndex,
+			Status:          submit.Status,
+		}
+
+		if err := ss.db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
+			return err
+		}
 	}
 
 	return nil

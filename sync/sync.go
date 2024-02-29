@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
+	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
@@ -47,7 +47,7 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		Address              string
 		SubmitEventSignature string
 	}
-	viperutil.MustUnmarshalKey("flow", &flow)
+	viperUtil.MustUnmarshalKey("flow", &flow)
 
 	syncer := &Syncer{
 		conf:                &cf,
@@ -133,12 +133,13 @@ func (s *Syncer) doTicker(ticker *time.Ticker) error {
 
 	complete, err := s.syncOnce()
 
-	if err != nil {
+	switch {
+	case err != nil:
 		ticker.Reset(s.syncIntervalNormal)
 		return err
-	} else if complete {
+	case complete:
 		ticker.Reset(s.syncIntervalNormal)
-	} else {
+	default:
 		ticker.Reset(s.syncIntervalCatchUp)
 	}
 
@@ -151,7 +152,7 @@ var (
 )
 
 func (s *Syncer) syncOnce() (bool, error) {
-	// get latest block
+	// get the latest block
 	latestBlock, err := s.sdk.Eth.BlockNumber()
 	if err != nil {
 		return false, err
@@ -164,16 +165,15 @@ func (s *Syncer) syncOnce() (bool, error) {
 	}
 
 	// check parity api available
-	var data *EthData
 	if !checkParityAPIAlready {
-		data, err = getEthDataByReceipts(s.sdk, curBlock)
-		if err != nil && strings.Contains(err.Error(), "parity_getBlockReceipts") {
+		if _, err = getEthDataByReceipts(s.sdk, curBlock); err != nil && strings.Contains(err.Error(), "parity_getBlockReceipts") {
 			syncDataByLogs = true
 		}
 		checkParityAPIAlready = true
 	}
 
 	// get eth data
+	var data *EthData
 	if syncDataByLogs {
 		data, err = getEthDataByLogs(s.sdk, curBlock, common.HexToAddress(s.flowAddr), common.HexToHash(s.flowSubmitSig))
 	} else {
@@ -191,7 +191,7 @@ func (s *Syncer) syncOnce() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if len(latestBlockHash) > 0 && data.Block.ParentHash.Hex()[2:] != latestBlockHash {
+	if len(latestBlockHash) > 0 && data.Block.ParentHash.Hex() != latestBlockHash {
 		return false, s.revertReorgData(s.latestStoreBlock())
 	}
 
@@ -209,7 +209,7 @@ func (s *Syncer) syncOnce() (bool, error) {
 	if s.currentBlock%100 == 0 {
 		logrus.WithField("block", s.currentBlock).Info("Sync data")
 	}
-	s.currentBlock += 1
+	s.currentBlock++
 
 	return false, nil
 }
@@ -276,7 +276,7 @@ func (s *Syncer) existReorgData(blockNum uint64) (bool, error) {
 		return false, errors.WithMessagef(err, "failed to get block at %v from blockchain", blockNum)
 	}
 
-	return hash != block.Hash.String()[2:], nil
+	return hash != block.Hash.String(), nil
 }
 
 func (s *Syncer) revertReorgData(revertBlock uint64) error {
@@ -302,7 +302,7 @@ func (s *Syncer) parseEthData(data *EthData) (*storeData, error) {
 				continue
 			}
 
-			submit, err := s.decodeSubmit(blockTime, &log)
+			submit, err := s.decodeSubmit(blockTime, log)
 			if err != nil {
 				return nil, err
 			}
@@ -313,12 +313,12 @@ func (s *Syncer) parseEthData(data *EthData) (*storeData, error) {
 	} else {
 		for _, t := range data.Block.Transactions.Transactions() {
 			rcpt := data.Receipts[t.Hash]
-			if rcpt == nil || !isTxExecutedInBlock(&t, rcpt) {
+			if rcpt == nil || !isTxExecutedInBlock(t, *rcpt) {
 				continue
 			}
 
 			for _, log := range rcpt.Logs {
-				submit, err := s.decodeSubmit(blockTime, log)
+				submit, err := s.decodeSubmit(blockTime, *log)
 				if err != nil {
 					return nil, err
 				}
@@ -332,7 +332,7 @@ func (s *Syncer) parseEthData(data *EthData) (*storeData, error) {
 	return &storeData{submits}, nil
 }
 
-func (s *Syncer) decodeSubmit(blkTime time.Time, log *types.Log) (*store.Submit, error) {
+func (s *Syncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.Submit, error) {
 	addr := log.Address.String()
 	sig := log.Topics[0].String()
 	if !strings.EqualFold(addr, s.flowAddr) || sig != s.flowSubmitSig {
