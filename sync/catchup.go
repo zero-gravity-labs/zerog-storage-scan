@@ -2,6 +2,10 @@ package sync
 
 import (
 	"context"
+	"math/big"
+	"strings"
+	"time"
+
 	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
@@ -10,9 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	nhContract "github.com/zero-gravity-labs/zerog-storage-scan/contract"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"math/big"
-	"strings"
-	"time"
 )
 
 type CatchupSyncer struct {
