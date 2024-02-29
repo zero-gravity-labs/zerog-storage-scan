@@ -113,10 +113,10 @@ func listDataStatHandler(c *gin.Context) {
 	api.Wrap(listDataStat)(c)
 }
 
-// listBaseFeeStatHandler godoc
+// listFeeStatHandler godoc
 //
-//	@Summary		base fee statistics
-//	@Description	Query base fee statistics, including incremental and full data, and support querying at hourly or daily time intervals
+//	@Summary		fee statistics
+//	@Description	Query fee statistics, including incremental and full data, and support querying at hourly or daily time intervals
 //	@Tags			statistic
 //	@Accept			json
 //	@Produce		json
@@ -126,11 +126,11 @@ func listDataStatHandler(c *gin.Context) {
 //	@Param			maxTimestamp	query		int		false	"Timestamp in seconds"
 //	@Param			intervalType	query		string	false	"Statistics interval"	Enums(hour, day)	default(day)
 //	@Param			sort			query		string	false	"Sort by timestamp"		Enums(asc, desc)	default(desc)
-//	@Success		200				{object}	api.BusinessError{Data=BaseFeeStatList}
+//	@Success		200				{object}	api.BusinessError{Data=FeeStatList}
 //	@Failure		600				{object}	api.BusinessError
-//	@Router			/statistic/fee/base/list [get]
-func listBaseFeeStatHandler(c *gin.Context) {
-	api.Wrap(listBaseFeeStat)(c)
+//	@Router			/statistic/fee/list [get]
+func listFeeStatHandler(c *gin.Context) {
+	api.Wrap(listFeeStat)(c)
 }
 
 // listTxHandler godoc
@@ -188,7 +188,7 @@ func RegisterRouter(router *gin.Engine) {
 	statRoute.GET("dashboard", dashboardHandler)
 	statRoute.GET("transaction/list", listTxStatHandler)
 	statRoute.GET("storage/list", listDataStatHandler)
-	statRoute.GET("fee/base/list", listBaseFeeStatHandler)
+	statRoute.GET("fee/list", listFeeStatHandler)
 
 	txRoute := apiRoute.Group("/transaction")
 	txRoute.GET("list", listTxHandler)

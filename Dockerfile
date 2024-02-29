@@ -4,16 +4,16 @@ RUN mkdir /build
 WORKDIR /build
 COPY go.mod go.sum ./
 # you may use `GOPROXY` to speed it up in Mainland China.
-RUN  GOPROXY=https://goproxy.cn,direct go mod download
+# RUN  GOPROXY=https://goproxy.cn,direct go mod download
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o zerog_storage .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o zg-scan .
 
 # final target image for multi-stage builds
 FROM alpine:3.18
 RUN apk --no-cache add ca-certificates
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
-COPY --from=builder /build/zerog_storage .
+COPY --from=builder /build/zg-scan .
 COPY ./config/config.yml ./config.yml
-ENTRYPOINT [ "./zerog_storage" ]
+ENTRYPOINT [ "./zg-scan" ]
 CMD [ "--help" ]
