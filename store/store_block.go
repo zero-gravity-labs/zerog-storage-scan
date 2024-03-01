@@ -2,16 +2,17 @@ package store
 
 import (
 	"database/sql"
+	"time"
+
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/openweb3/web3go/types"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Block struct {
 	BlockNumber uint64    `gorm:"primaryKey;autoIncrement:false"`
 	Hash        string    `gorm:"size:66;not null"`
-	BlockTime   time.Time `gorm:"not null;index:idx_block_time,sort:desc"`
+	BlockTime   time.Time `gorm:"not null;index:idx_block_time"`
 }
 
 func NewBlock(data *types.Block) *Block {
