@@ -1,11 +1,12 @@
 package stat
 
 import (
+	"time"
+
 	"github.com/openweb3/web3go"
 	"github.com/pkg/errors"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
-	"time"
 )
 
 type StatSubmit struct {
@@ -94,7 +95,7 @@ func (ts *StatSubmit) statBasicRange(tr *TimeRange) (*store.SubmitStat, error) {
 	}
 
 	return &store.SubmitStat{
-		StatTime:     tr.start,
+		StatTime:     *tr.start,
 		StatType:     ts.statType,
 		FileCount:    delta.FileCount,
 		FileTotal:    total.FileCount + delta.FileCount,
@@ -127,7 +128,7 @@ func (ts *StatSubmit) statRange(rangEnd *time.Time, srcStatType, descStatType st
 	}
 
 	return &store.SubmitStat{
-		StatTime:     rangeStart,
+		StatTime:     *rangeStart,
 		StatType:     descStatType,
 		FileCount:    srcStat.FileCount,
 		FileTotal:    destStat.FileCount + srcStat.FileCount,

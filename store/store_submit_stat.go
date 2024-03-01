@@ -9,15 +9,16 @@ import (
 )
 
 type SubmitStat struct {
-	ID           uint64     `json:"-"`
-	StatTime     *time.Time `gorm:"not null;index:idx_statTime_statType,unique,priority:1" json:"statTime"`
-	StatType     string     `gorm:"size:3;not null;index:idx_statTime_statType,unique,priority:2" json:"-"`
-	FileCount    uint64     `gorm:"not null;default:0" json:"fileCount"`    // Number of files in a specific time interval
-	FileTotal    uint64     `gorm:"not null;default:0" json:"fileTotal"`    // Total number of files by a certain time
-	DataSize     uint64     `gorm:"not null;default:0" json:"dataSize"`     // Size of storage data in a specific time interval
-	DataTotal    uint64     `gorm:"not null;default:0" json:"dataTotal"`    // Total Size of storage data by a certain time
-	BaseFee      uint64     `gorm:"not null;default:0" json:"baseFee"`      // The base fee for storage
-	BaseFeeTotal uint64     `gorm:"not null;default:0" json:"baseFeeTotal"` // The total base fee for storage
+	ID        uint64    `json:"-"`
+	StatType  string    `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
+	StatTime  time.Time `gorm:"not null;uniqueIndex:idx_statType_statTime,priority:2" json:"statTime"`
+	FileCount uint64    `gorm:"not null;default:0" json:"fileCount"` // Number of files in a specific time interval
+	FileTotal uint64    `gorm:"not null;default:0" json:"fileTotal"` // Total number of files by a certain time
+	DataSize  uint64    `gorm:"not null;default:0" json:"dataSize"`  // Size of storage data in a specific time interval
+	DataTotal uint64    `gorm:"not null;default:0" json:"dataTotal"` // Total Size of storage data by a certain time
+	// TODO not enough for blockchain value of decimals 18.
+	BaseFee      uint64 `gorm:"not null;default:0" json:"baseFee"`      // The base fee for storage
+	BaseFeeTotal uint64 `gorm:"not null;default:0" json:"baseFeeTotal"` // The total base fee for storage
 }
 
 func (SubmitStat) TableName() string {
@@ -36,7 +37,7 @@ func newSubmitStatStore(db *gorm.DB) *SubmitStatStore {
 
 func (t *SubmitStatStore) LastByType(statType string) (*SubmitStat, error) {
 	var submitStat SubmitStat
-	err := t.Store.DB.Where("stat_type = ?", statType).Last(&submitStat).Error
+	err := t.Store.DB.Where("stat_type = ?", statType).Order("stat_time asc").Last(&submitStat).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -60,13 +61,13 @@ func (t *SubmitStatStore) Sum(startTime, endTime *time.Time, statType string) (*
 	db := t.DB.Model(&SubmitStat{}).Select(`IFNULL(sum(file_count), 0) as file_count, 
 		IFNULL(sum(data_size), 0) as data_size, IFNULL(sum(base_fee), 0) as base_fee`)
 	if startTime != nil && endTime != nil {
-		db = db.Where("stat_time >= ? and stat_time < ? and stat_type = ?", startTime, endTime, statType)
+		db = db.Where("stat_type = ? and stat_time >= ? and stat_time < ?", statType, startTime, endTime)
 	}
 	if startTime != nil && endTime == nil {
-		db = db.Where("stat_time >= ? and stat_type = ?", startTime, statType)
+		db = db.Where("stat_type = ? and stat_time >= ?", statType, startTime)
 	}
 	if startTime == nil && endTime != nil {
-		db = db.Where("stat_time < ? and stat_type = ?", endTime, statType)
+		db = db.Where("stat_type = ? and stat_time < ?", statType, endTime)
 	}
 
 	var sum SubmitStatResult
@@ -83,5 +84,5 @@ func (t *SubmitStatStore) Add(dbTx *gorm.DB, submitStat []*SubmitStat) error {
 }
 
 func (t *SubmitStatStore) Del(dbTx *gorm.DB, submitStat *SubmitStat) error {
-	return dbTx.Where("stat_time = ? and stat_type = ?", submitStat.StatTime, submitStat.StatType).Delete(&SubmitStat{}).Error
+	return dbTx.Where("stat_type = ? and stat_time = ?", submitStat.StatType, submitStat.StatTime).Delete(&SubmitStat{}).Error
 }
