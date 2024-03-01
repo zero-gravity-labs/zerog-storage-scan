@@ -2,6 +2,9 @@ package store
 
 import (
 	"encoding/json"
+	"math/big"
+	"time"
+
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
@@ -9,23 +12,26 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/zero-gravity-labs/zerog-storage-client/contract"
 	"gorm.io/gorm"
-	"math/big"
-	"time"
 )
+
+// TODO one table for overall submissions and another table for submissions of specific account.
 
 type Submit struct {
 	ID          uint64    `gorm:"index:idx_sender_id,priority:2"`
-	BlockNumber uint64    `gorm:"not null;index:idx_bn"`
-	BlockTime   time.Time `gorm:"not null;index:idx_blockTime,sort:desc"`
-	TxHash      string    `gorm:"size:66;not null;index:idx_hash"`
+	BlockNumber uint64    `gorm:"not null"`
+	BlockTime   time.Time `gorm:"not null"`
+	TxHash      string    `gorm:"size:66;not null"`
 
-	SubmissionIndex uint64          `gorm:"not null"`
-	RootHash        string          `gorm:"size:66;index:idx_root"`
-	Sender          string          `gorm:"-"`
-	SenderID        uint64          `gorm:"not null;index:idx_sender_id,priority:1"`
-	Length          uint64          `gorm:"not null"`
-	Finalized       bool            `gorm:"default:false"`
-	Value           decimal.Decimal `gorm:"type:varchar(78);not null"`
+	// TODO use as primary key?
+	SubmissionIndex uint64 `gorm:"not null;index:idx_seq"`
+	RootHash        string `gorm:"size:66;index:idx_root"`
+	Sender          string `gorm:"-"`
+	SenderID        uint64 `gorm:"not null;index:idx_sender_id,priority:1"`
+	Length          uint64 `gorm:"not null"`
+	// TODO supports more status, including L1 and L2 status
+	Finalized bool `gorm:"default:false"`
+	// TODO change to Fee. how about use decimal(64,18) as sql type?
+	Value decimal.Decimal `gorm:"type:varchar(78);not null"`
 
 	Extra []byte `gorm:"type:mediumText"` // json field
 }
