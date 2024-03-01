@@ -2,6 +2,10 @@ package sync
 
 import (
 	"context"
+	"math/big"
+	"strings"
+	"time"
+
 	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
@@ -10,9 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	nhContract "github.com/zero-gravity-labs/zerog-storage-scan/contract"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"math/big"
-	"strings"
-	"time"
 )
 
 type CatchupSyncer struct {
@@ -215,7 +216,7 @@ func (s *CatchupSyncer) convertSubmits(logs []types.Log, blockNum2TimeMap map[ui
 			return nil, err
 		}
 
-		senderId, err := s.db.AddressStore.Add(nil, submit.Sender, blockTime)
+		senderId, err := s.db.AddressStore.Add(submit.Sender, blockTime)
 		if err != nil {
 			return nil, err
 		}

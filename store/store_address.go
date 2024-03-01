@@ -1,9 +1,10 @@
 package store
 
 import (
+	"time"
+
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Address struct {
@@ -26,7 +27,7 @@ func newAddressStore(db *gorm.DB) *AddressStore {
 	}
 }
 
-func (as *AddressStore) Add(dbTx *gorm.DB, address string, blockTime time.Time) (uint64, error) {
+func (as *AddressStore) Add(address string, blockTime time.Time) (uint64, error) {
 	var addr Address
 	existed, err := as.Store.Exists(&addr, "address = ?", address) //TODO using LRU cache for improving the query performance
 	if err != nil {
@@ -40,10 +41,8 @@ func (as *AddressStore) Add(dbTx *gorm.DB, address string, blockTime time.Time) 
 		Address:   address,
 		BlockTime: blockTime,
 	}
-	if dbTx == nil {
-		dbTx = as.Store.DB
-	}
-	if err := dbTx.Create(&addr).Error; err != nil {
+
+	if err := as.DB.Create(&addr).Error; err != nil {
 		return 0, err
 	}
 

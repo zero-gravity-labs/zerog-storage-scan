@@ -2,13 +2,14 @@ package api
 
 import (
 	"encoding/json"
+	"strconv"
+
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
-	"strconv"
 )
 
 type Type int
@@ -93,7 +94,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		list := make([]DataStat, 0)
 		for _, stat := range *records {
 			list = append(list, DataStat{
-				StatTime:  stat.StatTime,
+				StatTime:  &stat.StatTime,
 				FileCount: stat.FileCount,
 				FileTotal: stat.FileTotal,
 				DataSize:  stat.DataSize,
@@ -105,7 +106,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		list := make([]TxStat, 0)
 		for _, stat := range *records {
 			list = append(list, TxStat{
-				StatTime: stat.StatTime,
+				StatTime: &stat.StatTime,
 				TxCount:  stat.FileCount,
 				TxTotal:  stat.FileTotal,
 			})
@@ -115,7 +116,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		list := make([]FeeStat, 0)
 		for _, stat := range *records {
 			list = append(list, FeeStat{
-				StatTime:     stat.StatTime,
+				StatTime:     &stat.StatTime,
 				BaseFee:      stat.BaseFee,
 				BaseFeeTotal: stat.BaseFeeTotal,
 			})

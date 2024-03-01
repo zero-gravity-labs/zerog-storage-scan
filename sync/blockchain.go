@@ -2,13 +2,13 @@ package sync
 
 import (
 	"context"
+
 	set "github.com/deckarep/golang-set"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/go-rpc-provider"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
 var (
@@ -16,11 +16,18 @@ var (
 	ErrChainReorged = errors.New("chain re-orged")
 )
 
+type EthData struct {
+	Number   uint64
+	Block    *types.Block
+	Receipts map[common.Hash]*types.Receipt
+	Logs     []types.Log
+}
+
 func isTxExecutedInBlock(tx *types.TransactionDetail, receipt *types.Receipt) bool {
 	return tx != nil && receipt.Status != nil && *receipt.Status < 2
 }
 
-func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*store.EthData, error) {
+func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, error) {
 	// get block
 	block, err := w3c.Eth.BlockByNumber(types.BlockNumber(blockNumber), true)
 	if err != nil {
@@ -48,13 +55,10 @@ func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*store.EthDat
 	}
 	for i := 0; i < len(blockTxs); i++ {
 		tx := blockTxs[i]
-		var receipt *types.Receipt
-		receipt = &blockReceipts[i]
+		receipt := &blockReceipts[i]
 
 		// check re-org
 		switch {
-		case receipt == nil: // receipt shouldn't be nil unless chain re-org
-			return nil, errors.WithMessage(ErrChainReorged, "tx receipt nil")
 		case receipt.BlockHash != block.Hash:
 			return nil, errors.WithMessagef(ErrChainReorged, "receipt block hash mismatch, rcptBlkHash %v, blkHash %v",
 				receipt.BlockHash, block.Hash)
@@ -68,10 +72,10 @@ func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*store.EthDat
 		txReceipts[tx.Hash] = receipt
 	}
 
-	return &store.EthData{Number: blockNumber, Block: block, Receipts: txReceipts}, nil
+	return &EthData{Number: blockNumber, Block: block, Receipts: txReceipts}, nil
 }
 
-func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, flowAddr common.Address, flowSubmitSig common.Hash) (*store.EthData, error) {
+func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, flowAddr common.Address, flowSubmitSig common.Hash) (*EthData, error) {
 	// get block
 	block, err := w3c.Eth.BlockByNumber(types.BlockNumber(blockNumber), true)
 	if err != nil {
@@ -111,7 +115,7 @@ func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, flowAddr common.Ad
 		logs = append(logs, log)
 	}
 
-	return &store.EthData{Number: blockNumber, Block: block, Logs: logs}, nil
+	return &EthData{Number: blockNumber, Block: block, Logs: logs}, nil
 }
 
 func batchGetFlowSubmits(w3c *web3go.Client, blockFrom, blockTo uint64, flowAddr common.Address,

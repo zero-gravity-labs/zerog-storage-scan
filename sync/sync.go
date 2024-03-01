@@ -2,6 +2,10 @@ package sync
 
 import (
 	"context"
+	"strings"
+	"sync"
+	"time"
+
 	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
@@ -10,9 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	nhContract "github.com/zero-gravity-labs/zerog-storage-scan/contract"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"strings"
-	"sync"
-	"time"
 )
 
 type SyncConfig struct {
@@ -163,7 +164,7 @@ func (s *Syncer) syncOnce() (bool, error) {
 	}
 
 	// check parity api available
-	var data *store.EthData
+	var data *EthData
 	if !checkParityAPIAlready {
 		data, err = getEthDataByReceipts(s.sdk, curBlock)
 		if err != nil && strings.Contains(err.Error(), "parity_getBlockReceipts") {
@@ -291,7 +292,7 @@ func (s *Syncer) revertReorgData(revertBlock uint64) error {
 	return nil
 }
 
-func (s *Syncer) parseEthData(data *store.EthData) (*storeData, error) {
+func (s *Syncer) parseEthData(data *EthData) (*storeData, error) {
 	blockTime := time.Unix(int64(data.Block.Timestamp), 0)
 	var submits []*store.Submit
 
@@ -343,7 +344,7 @@ func (s *Syncer) decodeSubmit(blkTime time.Time, log *types.Log) (*store.Submit,
 		return nil, err
 	}
 
-	senderID, err := s.db.AddressStore.Add(nil, submit.Sender, blkTime)
+	senderID, err := s.db.AddressStore.Add(submit.Sender, blkTime)
 	if err != nil {
 		return nil, err
 	}
