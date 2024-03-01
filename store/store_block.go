@@ -19,7 +19,7 @@ func NewBlock(data *types.Block) *Block {
 	blockTime := time.Unix(int64(data.Timestamp), 0)
 	return &Block{
 		BlockNumber: data.Number.Uint64(),
-		Hash:        data.Hash.String()[2:],
+		Hash:        data.Hash.String(),
 		BlockTime:   blockTime,
 	}
 }

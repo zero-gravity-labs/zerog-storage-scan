@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/shopspring/decimal"
 	"math/big"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type PageParam struct {
@@ -56,7 +57,7 @@ type TokenInfo struct {
 
 type CostInfo struct {
 	TokenInfo `json:"tokenInfo"`
-	BasicCost string `json:"basicCost"`
+	BasicCost decimal.Decimal `json:"basicCost"`
 }
 
 type SubmissionNode struct {
@@ -100,7 +101,7 @@ type TxDetail struct {
 
 type StorageBasicCost struct {
 	TokenInfo
-	BasicCostTotal string `json:"basicCostTotal"`
+	BasicCostTotal decimal.Decimal `json:"basicCostTotal"`
 }
 
 type Dashboard struct {
@@ -123,21 +124,21 @@ type FeeStatList struct {
 }
 
 type DataStat struct {
-	StatTime  *time.Time `json:"statTime"`
-	FileCount uint64     `json:"fileCount"`
-	FileTotal uint64     `json:"fileTotal"`
-	DataSize  uint64     `json:"dataSize"`
-	DataTotal uint64     `json:"dataTotal"`
+	StatTime  time.Time `json:"statTime"`
+	FileCount uint64    `json:"fileCount"`
+	FileTotal uint64    `json:"fileTotal"`
+	DataSize  uint64    `json:"dataSize"`
+	DataTotal uint64    `json:"dataTotal"`
 }
 
 type TxStat struct {
-	StatTime *time.Time `json:"statTime"`
-	TxCount  uint64     `json:"txCount"`
-	TxTotal  uint64     `json:"txTotal"`
+	StatTime time.Time `json:"statTime"`
+	TxCount  uint64    `json:"txCount"`
+	TxTotal  uint64    `json:"txTotal"`
 }
 
 type FeeStat struct {
-	StatTime     *time.Time `json:"statTime"`
-	BaseFee      uint64     `json:"baseFee"`
-	BaseFeeTotal uint64     `json:"baseFeeTotal"`
+	StatTime     time.Time       `json:"statTime"`
+	BaseFee      decimal.Decimal `json:"baseFee"`
+	BaseFeeTotal decimal.Decimal `json:"baseFeeTotal"`
 }

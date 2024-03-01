@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"strconv"
 
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
@@ -20,7 +19,7 @@ const (
 	FeeStatType
 )
 
-func dashboard(c *gin.Context) (interface{}, error) {
+func dashboard(_ *gin.Context) (interface{}, error) {
 	submitStat, err := db.SubmitStatStore.LastByType(stat.Day)
 	if err != nil {
 		return nil, commonApi.ErrInternal(err)
@@ -31,7 +30,7 @@ func dashboard(c *gin.Context) (interface{}, error) {
 
 	storageBasicCost := StorageBasicCost{
 		TokenInfo:      *chargeToken,
-		BasicCostTotal: strconv.FormatUint(submitStat.BaseFeeTotal, 10),
+		BasicCostTotal: submitStat.BaseFeeTotal,
 	}
 	result := Dashboard{
 		StorageBasicCost: storageBasicCost,
@@ -92,33 +91,33 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 	switch t {
 	case StorageStatType:
 		list := make([]DataStat, 0)
-		for _, stat := range *records {
+		for _, r := range *records {
 			list = append(list, DataStat{
-				StatTime:  &stat.StatTime,
-				FileCount: stat.FileCount,
-				FileTotal: stat.FileTotal,
-				DataSize:  stat.DataSize,
-				DataTotal: stat.DataTotal,
+				StatTime:  r.StatTime,
+				FileCount: r.FileCount,
+				FileTotal: r.FileTotal,
+				DataSize:  r.DataSize,
+				DataTotal: r.DataTotal,
 			})
 		}
 		result["list"] = list
 	case TxStatType:
 		list := make([]TxStat, 0)
-		for _, stat := range *records {
+		for _, r := range *records {
 			list = append(list, TxStat{
-				StatTime: &stat.StatTime,
-				TxCount:  stat.FileCount,
-				TxTotal:  stat.FileTotal,
+				StatTime: r.StatTime,
+				TxCount:  r.FileCount,
+				TxTotal:  r.FileTotal,
 			})
 		}
 		result["list"] = list
 	case FeeStatType:
 		list := make([]FeeStat, 0)
-		for _, stat := range *records {
+		for _, r := range *records {
 			list = append(list, FeeStat{
-				StatTime:     &stat.StatTime,
-				BaseFee:      stat.BaseFee,
-				BaseFeeTotal: stat.BaseFeeTotal,
+				StatTime:     r.StatTime,
+				BaseFee:      r.BaseFee,
+				BaseFeeTotal: r.BaseFeeTotal,
 			})
 		}
 		result["list"] = list

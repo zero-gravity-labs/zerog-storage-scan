@@ -3,6 +3,9 @@ package api
 import (
 	"encoding/hex"
 	"encoding/json"
+	"strconv"
+	"strings"
+
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -10,8 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
-	"strconv"
-	"strings"
 )
 
 func listTx(c *gin.Context) (interface{}, error) {
@@ -61,12 +62,10 @@ func listTx(c *gin.Context) (interface{}, error) {
 			RootHash:  submit.RootHash,
 			Address:   addrMap[submit.SenderID].Address,
 			Method:    "submit",
+			Status:    submit.Status,
 			Timestamp: submit.BlockTime.Unix(),
 			DataSize:  submit.Length,
-			BaseFee:   submit.Value,
-		}
-		if submit.Finalized {
-			storageTx.Status = 1
+			BaseFee:   submit.Fee,
 		}
 		storageTxs = append(storageTxs, storageTx)
 	}
@@ -105,17 +104,15 @@ func getTxBrief(c *gin.Context) (interface{}, error) {
 		From:     addrMap[submit.SenderID].Address,
 		Method:   "submit",
 		RootHash: submit.RootHash,
+		Status:   submit.Status,
 		DataSize: submit.Length,
 		CostInfo: &CostInfo{
 			TokenInfo: *chargeToken,
-			BasicCost: submit.Value.String(),
+			BasicCost: submit.Fee,
 		},
 		BlockNumber: submit.BlockNumber,
 		TxHash:      submit.TxHash,
 		Timestamp:   uint64(submit.BlockTime.Unix()),
-	}
-	if submit.Finalized {
-		result.Status = 1
 	}
 
 	hash := common.HexToHash(submit.TxHash)
@@ -158,7 +155,7 @@ func getTxDetail(c *gin.Context) (interface{}, error) {
 		return nil, errors.Errorf("Unmarshal submit extra error, txSeq %v", *param.TxSeq)
 	}
 
-	var nodes []SubmissionNode
+	nodes := make([]SubmissionNode, 0)
 	for _, n := range extra.Submission.Nodes {
 		nodes = append(nodes, SubmissionNode{
 			Root:   "0x" + hex.EncodeToString(n.Root[:]),
