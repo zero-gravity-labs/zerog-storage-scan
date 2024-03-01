@@ -344,7 +344,7 @@ func (s *Syncer) decodeSubmit(blkTime time.Time, log *types.Log) (*store.Submit,
 		return nil, err
 	}
 
-	senderID, err := s.db.AddressStore.Add(nil, submit.Sender, blkTime)
+	senderID, err := s.db.AddressStore.Add(submit.Sender, blkTime)
 	if err != nil {
 		return nil, err
 	}

@@ -216,7 +216,7 @@ func (s *CatchupSyncer) convertSubmits(logs []types.Log, blockNum2TimeMap map[ui
 			return nil, err
 		}
 
-		senderId, err := s.db.AddressStore.Add(nil, submit.Sender, blockTime)
+		senderId, err := s.db.AddressStore.Add(submit.Sender, blockTime)
 		if err != nil {
 			return nil, err
 		}
