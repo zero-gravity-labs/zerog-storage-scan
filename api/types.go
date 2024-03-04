@@ -15,8 +15,8 @@ type PageParam struct {
 
 type statParam struct {
 	PageParam
-	MinTimestamp int    `form:"minTimestamp,default=0" binding:"omitempty,number"`
-	MaxTimestamp int    `form:"maxTimestamp,default=0" binding:"omitempty,number"`
+	MinTimestamp *int   `form:"minTimestamp" binding:"omitempty,number"`
+	MaxTimestamp *int   `form:"maxTimestamp" binding:"omitempty,number"`
 	IntervalType string `form:"intervalType,default=day" binding:"omitempty,oneof=hour day"`
 	Sort         string `form:"sort,default=desc" binding:"omitempty,oneof=asc desc"`
 }
@@ -27,8 +27,13 @@ func (sp *statParam) isDesc() bool {
 
 type listTxParam struct {
 	PageParam
-	Address  string `form:"address" binding:"omitempty"`
-	RootHash string `form:"rootHash" binding:"omitempty"`
+	Address  *string `form:"address" binding:"omitempty"`
+	RootHash *string `form:"rootHash" binding:"omitempty"`
+	Sort     string  `form:"sort,default=desc" binding:"omitempty,oneof=asc desc"`
+}
+
+func (sp *listTxParam) isDesc() bool {
+	return strings.EqualFold(sp.Sort, "desc")
 }
 
 type queryTxParam struct {

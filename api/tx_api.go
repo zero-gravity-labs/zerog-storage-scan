@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"strconv"
-	"strings"
 
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"gorm.io/gorm"
 )
 
 func listTx(c *gin.Context) (interface{}, error) {
@@ -21,40 +19,34 @@ func listTx(c *gin.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	dbRaw := db.DB.Model(&store.Submit{})
-	var conds []func(db *gorm.DB) *gorm.DB
-	if param.Address != "" {
-		addr, exist, err := db.AddressStore.Get(param.Address)
+	var addrIDPtr *uint64
+	if param.Address != nil {
+		addr, exist, err := db.AddressStore.Get(*param.Address)
 		if err != nil {
 			return nil, commonApi.ErrInternal(err)
 		}
 		if !exist {
 			return TxList{}, nil
 		}
-		conds = append(conds, SenderID(addr.Id))
+		addrIDPtr = &addr.Id
 	}
-	if param.RootHash != "" {
-		conds = append(conds, RootHash(param.RootHash))
-	}
-	dbRaw.Scopes(conds...)
 
-	submits := new([]store.Submit)
-	total, err := db.List(dbRaw, true, param.Skip, param.Limit, submits)
+	total, submits, err := listSubmits(addrIDPtr, param.RootHash, param.isDesc(), param.Skip, param.Limit)
 	if err != nil {
 		return nil, err
 	}
 
-	addrIds := make([]uint64, 0)
-	for _, submit := range *submits {
-		addrIds = append(addrIds, submit.SenderID)
+	addrIDs := make([]uint64, 0)
+	for _, submit := range submits {
+		addrIDs = append(addrIDs, submit.SenderID)
 	}
-	addrMap, err := db.BatchGetAddresses(addrIds)
+	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	storageTxs := make([]StorageTx, 0)
-	for _, submit := range *submits {
+	for _, submit := range submits {
 		storageTx := StorageTx{
 			TxSeq:     submit.SubmissionIndex,
 			BlockNum:  submit.BlockNumber,
@@ -70,11 +62,10 @@ func listTx(c *gin.Context) (interface{}, error) {
 		storageTxs = append(storageTxs, storageTx)
 	}
 
-	result := TxList{
+	return TxList{
 		Total: total,
 		List:  storageTxs,
-	}
-	return result, nil
+	}, nil
 }
 
 func getTxBrief(c *gin.Context) (interface{}, error) {
@@ -93,8 +84,8 @@ func getTxBrief(c *gin.Context) (interface{}, error) {
 		return nil, errors.Errorf("Record not found, txSeq %v", *param.TxSeq)
 	}
 
-	addrIds := []uint64{submit.SenderID}
-	addrMap, err := db.BatchGetAddresses(addrIds)
+	addrIDs := []uint64{submit.SenderID}
+	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -175,14 +166,30 @@ func getTxDetail(c *gin.Context) (interface{}, error) {
 	return result, nil
 }
 
-func SenderID(si uint64) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("sender_id = ?", si)
+func listSubmits(addressID *uint64, rootHash *string, idDesc bool, skip, limit int) (int64, []store.Submit, error) {
+	if addressID == nil {
+		return db.SubmitStore.List(rootHash, idDesc, skip, limit)
 	}
-}
 
-func RootHash(rh string) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("root_hash = ?", strings.ToLower(strings.TrimPrefix(rh, "0x")))
+	total, addrSubmits, err := db.AddressSubmitStore.List(addressID, rootHash, idDesc, skip, limit)
+	if err != nil {
+		return 0, nil, err
 	}
+
+	submits := make([]store.Submit, 0)
+	for _, as := range addrSubmits {
+		submits = append(submits, store.Submit{
+			SubmissionIndex: as.SubmissionIndex,
+			RootHash:        as.RootHash,
+			SenderID:        as.SenderID,
+			Length:          as.Length,
+			BlockNumber:     as.BlockNumber,
+			BlockTime:       as.BlockTime,
+			TxHash:          as.TxHash,
+			Status:          as.Status,
+			Fee:             as.Fee,
+		})
+	}
+
+	return total, submits, nil
 }

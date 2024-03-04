@@ -9,6 +9,29 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	Min    = "1m"
+	TenMin = "10m"
+	Hour   = "1h"
+	Day    = "1d"
+)
+
+var (
+	Intervals = map[string]time.Duration{
+		Min:    time.Minute,
+		TenMin: time.Minute * 10,
+		Hour:   time.Hour,
+		Day:    time.Hour * 24,
+	}
+
+	IntervalTypes = map[string]string{
+		"min":   Min,
+		"10min": TenMin,
+		"hour":  Hour,
+		"day":   Day,
+	}
+)
+
 type SubmitStat struct {
 	ID           uint64          `json:"-"`
 	StatType     string          `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
@@ -85,4 +108,33 @@ func (t *SubmitStatStore) Add(dbTx *gorm.DB, submitStat []*SubmitStat) error {
 
 func (t *SubmitStatStore) Del(dbTx *gorm.DB, submitStat *SubmitStat) error {
 	return dbTx.Where("stat_type = ? and stat_time = ?", submitStat.StatType, submitStat.StatTime).Delete(&SubmitStat{}).Error
+}
+
+func (t *SubmitStatStore) List(intervalType *string, minTimestamp, maxTimestamp *int, desc bool, skip, limit int) (int64,
+	[]SubmitStat, error) {
+	var conds []func(db *gorm.DB) *gorm.DB
+
+	if intervalType != nil {
+		intervalType := IntervalTypes[*intervalType]
+		conds = append(conds, StatType(intervalType))
+	}
+
+	if minTimestamp != nil {
+		conds = append(conds, MinTimestamp(*minTimestamp))
+	}
+
+	if maxTimestamp != nil {
+		conds = append(conds, MaxTimestamp(*maxTimestamp))
+	}
+
+	dbRaw := t.DB.Model(&SubmitStat{})
+	dbRaw.Scopes(conds...)
+
+	list := new([]SubmitStat)
+	total, err := t.Store.List(dbRaw, desc, skip, limit, list)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return total, *list, nil
 }
