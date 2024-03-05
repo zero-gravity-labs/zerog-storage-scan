@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
 	providers "github.com/openweb3/go-rpc-provider/provider_wrapper"
@@ -9,11 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/zero-gravity-labs/zerog-storage-client/node"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
 )
 
 // DataContext context to hold sdk clients for blockchain interoperation.
@@ -44,6 +45,7 @@ var migrationModels = []interface{}{
 	&store.Block{},
 	&store.Config{},
 	&store.Submit{},
+	&store.AddressSubmit{},
 	&store.SubmitStat{},
 }
 

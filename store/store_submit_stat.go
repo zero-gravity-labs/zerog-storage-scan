@@ -5,20 +5,20 @@ import (
 
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
 type SubmitStat struct {
-	ID        uint64    `json:"-"`
-	StatType  string    `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
-	StatTime  time.Time `gorm:"not null;uniqueIndex:idx_statType_statTime,priority:2" json:"statTime"`
-	FileCount uint64    `gorm:"not null;default:0" json:"fileCount"` // Number of files in a specific time interval
-	FileTotal uint64    `gorm:"not null;default:0" json:"fileTotal"` // Total number of files by a certain time
-	DataSize  uint64    `gorm:"not null;default:0" json:"dataSize"`  // Size of storage data in a specific time interval
-	DataTotal uint64    `gorm:"not null;default:0" json:"dataTotal"` // Total Size of storage data by a certain time
-	// TODO not enough for blockchain value of decimals 18.
-	BaseFee      uint64 `gorm:"not null;default:0" json:"baseFee"`      // The base fee for storage
-	BaseFeeTotal uint64 `gorm:"not null;default:0" json:"baseFeeTotal"` // The total base fee for storage
+	ID           uint64          `json:"-"`
+	StatType     string          `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
+	StatTime     time.Time       `gorm:"not null;uniqueIndex:idx_statType_statTime,priority:2" json:"statTime"`
+	FileCount    uint64          `gorm:"not null;default:0" json:"fileCount"`                     // Number of files in a specific time interval
+	FileTotal    uint64          `gorm:"not null;default:0" json:"fileTotal"`                     // Total number of files by a certain time
+	DataSize     uint64          `gorm:"not null;default:0" json:"dataSize"`                      // Size of storage data in a specific time interval
+	DataTotal    uint64          `gorm:"not null;default:0" json:"dataTotal"`                     // Total Size of storage data by a certain time
+	BaseFee      decimal.Decimal `gorm:"type:decimal(65);not null;default:0" json:"baseFee"`      // The base fee for storage
+	BaseFeeTotal decimal.Decimal `gorm:"type:decimal(65);not null;default:0" json:"baseFeeTotal"` // The total base fee for storage
 }
 
 func (SubmitStat) TableName() string {
@@ -50,7 +50,7 @@ func (t *SubmitStatStore) LastByType(statType string) (*SubmitStat, error) {
 type SubmitStatResult struct {
 	FileCount uint64
 	DataSize  uint64
-	BaseFee   uint64
+	BaseFee   decimal.Decimal
 }
 
 func (t *SubmitStatStore) Sum(startTime, endTime *time.Time, statType string) (*SubmitStatResult, error) {

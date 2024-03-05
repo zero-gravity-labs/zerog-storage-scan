@@ -102,7 +102,7 @@ func (ts *StatSubmit) statBasicRange(tr *TimeRange) (*store.SubmitStat, error) {
 		DataSize:     delta.DataSize,
 		DataTotal:    total.DataSize + delta.DataSize,
 		BaseFee:      delta.BaseFee,
-		BaseFeeTotal: total.BaseFee + delta.BaseFee,
+		BaseFeeTotal: total.BaseFee.Add(delta.BaseFee),
 	}, nil
 }
 
@@ -124,7 +124,7 @@ func (ts *StatSubmit) statRange(rangEnd *time.Time, srcStatType, descStatType st
 	if latestStat != nil {
 		srcStat.FileCount += latestStat.FileCount
 		srcStat.DataSize += latestStat.DataSize
-		srcStat.BaseFee += latestStat.BaseFee
+		srcStat.BaseFee = srcStat.BaseFee.Add(latestStat.BaseFee)
 	}
 
 	return &store.SubmitStat{
@@ -135,6 +135,6 @@ func (ts *StatSubmit) statRange(rangEnd *time.Time, srcStatType, descStatType st
 		DataSize:     srcStat.DataSize,
 		DataTotal:    destStat.DataSize + srcStat.DataSize,
 		BaseFee:      srcStat.BaseFee,
-		BaseFeeTotal: destStat.BaseFee + srcStat.BaseFee,
+		BaseFeeTotal: destStat.BaseFee.Add(srcStat.BaseFee),
 	}, nil
 }
