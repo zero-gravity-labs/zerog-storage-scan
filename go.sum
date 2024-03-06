@@ -937,6 +937,8 @@ github.com/yusufpapurcu/wmi v1.2.3 h1:E1ctvB7uKFMOJw3fdOW32DwGE9I7t++CRUEMKvFoFi
 github.com/yusufpapurcu/wmi v1.2.3/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 github.com/zero-gravity-labs/zerog-storage-client v0.1.12 h1:jIHUfhAw3KREyqMuksJ/2K9pLl/9uN9c317mJuHadKY=
 github.com/zero-gravity-labs/zerog-storage-client v0.1.12/go.mod h1:X0u50IkiCmB9hchf8mEiIWyk6bLlo0d2xAxrPPK8IZ4=
+github.com/zero-gravity-labs/zerog-storage-client v0.1.14-0.20240229065452-bbb5632981ab h1:/F2e3PaQNSdonkM4gfvKmnGnfNfl1nQZQJyeisB5lTM=
+github.com/zero-gravity-labs/zerog-storage-client v0.1.14-0.20240229065452-bbb5632981ab/go.mod h1:X0u50IkiCmB9hchf8mEiIWyk6bLlo0d2xAxrPPK8IZ4=
 go.etcd.io/etcd/api/v3 v3.5.1/go.mod h1:cbVKeC6lCfl7j/8jBhAK6aIYO9XOjdptoxU/nLQcPvs=
 go.etcd.io/etcd/client/pkg/v3 v3.5.1/go.mod h1:IJHfcCEKxYu1Os13ZdwCwIUTUVGYTSAM3YSwc9/Ac1g=
 go.etcd.io/etcd/client/v2 v2.305.1/go.mod h1:pMEacxZW7o8pg4CrFE7pquyCJJzZvkvdD2RibOCCCGs=

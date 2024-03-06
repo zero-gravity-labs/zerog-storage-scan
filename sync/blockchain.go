@@ -23,8 +23,8 @@ type EthData struct {
 	Logs     []types.Log
 }
 
-func isTxExecutedInBlock(tx *types.TransactionDetail, receipt *types.Receipt) bool {
-	return tx != nil && receipt.Status != nil && *receipt.Status < 2
+func isTxExecutedInBlock(tx types.TransactionDetail, receipt types.Receipt) bool {
+	return tx.BlockHash != nil && receipt.Status != nil && *receipt.Status < 2
 }
 
 func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, error) {
@@ -87,6 +87,9 @@ func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, flowAddr common.Ad
 
 	// batch get logs
 	logArray, err := batchGetFlowSubmits(w3c, blockNumber, blockNumber, flowAddr, flowSubmitSig)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "failed to get flow submits in batch at block %v", blockNumber)
+	}
 
 	// check re-org
 	txs := block.Transactions.Transactions()

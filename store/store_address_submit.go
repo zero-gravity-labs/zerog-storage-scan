@@ -36,6 +36,20 @@ func newAddressSubmitStore(db *gorm.DB) *AddressSubmitStore {
 	}
 }
 
+func (ass *AddressSubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *AddressSubmit) error {
+	db := ass.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	if err := db.Model(&s).Where("sender_id=? and submission_index=?", s.SenderID, s.SubmissionIndex).
+		Updates(s).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, idDesc bool, skip, limit int) (int64,
 	[]AddressSubmit, error) {
 	dbRaw := ass.DB.Model(&AddressSubmit{})

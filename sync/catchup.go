@@ -73,7 +73,7 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 	for {
 		var logs []types.Log
 		var err error
-		logs, start, end, err = s.batchGetFlowSubmitsBestEffort(s.sdk, start, end, s.flowAddr, s.flowSubmitSig)
+		logs, _, end, err = s.batchGetFlowSubmitsBestEffort(s.sdk, start, end, s.flowAddr, s.flowSubmitSig)
 		if err != nil {
 			return err
 		}
@@ -206,22 +206,22 @@ func (s *CatchupSyncer) convertBlock(logs []types.Log, blockNum2TimeMap map[uint
 }
 
 func (s *CatchupSyncer) convertSubmits(logs []types.Log, blockNum2TimeMap map[uint64]uint64) ([]*store.Submit, error) {
-	var submits []*store.Submit
+	submits := make([]*store.Submit, 0)
 
 	for _, log := range logs {
 		ts := blockNum2TimeMap[log.BlockNumber]
 		blockTime := time.Unix(int64(ts), 0)
-		submit, err := store.NewSubmit(blockTime, &log, nhContract.DummyFlowFilterer())
+		submit, err := store.NewSubmit(blockTime, log, nhContract.DummyFlowFilterer())
 		if err != nil {
 			return nil, err
 		}
 
-		senderId, err := s.db.AddressStore.Add(submit.Sender, blockTime)
+		senderID, err := s.db.AddressStore.Add(submit.Sender, blockTime)
 		if err != nil {
 			return nil, err
 		}
 
-		submit.SenderID = senderId
+		submit.SenderID = senderID
 		submits = append(submits, submit)
 	}
 

@@ -16,7 +16,7 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.2
-	github.com/zero-gravity-labs/zerog-storage-client v0.1.12
+	github.com/zero-gravity-labs/zerog-storage-client v0.1.14-0.20240229065452-bbb5632981ab
 	gorm.io/gorm v1.25.4
 )
 

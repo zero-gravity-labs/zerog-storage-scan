@@ -8,10 +8,16 @@ import (
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
-	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/zero-gravity-labs/zerog-storage-client/contract"
 	"gorm.io/gorm"
+)
+
+type Status int
+
+const (
+	NotFinalized Status = iota
+	Finalized
 )
 
 type Submit struct {
@@ -37,7 +43,7 @@ type SubmitExtra struct {
 	Submission contract.Submission `json:"submission"`
 }
 
-func NewSubmit(blockTime time.Time, log *types.Log, filter *contract.FlowFilterer) (*Submit, error) {
+func NewSubmit(blockTime time.Time, log types.Log, filter *contract.FlowFilterer) (*Submit, error) {
 	flowSubmit, err := filter.ParseSubmit(*log.ToEthLog())
 	if err != nil {
 		return nil, err
@@ -54,6 +60,7 @@ func NewSubmit(blockTime time.Time, log *types.Log, filter *contract.FlowFiltere
 
 	submit := &Submit{
 		SubmissionIndex: flowSubmit.SubmissionIndex.Uint64(),
+		RootHash:        flowSubmit.Submission.Root().String(),
 		Sender:          flowSubmit.Sender.String(),
 		Length:          flowSubmit.Submission.Length.Uint64(),
 		BlockNumber:     log.BlockNumber,
@@ -120,23 +127,14 @@ func (ss *SubmitStore) Count(startTime, endTime time.Time) (*SubmitStatResult, e
 	return &result, nil
 }
 
-func (ss *SubmitStore) FirstWithoutRootHash() (*Submit, error) {
-	var submit Submit
-	err := ss.DB.Where("root_hash = ?", "").First(&submit).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, nil
+func (ss *SubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *Submit) error {
+	db := ss.DB
+	if dbTx != nil {
+		db = dbTx
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return &submit, nil
-}
-
-func (ss *SubmitStore) UpdateByPrimaryKey(submit *Submit) error {
-	if err := ss.DB.Model(&submit).Where("submission_index=?", submit.SubmissionIndex).
-		Updates(submit).Error; err != nil {
+	if err := db.Model(&s).Where("submission_index=?", s.SubmissionIndex).
+		Updates(s).Error; err != nil {
 		return err
 	}
 
@@ -165,4 +163,14 @@ func (ss *SubmitStore) List(rootHash *string, idDesc bool, skip, limit int) (int
 	}
 
 	return total, *list, nil
+}
+
+func (ss *SubmitStore) BatchGetNotFinalized(batch int) ([]Submit, error) {
+	submits := new([]Submit)
+	if err := ss.DB.Raw("select submission_index, sender_id from submits where status = ? limit ?",
+		NotFinalized, batch).Scan(submits).Error; err != nil {
+		return nil, err
+	}
+
+	return *submits, nil
 }

@@ -76,6 +76,18 @@ func (ms *MysqlStore) Close() error {
 	return ms.Store.Close()
 }
 
+func (ms *MysqlStore) UpdateSubmitByPrimaryKey(s *Submit, as *AddressSubmit) error {
+	return ms.Store.DB.Transaction(func(dbTx *gorm.DB) error {
+		if err := ms.SubmitStore.UpdateByPrimaryKey(dbTx, s); err != nil {
+			return errors.WithMessage(err, "failed to update submit")
+		}
+		if err := ms.AddressSubmitStore.UpdateByPrimaryKey(dbTx, as); err != nil {
+			return errors.WithMessage(err, "failed to update address submit")
+		}
+		return nil
+	})
+}
+
 func SenderID(si uint64) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("sender_id = ?", si)
