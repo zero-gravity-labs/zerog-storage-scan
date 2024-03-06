@@ -110,7 +110,7 @@ func (ss *SubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
 
 func (ss *SubmitStore) Count(startTime, endTime time.Time) (*SubmitStatResult, error) {
 	var result SubmitStatResult
-	err := ss.DB.Model(&Submit{}).Select(`count(id) as file_count, IFNULL(sum(length), 0) as data_size, 
+	err := ss.DB.Model(&Submit{}).Select(`count(submission_index) as file_count, IFNULL(sum(length), 0) as data_size, 
 		IFNULL(sum(fee), 0) as base_fee`).Where("block_time >= ? and block_time < ?", startTime, endTime).
 		Find(&result).Error
 	if err != nil {
@@ -141,4 +141,28 @@ func (ss *SubmitStore) UpdateByPrimaryKey(submit *Submit) error {
 	}
 
 	return nil
+}
+
+func (ss *SubmitStore) List(rootHash *string, idDesc bool, skip, limit int) (int64, []Submit, error) {
+	dbRaw := ss.DB.Model(&Submit{})
+	var conds []func(db *gorm.DB) *gorm.DB
+	if rootHash != nil {
+		conds = append(conds, RootHash(*rootHash))
+	}
+	dbRaw.Scopes(conds...)
+
+	var orderBy string
+	if idDesc {
+		orderBy = "submission_index DESC"
+	} else {
+		orderBy = "submission_index ASC"
+	}
+
+	list := new([]Submit)
+	total, err := ss.Store.ListByOrder(dbRaw, orderBy, skip, limit, list)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return total, *list, nil
 }

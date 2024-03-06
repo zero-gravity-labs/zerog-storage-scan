@@ -1,14 +1,9 @@
 package api
 
 import (
-	"encoding/json"
-
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
-	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"gorm.io/gorm"
 )
 
 type Type int
@@ -20,7 +15,7 @@ const (
 )
 
 func dashboard(_ *gin.Context) (interface{}, error) {
-	submitStat, err := db.SubmitStatStore.LastByType(stat.Day)
+	submitStat, err := db.SubmitStatStore.LastByType(store.Day)
 	if err != nil {
 		return nil, commonApi.ErrInternal(err)
 	}
@@ -57,30 +52,8 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		return nil, err
 	}
 
-	r, _ := json.Marshal(statP)
-	logrus.WithFields(logrus.Fields{
-		"skip":         statP.Skip,
-		"limit":        statP.Limit,
-		"minTimestamp": statP.MinTimestamp,
-		"maxTimestamp": statP.MaxTimestamp,
-		"intervalType": statP.IntervalType,
-		"sort":         statP.Sort,
-	}).Infof("queryStat incoming %v", string(r))
-
-	var conds []func(db *gorm.DB) *gorm.DB
-	intervalType := stat.IntervalTypes[statP.IntervalType]
-	conds = append(conds, StatType(intervalType))
-	if statP.MinTimestamp != 0 {
-		conds = append(conds, MinTimestamp(statP.MinTimestamp))
-	}
-	if statP.MaxTimestamp != 0 {
-		conds = append(conds, MaxTimestamp(statP.MaxTimestamp))
-	}
-	dbRaw := db.DB.Model(&store.SubmitStat{})
-	dbRaw.Scopes(conds...)
-
-	records := new([]store.SubmitStat)
-	total, err := db.List(dbRaw, statP.isDesc(), statP.Skip, statP.Limit, records)
+	total, records, err := db.SubmitStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
+		statP.isDesc(), statP.Skip, statP.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +64,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 	switch t {
 	case StorageStatType:
 		list := make([]DataStat, 0)
-		for _, r := range *records {
+		for _, r := range records {
 			list = append(list, DataStat{
 				StatTime:  r.StatTime,
 				FileCount: r.FileCount,
@@ -103,7 +76,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		result["list"] = list
 	case TxStatType:
 		list := make([]TxStat, 0)
-		for _, r := range *records {
+		for _, r := range records {
 			list = append(list, TxStat{
 				StatTime: r.StatTime,
 				TxCount:  r.FileCount,
@@ -113,7 +86,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		result["list"] = list
 	case FeeStatType:
 		list := make([]FeeStat, 0)
-		for _, r := range *records {
+		for _, r := range records {
 			list = append(list, FeeStat{
 				StatTime:     r.StatTime,
 				BaseFee:      r.BaseFee,
@@ -126,22 +99,4 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 	}
 
 	return result, nil
-}
-
-func StatType(t string) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("stat_type = ?", t)
-	}
-}
-
-func MinTimestamp(minTimestamp int) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("stat_time >= ?", minTimestamp)
-	}
-}
-
-func MaxTimestamp(maxTimestamp int) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("stat_time <= ?", maxTimestamp)
-	}
 }

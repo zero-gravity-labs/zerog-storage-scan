@@ -2,41 +2,21 @@ package stat
 
 import (
 	"context"
+	"sync"
+	"time"
+
 	"github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
-	"sync"
-	"time"
-)
-
-const (
-	Min    = "1m"
-	TenMin = "10m"
-	Hour   = "1h"
-	Day    = "1d"
 )
 
 var (
 	ErrTimeNotReach      = errors.New("time not reach")
 	ErrBlockNotSync      = errors.New("block not sync")
 	ErrBlockNotFinalized = errors.New("block not finalized")
-
-	Intervals = map[string]time.Duration{
-		Min:    time.Minute,
-		TenMin: time.Minute * 10,
-		Hour:   time.Hour,
-		Day:    time.Hour * 24,
-	}
-
-	IntervalTypes = map[string]string{
-		"min":   Min,
-		"10min": TenMin,
-		"hour":  Hour,
-		"day":   Day,
-	}
 )
 
 type StatConfig struct {
@@ -52,7 +32,7 @@ type TimeRange struct {
 
 type BaseStat struct {
 	Config    *StatConfig
-	Db        *store.MysqlStore
+	DB        *store.MysqlStore
 	Sdk       *web3go.Client
 	StartTime *time.Time
 }
@@ -123,7 +103,7 @@ func (bs *BaseStat) calStatRangeStart(t *time.Time, statType string) (*time.Time
 }
 
 func (bs *BaseStat) firstBlockAfterRangeEnd(rangeEnd *time.Time) (uint64, bool, error) {
-	return bs.Db.FirstBlockAfterTime(rangeEnd)
+	return bs.DB.FirstBlockAfterTime(rangeEnd)
 }
 
 type Stat interface {

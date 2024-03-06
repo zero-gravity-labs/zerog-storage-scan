@@ -1,6 +1,8 @@
 package store
 
 import (
+	"strings"
+
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
@@ -17,16 +19,18 @@ type MysqlStore struct {
 	*ConfigStore
 	*SubmitStore
 	*SubmitStatStore
+	*AddressSubmitStore
 }
 
 func MustNewStore(db *gorm.DB) *MysqlStore {
 	return &MysqlStore{
-		Store:           mysql.NewStore(db),
-		AddressStore:    newAddressStore(db),
-		BlockStore:      newBlockStore(db),
-		ConfigStore:     newConfigStore(db),
-		SubmitStore:     newSubmitStore(db),
-		SubmitStatStore: newSubmitStatStore(db),
+		Store:              mysql.NewStore(db),
+		AddressStore:       newAddressStore(db),
+		BlockStore:         newBlockStore(db),
+		ConfigStore:        newConfigStore(db),
+		SubmitStore:        newSubmitStore(db),
+		SubmitStatStore:    newSubmitStatStore(db),
+		AddressSubmitStore: newAddressSubmitStore(db),
 	}
 }
 
@@ -70,4 +74,34 @@ func (ms *MysqlStore) Pop(block uint64) error {
 
 func (ms *MysqlStore) Close() error {
 	return ms.Store.Close()
+}
+
+func SenderID(si uint64) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("sender_id = ?", si)
+	}
+}
+
+func RootHash(rh string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("root_hash = ?", strings.ToLower(strings.TrimPrefix(rh, "0x")))
+	}
+}
+
+func StatType(t string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("stat_type = ?", t)
+	}
+}
+
+func MinTimestamp(minTimestamp int) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("stat_time >= ?", minTimestamp)
+	}
+}
+
+func MaxTimestamp(maxTimestamp int) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("stat_time <= ?", maxTimestamp)
+	}
 }
