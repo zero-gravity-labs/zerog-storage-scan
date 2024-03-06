@@ -117,9 +117,9 @@ func (ss *SubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
 
 func (ss *SubmitStore) Count(startTime, endTime time.Time) (*SubmitStatResult, error) {
 	var result SubmitStatResult
-	err := ss.DB.Model(&Submit{}).Select(`count(submission_index) as file_count, IFNULL(sum(length), 0) as data_size, 
-		IFNULL(sum(fee), 0) as base_fee`).Where("block_time >= ? and block_time < ?", startTime, endTime).
-		Find(&result).Error
+	err := ss.DB.Model(&Submit{}).Select(`count(submission_index) as file_count, 
+		IFNULL(sum(length), 0) as data_size, IFNULL(sum(fee), 0) as base_fee, count(distinct tx_hash) as tx_count`).
+		Where("block_time >= ? and block_time < ?", startTime, endTime).Find(&result).Error
 	if err != nil {
 		return nil, err
 	}

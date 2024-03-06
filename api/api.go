@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/openweb3/web3go"
 	"github.com/sirupsen/logrus"
-	"github.com/swaggo/files"
-	"github.com/swaggo/gin-swagger"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	nhContract "github.com/zero-gravity-labs/zerog-storage-scan/contract"
 	"github.com/zero-gravity-labs/zerog-storage-scan/docs"
 	"github.com/zero-gravity-labs/zerog-storage-scan/store"
@@ -16,11 +16,9 @@ import (
 const BasePath = "/api"
 
 var (
-	sdk           *web3go.Client
-	db            *store.MysqlStore
-	chargeToken   *TokenInfo
-	flowAddr      string
-	flowSubmitSig string
+	sdk         *web3go.Client
+	db          *store.MysqlStore
+	chargeToken *TokenInfo
 )
 
 func MustInit(client *web3go.Client, store *store.MysqlStore) {
@@ -49,8 +47,6 @@ func MustInit(client *web3go.Client, store *store.MysqlStore) {
 		SubmitEventSignature string
 	}
 	viperutil.MustUnmarshalKey("flow", &flow)
-	flowAddr = flow.Address
-	flowSubmitSig = flow.SubmitEventSignature
 }
 
 // @title		ZeroGStorage Scan API

@@ -68,7 +68,7 @@ func (bs *BlockStore) BlockHash(blockNumber uint64) (string, bool, error) {
 	return blk.Hash, existed, nil
 }
 
-func (bs *BlockStore) FirstBlockAfterTime(t *time.Time) (uint64, bool, error) {
+func (bs *BlockStore) FirstBlockAfterTime(t time.Time) (uint64, bool, error) {
 	var blk Block
 
 	result := bs.DB.Where("block_time >= ?", t).Order("block_time asc").Limit(1).Find(&blk)

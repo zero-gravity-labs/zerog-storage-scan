@@ -26,38 +26,22 @@ type StatConfig struct {
 }
 
 type TimeRange struct {
-	start *time.Time
-	end   *time.Time
+	start time.Time
+	end   time.Time
 }
 
 type BaseStat struct {
 	Config    *StatConfig
 	DB        *store.MysqlStore
 	Sdk       *web3go.Client
-	StartTime *time.Time
+	StartTime time.Time
 }
 
-func (bs *BaseStat) defaultRangeStart() (*time.Time, error) {
-	if bs.Config.BlockOnStatBegin == uint64(0) {
-		return nil, errors.New("missing block from which the stat begin")
-	}
-
-	block, err := bs.Sdk.Eth.BlockByNumber(types.BlockNumber(bs.Config.BlockOnStatBegin), false)
-	if err != nil {
-		return nil, err
-	}
-
-	t := time.Unix(int64(block.Timestamp), 0).UTC()
-	rangeStart := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
-
-	return &rangeStart, nil
-}
-
-func (bs *BaseStat) calStatRange(rangeStart *time.Time, interval time.Duration) (*TimeRange, error) {
+func (bs *BaseStat) calStatRange(rangeStart time.Time, interval time.Duration) (*TimeRange, error) {
 	rangeEnd := rangeStart.Add(interval)
 	timeRange := TimeRange{
 		start: rangeStart,
-		end:   &rangeEnd,
+		end:   rangeEnd,
 	}
 	return &timeRange, nil
 }
@@ -75,7 +59,7 @@ Range in Hour
 current time "2023-01-01 01:00:00", expect range start time "2023-01-01 00:00:00"
 current time "2023-01-01 00:00:00", expect range start time "2022-12-31 23:00:00"
 */
-func (bs *BaseStat) calStatRangeStart(t *time.Time, statType string) (*time.Time, error) {
+func (bs *BaseStat) calStatRangeStart(t time.Time, statType string) (time.Time, error) {
 	var rangeStart time.Time
 	timeFormat := t.Format("2006-01-02 15:04:05")
 
@@ -96,20 +80,20 @@ func (bs *BaseStat) calStatRangeStart(t *time.Time, statType string) (*time.Time
 			rangeStart = rangeStart.Add(-time.Hour)
 		}
 	default:
-		return nil, errors.Errorf("stat type %v not supported", statType)
+		return time.Time{}, errors.Errorf("stat type %v not supported", statType)
 	}
 
-	return &rangeStart, nil
+	return rangeStart, nil
 }
 
-func (bs *BaseStat) firstBlockAfterRangeEnd(rangeEnd *time.Time) (uint64, bool, error) {
+func (bs *BaseStat) firstBlockAfterRangeEnd(rangeEnd time.Time) (uint64, bool, error) {
 	return bs.DB.FirstBlockAfterTime(rangeEnd)
 }
 
 type Stat interface {
 	nextTimeRange() (*TimeRange, error)
-	firstBlockAfterRangeEnd(rangeEnd *time.Time) (uint64, bool, error)
-	calculateStat(*TimeRange) error
+	firstBlockAfterRangeEnd(rangeEnd time.Time) (uint64, bool, error)
+	calculateStat(TimeRange) error
 }
 
 type AbsStat struct {
@@ -140,7 +124,7 @@ func (as *AbsStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 			continue
 		}
 
-		err = as.calculateStat(timeRange)
+		err = as.calculateStat(*timeRange)
 		if err != nil {
 			logrus.WithError(err).Error("do stat")
 			time.Sleep(time.Second * 10)
@@ -154,7 +138,7 @@ func (as *AbsStat) tryAcquireTimeRange() (*TimeRange, error) {
 	if err != nil {
 		return nil, err
 	}
-	if time.Now().UTC().Before(*timeRange.end) {
+	if time.Now().UTC().Before(timeRange.end) {
 		return nil, ErrTimeNotReach
 	}
 
@@ -186,7 +170,7 @@ func (as *AbsStat) interrupted(ctx context.Context) bool {
 	return false
 }
 
-func MustDefaultRangeStart(sdk *web3go.Client) *time.Time {
+func MustDefaultRangeStart(sdk *web3go.Client) time.Time {
 	start, err := defaultRangeStart(sdk)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to get default start time for stat task")
@@ -195,21 +179,21 @@ func MustDefaultRangeStart(sdk *web3go.Client) *time.Time {
 	return start
 }
 
-func defaultRangeStart(sdk *web3go.Client) (*time.Time, error) {
+func defaultRangeStart(sdk *web3go.Client) (time.Time, error) {
 	config := StatConfig{}
 	viper.MustUnmarshalKey("stat", &config)
 
 	if config.BlockOnStatBegin == uint64(0) {
-		return nil, errors.New("missing block from which the stat begin")
+		return time.Time{}, errors.New("missing block from which the stat begin")
 	}
 
 	block, err := sdk.Eth.BlockByNumber(types.BlockNumber(config.BlockOnStatBegin), false)
 	if err != nil {
-		return nil, err
+		return time.Time{}, err
 	}
 
 	t := time.Unix(int64(block.Timestamp), 0).UTC()
 	rangeStart := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
 
-	return &rangeStart, nil
+	return rangeStart, nil
 }
