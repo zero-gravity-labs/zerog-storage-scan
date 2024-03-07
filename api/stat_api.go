@@ -79,8 +79,8 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		for _, r := range records {
 			list = append(list, TxStat{
 				StatTime: r.StatTime,
-				TxCount:  r.FileCount,
-				TxTotal:  r.FileTotal,
+				TxCount:  r.TxCount,
+				TxTotal:  r.TxTotal,
 			})
 		}
 		result["list"] = list
