@@ -6,14 +6,14 @@ import (
 	"sync"
 	"time"
 
+	nhContract "github.com/0glabs/0g-storage-scan/contract"
+	"github.com/0glabs/0g-storage-scan/store"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	nhContract "github.com/zero-gravity-labs/zerog-storage-scan/contract"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
 type SyncConfig struct {

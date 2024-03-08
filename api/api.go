@@ -1,16 +1,16 @@
 package api
 
 import (
+	nhContract "github.com/0glabs/0g-storage-scan/contract"
+	"github.com/0glabs/0g-storage-scan/docs"
+	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
-	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
+	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/gin-gonic/gin"
 	"github.com/openweb3/web3go"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	nhContract "github.com/zero-gravity-labs/zerog-storage-scan/contract"
-	"github.com/zero-gravity-labs/zerog-storage-scan/docs"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
 const BasePath = "/api"
@@ -28,7 +28,7 @@ func MustInit(client *web3go.Client, store *store.MysqlStore) {
 	var charge struct {
 		Erc20TokenAddress string
 	}
-	viperutil.MustUnmarshalKey("charge", &charge)
+	viperUtil.MustUnmarshalKey("charge", &charge)
 
 	name, symbol, decimals, err := nhContract.TokenInfo(client, charge.Erc20TokenAddress)
 	if err != nil {
@@ -46,12 +46,12 @@ func MustInit(client *web3go.Client, store *store.MysqlStore) {
 		Address              string
 		SubmitEventSignature string
 	}
-	viperutil.MustUnmarshalKey("flow", &flow)
+	viperUtil.MustUnmarshalKey("flow", &flow)
 }
 
-// @title		ZeroGStorage Scan API
+// @title		0G Storage Scan API
 // @version		1.0
-// @description	Use any http client to fetch data from the ZeroGStorage Scan.
+// @description	Use any http client to fetch data from the 0G Storage Scan.
 func init() {
 	docs.SwaggerInfo.BasePath = BasePath
 }

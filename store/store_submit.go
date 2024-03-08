@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/0glabs/0g-storage-client/contract"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
 	"github.com/shopspring/decimal"
-	"github.com/zero-gravity-labs/zerog-storage-client/contract"
 	"gorm.io/gorm"
 )
 

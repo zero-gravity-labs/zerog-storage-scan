@@ -3,9 +3,9 @@ package stat
 import (
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/openweb3/web3go"
 	"github.com/pkg/errors"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
 )
 

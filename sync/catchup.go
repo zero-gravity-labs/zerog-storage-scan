@@ -6,14 +6,14 @@ import (
 	"strings"
 	"time"
 
-	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
+	nhContract "github.com/0glabs/0g-storage-scan/contract"
+	"github.com/0glabs/0g-storage-scan/store"
+	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	nhContract "github.com/zero-gravity-labs/zerog-storage-scan/contract"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
 type CatchupSyncer struct {
@@ -31,13 +31,13 @@ func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncCon
 		Address              string
 		SubmitEventSignature string
 	}
-	viperutil.MustUnmarshalKey("flow", &flow)
+	viperUtil.MustUnmarshalKey("flow", &flow)
 
 	var charge struct {
 		Erc20TokenAddress           string
 		Erc20TransferEventSignature string
 	}
-	viperutil.MustUnmarshalKey("charge", &charge)
+	viperUtil.MustUnmarshalKey("charge", &charge)
 
 	return &CatchupSyncer{
 		conf:          &conf,

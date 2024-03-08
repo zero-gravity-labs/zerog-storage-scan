@@ -1,1 +1,1 @@
-# zerog-storage-scan
+# 0g-storage-scan

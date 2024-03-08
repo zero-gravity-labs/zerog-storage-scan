@@ -3,29 +3,29 @@ version: '3.3'
 services:
   sync:
     build: .
-    image: zg-scan:latest
+    image: 0g-scan:latest
     command: sync
     restart: unless-stopped
     environment:
-      - ZEROG_STORAGE_LOG_LEVEL=info
+      - 0G_SCAN_LOG_LEVEL=info
     network_mode: host
-    container_name: zerog-storage-sync
+    container_name: 0g-scan-sync
 
   stat:
-    image: zg-scan:latest
+    image: 0g-scan:latest
     command: stat
     restart: unless-stopped
     environment:
-      - ZEROG_STORAGE_LOG_LEVEL=info
+      - 0G_SCAN_LOG_LEVEL=info
     network_mode: host
-    container_name: zerog-storage-stat
+    container_name: 0g-scan-stat
 
   api:
-    image: zg-scan:latest
+    image: 0g-scan:latest
     command: api
     restart: unless-stopped
     environment:
-      - ZEROG_STORAGE_LOG_LEVEL=info
-      - ZEROG_STORAGE_API_ENDPOINT=:16451
+      - 0G_SCAN_LOG_LEVEL=info
+      - 0G_SCAN_API_ENDPOINT=:16451
     network_mode: host
-    container_name: zerog-storage-api
+    container_name: 0g-scan-api

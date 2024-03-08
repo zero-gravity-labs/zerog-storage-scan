@@ -1,4 +1,4 @@
-module github.com/zero-gravity-labs/zerog-storage-scan
+module github.com/0glabs/0g-storage-scan
 
 go 1.21.0
 
@@ -16,11 +16,11 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.2
-	github.com/zero-gravity-labs/zerog-storage-client v0.1.14-0.20240229065452-bbb5632981ab
 	gorm.io/gorm v1.25.4
 )
 
 require (
+	github.com/0glabs/0g-storage-client v0.1.14-0.20240310090450-1d09ec4f0b9c // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0 // indirect

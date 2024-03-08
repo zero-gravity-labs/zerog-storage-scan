@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"strconv"
 
+	"github.com/0glabs/0g-storage-scan/store"
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
 func listTx(c *gin.Context) (interface{}, error) {
@@ -28,7 +28,7 @@ func listTx(c *gin.Context) (interface{}, error) {
 		if !exist {
 			return TxList{}, nil
 		}
-		addrIDPtr = &addr.Id
+		addrIDPtr = &addr.ID
 	}
 
 	total, submits, err := listSubmits(addrIDPtr, param.RootHash, param.isDesc(), param.Skip, param.Limit)

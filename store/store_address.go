@@ -8,7 +8,7 @@ import (
 )
 
 type Address struct {
-	Id        uint64
+	ID        uint64
 	Address   string    `gorm:"size:64;unique"`
 	BlockTime time.Time `gorm:"not null"`
 }
@@ -34,7 +34,7 @@ func (as *AddressStore) Add(address string, blockTime time.Time) (uint64, error)
 		return 0, err
 	}
 	if existed {
-		return addr.Id, nil
+		return addr.ID, nil
 	}
 
 	addr = Address{
@@ -46,20 +46,20 @@ func (as *AddressStore) Add(address string, blockTime time.Time) (uint64, error)
 		return 0, err
 	}
 
-	return addr.Id, nil
+	return addr.ID, nil
 }
 
 // BatchGetAddresses TODO LRU cache
-func (as *AddressStore) BatchGetAddresses(addrIds []uint64) (map[uint64]Address, error) {
+func (as *AddressStore) BatchGetAddresses(addrIDs []uint64) (map[uint64]Address, error) {
 	addresses := new([]Address)
-	err := as.DB.Raw("select * from addresses where id in ?", addrIds).Scan(addresses).Error
+	err := as.DB.Raw("select * from addresses where id in ?", addrIDs).Scan(addresses).Error
 	if err != nil {
 		return nil, err
 	}
 
 	m := make(map[uint64]Address)
 	for _, addr := range *addresses {
-		m[addr.Id] = addr
+		m[addr.ID] = addr
 	}
 
 	return m, nil

@@ -3,10 +3,10 @@ package api
 import (
 	"encoding/json"
 
+	"github.com/0glabs/0g-storage-scan/stat"
+	"github.com/0glabs/0g-storage-scan/store"
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
-	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
 type Type int

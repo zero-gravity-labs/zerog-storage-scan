@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"context"
-	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
+	"sync"
+
+	nhSync "github.com/0glabs/0g-storage-scan/sync"
+	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	nhSync "github.com/zero-gravity-labs/zerog-storage-scan/sync"
-	"sync"
 )
 
 var (
@@ -27,7 +28,7 @@ func startSyncService(*cobra.Command, []string) {
 	defer dataCtx.Close()
 
 	var conf nhSync.SyncConfig
-	viperutil.MustUnmarshalKey("sync", &conf)
+	viperUtil.MustUnmarshalKey("sync", &conf)
 
 	cs := nhSync.MustNewCatchupSyncer(dataCtx.Eth, dataCtx.DB, conf)
 	ss := nhSync.MustNewStorageSyncer(dataCtx.L2Sdk, dataCtx.DB)

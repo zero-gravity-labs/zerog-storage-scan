@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/stat"
 	"github.com/shopspring/decimal"
-	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
 )
 
 type PageParam struct {
