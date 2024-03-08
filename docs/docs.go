@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/statistic/dashboard": {
             "get": {
-                "description": "Query statistics dashboard includes ` + "`" + `average uplink rate` + "`" + ` and ` + "`" + `storage base fee` + "`" + `",
+                "description": "Query statistics dashboard includes ` + "`" + `storage fee` + "`" + ` and ` + "`" + `log sync height` + "`" + `",
                 "produces": [
                     "application/json"
                 ],
@@ -525,7 +525,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "basicCost": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "tokenInfo": {
                     "$ref": "#/definitions/api.TokenInfo"
@@ -535,6 +535,9 @@ const docTemplate = `{
         "api.Dashboard": {
             "type": "object",
             "properties": {
+                "logSyncInfo": {
+                    "$ref": "#/definitions/stat.LogSyncInfo"
+                },
                 "storageBasicCost": {
                     "$ref": "#/definitions/api.StorageBasicCost"
                 }
@@ -578,10 +581,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "baseFee": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "baseFeeTotal": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "statTime": {
                     "type": "string"
@@ -609,7 +612,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "basicCostTotal": {
-                    "type": "string"
+                    "type": "number"
                 },
                 "decimals": {
                     "type": "integer"
@@ -802,6 +805,17 @@ const docTemplate = `{
         },
         "big.Int": {
             "type": "object"
+        },
+        "stat.LogSyncInfo": {
+            "type": "object",
+            "properties": {
+                "l2LogSyncHeight": {
+                    "type": "integer"
+                },
+                "logSyncHeight": {
+                    "type": "integer"
+                }
+            }
         }
     }
 }`
