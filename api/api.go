@@ -59,7 +59,7 @@ func init() {
 // dashboardHandler godoc
 //
 //	@Summary		Statistics dashboard
-//	@Description	Query statistics dashboard includes `average uplink rate` and `storage base fee`
+//	@Description	Query statistics dashboard includes `storage fee` and `log sync height`
 //	@Tags			statistic
 //	@Produce		json
 //	@Success		200	{object}	api.BusinessError{Data=Dashboard}

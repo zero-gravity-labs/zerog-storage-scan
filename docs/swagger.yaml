@@ -10,12 +10,14 @@ definitions:
   api.CostInfo:
     properties:
       basicCost:
-        type: string
+        type: number
       tokenInfo:
         $ref: '#/definitions/api.TokenInfo'
     type: object
   api.Dashboard:
     properties:
+      logSyncInfo:
+        $ref: '#/definitions/stat.LogSyncInfo'
       storageBasicCost:
         $ref: '#/definitions/api.StorageBasicCost'
     type: object
@@ -44,9 +46,9 @@ definitions:
   api.FeeStat:
     properties:
       baseFee:
-        type: integer
+        type: number
       baseFeeTotal:
-        type: integer
+        type: number
       statTime:
         type: string
     type: object
@@ -64,7 +66,7 @@ definitions:
       address:
         type: string
       basicCostTotal:
-        type: string
+        type: number
       decimals:
         type: integer
       name:
@@ -190,6 +192,13 @@ definitions:
     type: object
   big.Int:
     type: object
+  stat.LogSyncInfo:
+    properties:
+      l2LogSyncHeight:
+        type: integer
+      logSyncHeight:
+        type: integer
+    type: object
 info:
   contact: {}
   description: Use any http client to fetch data from the ZeroGStorage Scan.
@@ -198,8 +207,8 @@ info:
 paths:
   /statistic/dashboard:
     get:
-      description: Query statistics dashboard includes `average uplink rate` and `storage
-        base fee`
+      description: Query statistics dashboard includes `storage fee` and `log sync
+        height`
       produces:
       - application/json
       responses:
