@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Use any http client to fetch data from the ZeroGStorage Scan.",
-        "title": "ZeroGStorage Scan API",
+        "description": "Use any http client to fetch data from the 0G Storage Scan.",
+        "title": "0G Storage Scan API",
         "contact": {},
         "version": "1.0"
     },

@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/0glabs/0g-storage-scan/stat"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/zero-gravity-labs/zerog-storage-scan/stat"
 )
 
 var (

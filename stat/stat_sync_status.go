@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
-	viperutil "github.com/Conflux-Chain/go-conflux-util/viper"
+	"github.com/0glabs/0g-storage-client/node"
+	"github.com/0glabs/0g-storage-scan/store"
+	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/zero-gravity-labs/zerog-storage-client/node"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 	"gorm.io/gorm"
 )
 
@@ -24,7 +24,7 @@ func MustNewSyncStatusStat(db *store.MysqlStore, l2Sdk *node.Client) *LogSyncInf
 	var stat struct {
 		StatIntervalSyncStatus time.Duration `default:"1s"`
 	}
-	viperutil.MustUnmarshalKey("stat", &stat)
+	viperUtil.MustUnmarshalKey("stat", &stat)
 
 	return &LogSyncInfoStat{
 		db:       db,
@@ -45,29 +45,29 @@ func (s *LogSyncInfoStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 		default:
 		}
 
-		var submit store.Submit
-		err := s.db.Store.DB.Last(&submit).Error
+		var block store.Block
+		err := s.db.Store.DB.Last(&block).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			logrus.WithError(err).Info("No submit record to update log sync info")
+			logrus.WithError(err).Info("No block record to update log sync info")
 			time.Sleep(10 * time.Second)
 			continue
 		}
 		if err != nil {
-			logrus.WithError(err).Error("Failed to get submit record to update log sync info")
+			logrus.WithError(err).Error("Failed to get block record to update log sync info")
 			time.Sleep(10 * time.Second)
 			continue
 		}
 
-		zgStatus, err := s.l2Sdk.ZeroGStorage().GetStatus()
+		nodeStatus, err := s.l2Sdk.ZeroGStorage().GetStatus()
 		if err != nil {
-			logrus.WithError(err).Error("Failed to get zg status to update log sync info")
+			logrus.WithError(err).Error("Failed to get storage node status to update log sync info")
 			time.Sleep(10 * time.Second)
 			continue
 		}
 
 		status := LogSyncInfo{
-			LogSyncHeight:   submit.BlockNumber,
-			L2LogSyncHeight: zgStatus.LogSyncHeight,
+			LogSyncHeight:   block.BlockNumber,
+			L2LogSyncHeight: nodeStatus.LogSyncHeight,
 		}
 		statusBytes, err := json.Marshal(status)
 		if err != nil {

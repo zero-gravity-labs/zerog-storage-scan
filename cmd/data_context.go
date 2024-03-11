@@ -8,13 +8,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/0glabs/0g-storage-client/node"
+	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
 	providers "github.com/openweb3/go-rpc-provider/provider_wrapper"
 	"github.com/openweb3/web3go"
 	"github.com/sirupsen/logrus"
-	"github.com/zero-gravity-labs/zerog-storage-client/node"
-	"github.com/zero-gravity-labs/zerog-storage-scan/store"
 )
 
 // DataContext context to hold sdk clients for blockchain interoperation.
@@ -25,7 +25,7 @@ type DataContext struct {
 }
 
 type SdkConfig struct {
-	Url             string
+	URL             string
 	Retry           int
 	RetryInterval   time.Duration `default:"1s"`
 	RequestTimeout  time.Duration `default:"3s"`
@@ -33,7 +33,7 @@ type SdkConfig struct {
 }
 
 type L2SdkConfig struct {
-	Url             string
+	URL             string
 	Retry           int
 	RetryInterval   time.Duration `default:"1s"`
 	RequestTimeout  time.Duration `default:"3s"`
@@ -62,7 +62,7 @@ func MustInitDataContext() DataContext {
 	opt.WithRetry(sdkCfg.Retry, sdkCfg.RetryInterval).
 		WithTimout(sdkCfg.RequestTimeout).
 		WithMaxConnectionPerHost(sdkCfg.MaxConnsPerHost)
-	eth := web3go.MustNewClientWithOption(sdkCfg.Url, opt)
+	eth := web3go.MustNewClientWithOption(sdkCfg.URL, opt)
 
 	l2SdkCfg := L2SdkConfig{}
 	viper.MustUnmarshalKey("storage", &l2SdkCfg)
@@ -70,7 +70,7 @@ func MustInitDataContext() DataContext {
 	opt2.WithRetry(l2SdkCfg.Retry, l2SdkCfg.RetryInterval).
 		WithTimout(l2SdkCfg.RequestTimeout).
 		WithMaxConnectionPerHost(l2SdkCfg.MaxConnsPerHost)
-	l2Sdk := node.MustNewClient(l2SdkCfg.Url, opt2)
+	l2Sdk := node.MustNewClient(l2SdkCfg.URL, opt2)
 
 	return DataContext{
 		DB:    store.MustNewStore(db),

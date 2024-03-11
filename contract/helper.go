@@ -1,9 +1,9 @@
 package contract
 
 import (
+	"github.com/0glabs/0g-storage-client/contract"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
-	"github.com/zero-gravity-labs/zerog-storage-client/contract"
 )
 
 var (

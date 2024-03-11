@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-zerog-storage-scan
+0g-storage-scan
 
 # Test binary, built with `go test -c`
 *.test

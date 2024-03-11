@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "zerog_storage",
-	Short: "Web3 storage scan on ZeroGStorage.",
+	Use:   "0g_storage",
+	Short: "Web3 storage scan on 0G Storage.",
 }
 
 func Execute() {
