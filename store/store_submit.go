@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/0glabs/0g-storage-client/contract"
+	"github.com/0glabs/0g-storage-client/core"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
@@ -13,11 +14,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type Status int
+type Status uint8
 
 const (
-	NotFinalized Status = iota
-	Finalized
+	NotUploaded Status = iota
+	Uploading
+	Uploaded
 )
 
 type Submit struct {
@@ -31,8 +33,10 @@ type Submit struct {
 	BlockTime   time.Time `gorm:"not null"`
 	TxHash      string    `gorm:"size:66;not null"`
 
-	Status uint64          `gorm:"not null;default:0"`
-	Fee    decimal.Decimal `gorm:"type:decimal(65);not null"`
+	TotalSegNum    uint64          `gorm:"not null;default:0"`
+	UploadedSegNum uint64          `gorm:"not null;default:0"`
+	Status         uint8           `gorm:"not null;default:0"`
+	Fee            decimal.Decimal `gorm:"type:decimal(65);not null"`
 
 	Extra []byte `gorm:"type:mediumText"` // json field
 }
@@ -58,15 +62,17 @@ func NewSubmit(blockTime time.Time, log types.Log, filter *contract.FlowFilterer
 		return nil, err
 	}
 
+	length := flowSubmit.Submission.Length.Uint64()
 	submit := &Submit{
 		SubmissionIndex: flowSubmit.SubmissionIndex.Uint64(),
 		RootHash:        flowSubmit.Submission.Root().String(),
 		Sender:          flowSubmit.Sender.String(),
-		Length:          flowSubmit.Submission.Length.Uint64(),
+		Length:          length,
 		BlockNumber:     log.BlockNumber,
 		BlockTime:       blockTime,
 		TxHash:          log.TxHash.String(),
 		Fee:             decimal.NewFromBigInt(big.NewInt(0), 0),
+		TotalSegNum:     (length-1)/core.DefaultSegmentSize + 1,
 		Extra:           extra,
 	}
 
@@ -88,27 +94,7 @@ func newSubmitStore(db *gorm.DB) *SubmitStore {
 }
 
 func (ss *SubmitStore) Add(dbTx *gorm.DB, submits []*Submit) error {
-	addressSubmits := make([]AddressSubmit, 0)
-	for _, submit := range submits {
-		addressSubmit := AddressSubmit{
-			SenderID:        submit.SenderID,
-			SubmissionIndex: submit.SubmissionIndex,
-			RootHash:        submit.RootHash,
-			Length:          submit.Length,
-			BlockNumber:     submit.BlockNumber,
-			BlockTime:       submit.BlockTime,
-			TxHash:          submit.TxHash,
-			Fee:             submit.Fee,
-			Status:          submit.Status,
-		}
-		addressSubmits = append(addressSubmits, addressSubmit)
-	}
-
-	if err := dbTx.CreateInBatches(submits, batchSizeInsert).Error; err != nil {
-		return err
-	}
-
-	return dbTx.CreateInBatches(addressSubmits, batchSizeInsert).Error
+	return dbTx.CreateInBatches(submits, batchSizeInsert).Error
 }
 
 func (ss *SubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
@@ -167,8 +153,8 @@ func (ss *SubmitStore) List(rootHash *string, idDesc bool, skip, limit int) (int
 
 func (ss *SubmitStore) BatchGetNotFinalized(batch int) ([]Submit, error) {
 	submits := new([]Submit)
-	if err := ss.DB.Raw("select submission_index, sender_id from submits where status = ? limit ?",
-		NotFinalized, batch).Scan(submits).Error; err != nil {
+	if err := ss.DB.Raw("select submission_index, sender_id from submits where status < ? limit ?",
+		Uploaded, batch).Scan(submits).Error; err != nil {
 		return nil, err
 	}
 

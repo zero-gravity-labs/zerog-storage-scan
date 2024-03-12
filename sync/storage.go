@@ -65,14 +65,22 @@ func (ss *StorageSyncer) syncFileInfo() error {
 
 		submit := store.Submit{
 			SubmissionIndex: s.SubmissionIndex,
+			UploadedSegNum:  info.UploadedSegNum,
 		}
-		if info.Finalized {
-			submit.Status = uint64(store.Finalized)
+		if !info.Finalized {
+			if info.UploadedSegNum == 0 {
+				submit.Status = uint8(store.NotUploaded)
+			} else {
+				submit.Status = uint8(store.Uploading)
+			}
+		} else {
+			submit.Status = uint8(store.Uploaded)
 		}
 
 		addressSubmit := store.AddressSubmit{
 			SenderID:        s.SenderID,
 			SubmissionIndex: s.SubmissionIndex,
+			UploadedSegNum:  info.UploadedSegNum,
 			Status:          submit.Status,
 		}
 
