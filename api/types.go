@@ -37,24 +37,22 @@ func (sp *listTxParam) isDesc() bool {
 }
 
 type queryTxParam struct {
-	TxSeq *uint64 `form:"txSeq" binding:"required,number,gte=0"`
+	TxSeq *uint64 `uri:"txSeq" form:"txSeq" binding:"required,number,gte=0"`
 }
 
 // StorageTx model info
 // @Description Submission information
 type StorageTx struct {
-	TxSeq          uint64          `json:"txSeq"`          // Submission index in submit event
-	BlockNum       uint64          `json:"blockNum"`       // The block where the submit event is emitted
-	TxHash         string          `json:"txHash"`         // The transaction where the submit event is emitted
-	RootHash       string          `json:"rootHash"`       // Merkle root of the file to upload
-	Address        string          `json:"address"`        // File uploader address
-	Method         string          `json:"method"`         // The name of the submit event is always `submit`
-	Status         uint8           `json:"status"`         // File upload status, 0-not uploaded,1-uploading,2-uploaded
-	TotalSegNum    uint64          `json:"totalSegNum"`    // The total number of segments the file is split into
-	UploadedSegNum uint64          `json:"uploadedSegNum"` // The number of segments the file has been uploaded
-	Timestamp      int64           `json:"timestamp"`      // The block time when submit event emits
-	DataSize       uint64          `json:"dataSize"`       // File size in bytes
-	BaseFee        decimal.Decimal `json:"baseFee"`        // The token fee required to upload the file
+	TxSeq     uint64          `json:"txSeq"`     // Submission index in submit event
+	BlockNum  uint64          `json:"blockNum"`  // The block where the submit event is emitted
+	TxHash    string          `json:"txHash"`    // The transaction where the submit event is emitted
+	RootHash  string          `json:"rootHash"`  // Merkle root of the file to upload
+	Address   string          `json:"address"`   // File uploader address
+	Method    string          `json:"method"`    // The name of the submit event is always `submit`
+	Status    uint8           `json:"status"`    // File upload status, 0-not uploaded,1-uploading,2-uploaded
+	Timestamp int64           `json:"timestamp"` // The block time when submit event emits
+	DataSize  uint64          `json:"dataSize"`  // File size in bytes
+	BaseFee   decimal.Decimal `json:"baseFee"`   // The storage fee required to upload the file
 }
 
 // TokenInfo model info
@@ -64,6 +62,7 @@ type TokenInfo struct {
 	Name     string `json:"name"`     // Token name
 	Symbol   string `json:"symbol"`   // Token symbol
 	Decimals uint8  `json:"decimals"` // Token decimals
+	Native   bool   `json:"native"`   // True is native token, otherwise is not
 }
 
 // CostInfo model info
@@ -168,7 +167,100 @@ type TxStat struct {
 // FeeStat model info
 // @Description Storage fee information
 type FeeStat struct {
-	StatTime     time.Time       `json:"statTime"`     // Statistics time
-	BaseFee      decimal.Decimal `json:"baseFee"`      // The base fee for storage in a specific time interval
-	BaseFeeTotal decimal.Decimal `json:"baseFeeTotal"` // The total base fee for storage by a certain time
+	StatTime        time.Time       `json:"statTime"`        // Statistics time
+	StorageFee      decimal.Decimal `json:"storageFee"`      // The base fee for storage in a specific time interval
+	StorageFeeTotal decimal.Decimal `json:"storageFeeTotal"` // The total base fee for storage by a certain time
+}
+
+type listStorageTxParam struct {
+	PageParam
+	Sort string `form:"sort,default=desc" binding:"omitempty,oneof=asc desc"`
+}
+
+func (sp *listStorageTxParam) isDesc() bool {
+	return strings.EqualFold(sp.Sort, "desc")
+}
+
+type listAddressStorageTxParam struct {
+	PageParam
+	RootHash *string `form:"rootHash" binding:"omitempty"`
+	Sort     string  `form:"sort,default=desc" binding:"omitempty,oneof=asc desc"`
+}
+
+func (sp *listAddressStorageTxParam) isDesc() bool {
+	return strings.EqualFold(sp.Sort, "desc")
+}
+
+// Summary model info
+// @Description Storage summary information
+type Summary struct {
+	StorageFeeStat   `json:"storageFee"` // Storage fee information
+	stat.LogSyncInfo `json:"logSync"`    // Synchronization information of submit event
+}
+
+// StorageFeeStat model info
+// @Description Stat storage fee information
+type StorageFeeStat struct {
+	TokenInfo       `json:"chargeToken"` // Charge token info
+	StorageFeeTotal decimal.Decimal      `json:"storageFeeTotal"` // Total storage fee
+}
+
+// StorageTxInfo model info
+// @Description Submission transaction information
+type StorageTxInfo struct {
+	TxSeq  uint64 `json:"txSeq"`  // Submission index in submit event
+	From   string `json:"from"`   // File uploader address
+	Method string `json:"method"` // The name of the submit event is always `submit`
+
+	RootHash   string          `json:"rootHash"`   // Merkle root of the file to upload
+	DataSize   uint64          `json:"dataSize"`   // File size in bytes
+	StorageFee decimal.Decimal `json:"storageFee"` // The storage fee required to upload the file
+	Status     uint8           `json:"status"`     // File upload status, 0-not uploaded,1-uploading,2-uploaded
+
+	BlockNumber uint64 `json:"blockNumber"` // The block where the submit event is emitted
+	TxHash      string `json:"txHash"`      // The transaction where the submit event is emitted
+	Timestamp   int64  `json:"timestamp"`   // The block time when submit event emits
+
+	Segments         uint64 `json:"segments"`         // The total number of segments the file is split into
+	UploadedSegments uint64 `json:"uploadedSegments"` // The number of segments the file has been uploaded
+}
+
+// StorageTxList model info
+// @Description Submission information list
+type StorageTxList struct {
+	Total int64           `json:"total"` // The total number of submission returned
+	List  []StorageTxInfo `json:"list"`  // Submission list
+}
+
+// StorageTxDetail model info
+// @Description Submission transaction information
+type StorageTxDetail struct {
+	TxSeq  string `json:"txSeq"`  // Submission index in submit event
+	From   string `json:"from"`   // File uploader address
+	Method string `json:"method"` // The name of the submit event is always `submit`
+
+	RootHash   string          `json:"rootHash"`   // Merkle root of the file to upload
+	DataSize   uint64          `json:"dataSize"`   // File size in bytes
+	Expiration uint64          `json:"expiration"` // Expiration date of the uploaded file
+	StorageFee decimal.Decimal `json:"storageFee"` // The storage fee required to upload the file
+	Status     uint8           `json:"status"`     // File upload status, 0-not uploaded,1-uploading,2-uploaded
+
+	StartPosition uint64 `json:"startPosition"` // The starting position of the file stored in the storage node
+	EndPosition   uint64 `json:"endPosition"`   // The ending position of the file stored in the storage node
+	Segments      uint64 `json:"segments"`      // The total number of segments the file is split into
+
+	BlockNumber uint64 `json:"blockNumber"` // The block where the submit event is emitted
+	TxHash      string `json:"txHash"`      // The transaction where the submit event is emitted
+	Timestamp   uint64 `json:"timestamp"`   // The block time when submit event emits
+
+	GasFee   uint64 `json:"gasFee"`   // The gas fee of the transaction on layer1
+	GasUsed  uint64 `json:"gasUsed"`  // The gas used of the transaction on layer1
+	GasLimit uint64 `json:"gasLimit"` // The gas limit of the transaction on layer1
+}
+
+// StorageFee model info
+// @Description Storage fee information
+type StorageFee struct {
+	TokenInfo  `json:"chargeToken"` // Charge token info
+	StorageFee decimal.Decimal      `json:"storageFee"` // Storage fee
 }

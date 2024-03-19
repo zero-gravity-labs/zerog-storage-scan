@@ -71,9 +71,9 @@ func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, idDesc 
 
 	var orderBy string
 	if idDesc {
-		orderBy = "sender_id DESC"
+		orderBy = "submission_index DESC"
 	} else {
-		orderBy = "sender_id ASC"
+		orderBy = "submission_index ASC"
 	}
 
 	list := new([]AddressSubmit)

@@ -117,7 +117,7 @@ func SenderID(si uint64) func(db *gorm.DB) *gorm.DB {
 
 func RootHash(rh string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("root_hash = ?", strings.ToLower(strings.TrimPrefix(rh, "0x")))
+		return db.Where("root_hash = ?", strings.ToLower(rh))
 	}
 }
 
