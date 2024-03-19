@@ -18,8 +18,10 @@ type AddressSubmit struct {
 	BlockTime   time.Time `gorm:"not null"`
 	TxHash      string    `gorm:"size:66;not null"`
 
-	Status uint64          `gorm:"not null;default:0"`
-	Fee    decimal.Decimal `gorm:"type:decimal(65);not null"`
+	TotalSegNum    uint64          `gorm:"not null;default:0"`
+	UploadedSegNum uint64          `gorm:"not null;default:0"`
+	Status         uint8           `gorm:"not null;default:0"`
+	Fee            decimal.Decimal `gorm:"type:decimal(65);not null"`
 }
 
 func (AddressSubmit) TableName() string {
@@ -34,6 +36,10 @@ func newAddressSubmitStore(db *gorm.DB) *AddressSubmitStore {
 	return &AddressSubmitStore{
 		Store: mysql.NewStore(db),
 	}
+}
+
+func (ass *AddressSubmitStore) Add(dbTx *gorm.DB, addressSubmits []AddressSubmit) error {
+	return dbTx.CreateInBatches(addressSubmits, batchSizeInsert).Error
 }
 
 func (ass *AddressSubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *AddressSubmit) error {

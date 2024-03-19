@@ -1,10 +1,10 @@
 package api
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"strconv"
 
+	"github.com/0glabs/0g-storage-client/core"
 	"github.com/0glabs/0g-storage-scan/store"
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
@@ -48,16 +48,18 @@ func listTx(c *gin.Context) (interface{}, error) {
 	storageTxs := make([]StorageTx, 0)
 	for _, submit := range submits {
 		storageTx := StorageTx{
-			TxSeq:     submit.SubmissionIndex,
-			BlockNum:  submit.BlockNumber,
-			TxHash:    submit.TxHash,
-			RootHash:  submit.RootHash,
-			Address:   addrMap[submit.SenderID].Address,
-			Method:    "submit",
-			Status:    submit.Status,
-			Timestamp: submit.BlockTime.Unix(),
-			DataSize:  submit.Length,
-			BaseFee:   submit.Fee,
+			TxSeq:          submit.SubmissionIndex,
+			BlockNum:       submit.BlockNumber,
+			TxHash:         submit.TxHash,
+			RootHash:       submit.RootHash,
+			Address:        addrMap[submit.SenderID].Address,
+			Method:         "submit",
+			Status:         submit.Status,
+			TotalSegNum:    submit.TotalSegNum,
+			UploadedSegNum: submit.UploadedSegNum,
+			Timestamp:      submit.BlockTime.Unix(),
+			DataSize:       submit.Length,
+			BaseFee:        submit.Fee,
 		}
 		storageTxs = append(storageTxs, storageTx)
 	}
@@ -146,21 +148,12 @@ func getTxDetail(c *gin.Context) (interface{}, error) {
 		return nil, errors.Errorf("Unmarshal submit extra error, txSeq %v", *param.TxSeq)
 	}
 
-	nodes := make([]SubmissionNode, 0)
-	for _, n := range extra.Submission.Nodes {
-		nodes = append(nodes, SubmissionNode{
-			Root:   "0x" + hex.EncodeToString(n.Root[:]),
-			Height: n.Height,
-		})
-	}
-
 	result := TxDetail{
 		TxSeq:       strconv.FormatUint(submit.SubmissionIndex, 10),
 		RootHash:    submit.RootHash,
 		StartPos:    extra.StartPos.Uint64(),
 		EndPos:      extra.StartPos.Uint64() + submit.Length,
-		PieceCounts: uint64(len(nodes)),
-		Pieces:      nodes,
+		PieceCounts: (submit.Length-1)/core.DefaultSegmentSize + 1,
 	}
 
 	return result, nil
@@ -187,6 +180,8 @@ func listSubmits(addressID *uint64, rootHash *string, idDesc bool, skip, limit i
 			BlockTime:       as.BlockTime,
 			TxHash:          as.TxHash,
 			Status:          as.Status,
+			TotalSegNum:     as.TotalSegNum,
+			UploadedSegNum:  as.UploadedSegNum,
 			Fee:             as.Fee,
 		})
 	}

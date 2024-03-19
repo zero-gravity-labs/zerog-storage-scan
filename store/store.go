@@ -35,6 +35,24 @@ func MustNewStore(db *gorm.DB) *MysqlStore {
 }
 
 func (ms *MysqlStore) Push(block *Block, submits []*Submit) error {
+	addressSubmits := make([]AddressSubmit, 0)
+	if len(submits) > 0 {
+		for _, submit := range submits {
+			addressSubmit := AddressSubmit{
+				SenderID:        submit.SenderID,
+				SubmissionIndex: submit.SubmissionIndex,
+				RootHash:        submit.RootHash,
+				Length:          submit.Length,
+				BlockNumber:     submit.BlockNumber,
+				BlockTime:       submit.BlockTime,
+				TxHash:          submit.TxHash,
+				Fee:             submit.Fee,
+				TotalSegNum:     submit.TotalSegNum,
+			}
+			addressSubmits = append(addressSubmits, addressSubmit)
+		}
+	}
+
 	return ms.Store.DB.Transaction(func(dbTx *gorm.DB) error {
 		// save blocks
 		if err := ms.BlockStore.Add(dbTx, block); err != nil {
@@ -45,6 +63,9 @@ func (ms *MysqlStore) Push(block *Block, submits []*Submit) error {
 		if len(submits) > 0 {
 			if err := ms.SubmitStore.Add(dbTx, submits); err != nil {
 				return errors.WithMessage(err, "failed to save flow submits")
+			}
+			if err := ms.AddressSubmitStore.Add(dbTx, addressSubmits); err != nil {
+				return errors.WithMessage(err, "failed to save address flow submits")
 			}
 		}
 

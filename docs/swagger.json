@@ -514,289 +514,368 @@
             }
         },
         "api.CostInfo": {
+            "description": "Charge fee information",
             "type": "object",
             "properties": {
                 "basicCost": {
+                    "description": "Charge fee",
                     "type": "number"
                 },
                 "tokenInfo": {
-                    "$ref": "#/definitions/api.TokenInfo"
+                    "description": "Charge token info",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.TokenInfo"
+                        }
+                    ]
                 }
             }
         },
         "api.Dashboard": {
+            "description": "Storage status information",
             "type": "object",
             "properties": {
                 "logSyncInfo": {
-                    "$ref": "#/definitions/stat.LogSyncInfo"
+                    "description": "Synchronization information of submit event",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/stat.LogSyncInfo"
+                        }
+                    ]
                 },
                 "storageBasicCost": {
-                    "$ref": "#/definitions/api.StorageBasicCost"
+                    "description": "Storage fee information",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.StorageBasicCost"
+                        }
+                    ]
                 }
             }
         },
         "api.DataStat": {
+            "description": "Storage data information",
             "type": "object",
             "properties": {
                 "dataSize": {
+                    "description": "Size of storage data in a specific time interval",
                     "type": "integer"
                 },
                 "dataTotal": {
+                    "description": "Total Size of storage data by a certain time",
                     "type": "integer"
                 },
                 "fileCount": {
+                    "description": "Number of files in a specific time interval",
                     "type": "integer"
                 },
                 "fileTotal": {
+                    "description": "Total number of files by a certain time",
                     "type": "integer"
                 },
                 "statTime": {
+                    "description": "Statistics time",
                     "type": "string"
                 }
             }
         },
         "api.DataStatList": {
+            "description": "Storage data list",
             "type": "object",
             "properties": {
                 "list": {
+                    "description": "Stat list",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api.DataStat"
                     }
                 },
                 "total": {
+                    "description": "The total number of stat returned",
                     "type": "integer"
                 }
             }
         },
         "api.FeeStat": {
+            "description": "Storage fee information",
             "type": "object",
             "properties": {
                 "baseFee": {
+                    "description": "The base fee for storage in a specific time interval",
                     "type": "number"
                 },
                 "baseFeeTotal": {
+                    "description": "The total base fee for storage by a certain time",
                     "type": "number"
                 },
                 "statTime": {
+                    "description": "Statistics time",
                     "type": "string"
                 }
             }
         },
         "api.FeeStatList": {
+            "description": "Storage fee list",
             "type": "object",
             "properties": {
                 "list": {
+                    "description": "Stat list",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api.FeeStat"
                     }
                 },
                 "total": {
+                    "description": "The total number of stat returned",
                     "type": "integer"
                 }
             }
         },
         "api.StorageBasicCost": {
+            "description": "Storage fee information",
             "type": "object",
             "properties": {
                 "address": {
+                    "description": "The address of the token contract",
                     "type": "string"
                 },
                 "basicCostTotal": {
+                    "description": "Total storage fee",
                     "type": "number"
                 },
                 "decimals": {
+                    "description": "Token decimals",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "Token name",
                     "type": "string"
                 },
                 "symbol": {
+                    "description": "Token symbol",
                     "type": "string"
                 }
             }
         },
         "api.StorageTx": {
+            "description": "Submission information",
             "type": "object",
             "properties": {
                 "address": {
+                    "description": "File uploader address",
                     "type": "string"
                 },
                 "baseFee": {
+                    "description": "The token fee required to upload the file",
                     "type": "number"
                 },
                 "blockNum": {
+                    "description": "The block where the submit event is emitted",
                     "type": "integer"
                 },
                 "dataSize": {
+                    "description": "File size in bytes",
                     "type": "integer"
                 },
                 "method": {
+                    "description": "The name of the submit event is always `submit`",
                     "type": "string"
                 },
                 "rootHash": {
+                    "description": "Merkle root of the file to upload",
                     "type": "string"
                 },
                 "status": {
+                    "description": "File upload status, 0-not uploaded,1-uploading,2-uploaded",
                     "type": "integer"
                 },
                 "timestamp": {
+                    "description": "The block time when submit event emits",
+                    "type": "integer"
+                },
+                "totalSegNum": {
+                    "description": "The total number of segments the file is split into",
                     "type": "integer"
                 },
                 "txHash": {
+                    "description": "The transaction where the submit event is emitted",
                     "type": "string"
                 },
                 "txSeq": {
+                    "description": "Submission index in submit event",
                     "type": "integer"
-                }
-            }
-        },
-        "api.SubmissionNode": {
-            "type": "object",
-            "properties": {
-                "height": {
-                    "$ref": "#/definitions/big.Int"
                 },
-                "root": {
-                    "type": "string"
+                "uploadedSegNum": {
+                    "description": "The number of segments the file has been uploaded",
+                    "type": "integer"
                 }
             }
         },
         "api.TokenInfo": {
+            "description": "Charge token information",
             "type": "object",
             "properties": {
                 "address": {
+                    "description": "The address of the token contract",
                     "type": "string"
                 },
                 "decimals": {
+                    "description": "Token decimals",
                     "type": "integer"
                 },
                 "name": {
+                    "description": "Token name",
                     "type": "string"
                 },
                 "symbol": {
+                    "description": "Token symbol",
                     "type": "string"
                 }
             }
         },
         "api.TxBrief": {
+            "description": "Submission brief information",
             "type": "object",
             "properties": {
                 "blockNumber": {
+                    "description": "The block where the submit event is emitted",
                     "type": "integer"
                 },
                 "costInfo": {
-                    "$ref": "#/definitions/api.CostInfo"
+                    "description": "Charge fee information",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.CostInfo"
+                        }
+                    ]
                 },
                 "dataSize": {
+                    "description": "File size in bytes",
                     "type": "integer"
                 },
                 "expiration": {
+                    "description": "Expiration date of the uploaded file",
                     "type": "integer"
                 },
                 "from": {
+                    "description": "File uploader address",
                     "type": "string"
                 },
                 "gasFee": {
+                    "description": "The gas fee of the transaction on layer1",
                     "type": "integer"
                 },
                 "gasLimit": {
+                    "description": "The gas limit of the transaction on layer1",
                     "type": "integer"
                 },
                 "gasUsed": {
+                    "description": "The gas used of the transaction on layer1",
                     "type": "integer"
                 },
                 "method": {
+                    "description": "The name of the submit event is always `submit`",
                     "type": "string"
                 },
                 "rootHash": {
+                    "description": "Merkle root of the file to upload",
                     "type": "string"
                 },
                 "status": {
+                    "description": "The status of the transaction on layer1",
                     "type": "integer"
                 },
                 "timestamp": {
+                    "description": "The block time when submit event emits",
                     "type": "integer"
                 },
                 "txHash": {
+                    "description": "The transaction where the submit event is emitted",
                     "type": "string"
                 },
                 "txSeq": {
+                    "description": "Submission index in submit event",
                     "type": "string"
                 }
             }
         },
         "api.TxDetail": {
+            "description": "Submission detail information",
             "type": "object",
             "properties": {
                 "endPos": {
+                    "description": "The ending position of the file stored in the storage node",
                     "type": "integer"
                 },
                 "pieceCounts": {
+                    "description": "The total number of segments the file is split into",
                     "type": "integer"
                 },
-                "pieces": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.SubmissionNode"
-                    }
-                },
                 "rootHash": {
+                    "description": "Merkle root of the file to upload",
                     "type": "string"
                 },
                 "startPos": {
+                    "description": "The starting position of the file stored in the storage node",
                     "type": "integer"
                 },
                 "txSeq": {
+                    "description": "Submission index in submit event",
                     "type": "string"
                 }
             }
         },
         "api.TxList": {
+            "description": "Submission information list",
             "type": "object",
             "properties": {
                 "list": {
+                    "description": "Submission list",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api.StorageTx"
                     }
                 },
                 "total": {
+                    "description": "The total number of submission returned",
                     "type": "integer"
                 }
             }
         },
         "api.TxStat": {
+            "description": "Storage transaction information",
             "type": "object",
             "properties": {
                 "statTime": {
+                    "description": "Statistics time",
                     "type": "string"
                 },
                 "txCount": {
+                    "description": "Number of layer1 transaction in a specific time interval",
                     "type": "integer"
                 },
                 "txTotal": {
+                    "description": "Total number of layer1 transaction by a certain time",
                     "type": "integer"
                 }
             }
         },
         "api.TxStatList": {
+            "description": "Storage transaction list",
             "type": "object",
             "properties": {
                 "list": {
+                    "description": "Stat list",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api.TxStat"
                     }
                 },
                 "total": {
+                    "description": "The total number of stat returned",
                     "type": "integer"
                 }
             }
-        },
-        "big.Int": {
-            "type": "object"
         },
         "stat.LogSyncInfo": {
             "type": "object",
