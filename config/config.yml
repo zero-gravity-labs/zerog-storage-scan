@@ -45,11 +45,17 @@ flow:
   submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
 
 # Charge info configurations
+# When charging in ERC20 token, configure `erc20TokenAddress` and `erc20TransferEventSignature`
+# When charging in native token, configure `symbol` and `decimals`
 charge:
   # Charge in ERC20 token address
   erc20TokenAddress: 0x7d682e65efc5c13bf4e394b8f376c48e6bae0355
   # ERC20 transfer event signature
   erc20TransferEventSignature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+  # Token symbol
+  symbol: A0GI
+  # Token decimals
+  decimals: 18
 
 # MySQL database configurations
 store:

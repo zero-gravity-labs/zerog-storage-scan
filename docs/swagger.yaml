@@ -64,15 +64,15 @@ definitions:
   api.FeeStat:
     description: Storage fee information
     properties:
-      baseFee:
-        description: The base fee for storage in a specific time interval
-        type: number
-      baseFeeTotal:
-        description: The total base fee for storage by a certain time
-        type: number
       statTime:
         description: Statistics time
         type: string
+      storageFee:
+        description: The base fee for storage in a specific time interval
+        type: number
+      storageFeeTotal:
+        description: The total base fee for storage by a certain time
+        type: number
     type: object
   api.FeeStatList:
     description: Storage fee list
@@ -101,9 +101,23 @@ definitions:
       name:
         description: Token name
         type: string
+      native:
+        description: True is native token, otherwise is not
+        type: boolean
       symbol:
         description: Token symbol
         type: string
+    type: object
+  api.StorageFeeStat:
+    description: Stat storage fee information
+    properties:
+      chargeToken:
+        allOf:
+        - $ref: '#/definitions/api.TokenInfo'
+        description: Charge token info
+      storageFeeTotal:
+        description: Total storage fee
+        type: number
     type: object
   api.StorageTx:
     description: Submission information
@@ -112,7 +126,7 @@ definitions:
         description: File uploader address
         type: string
       baseFee:
-        description: The token fee required to upload the file
+        description: The storage fee required to upload the file
         type: number
       blockNum:
         description: The block where the submit event is emitted
@@ -132,8 +146,97 @@ definitions:
       timestamp:
         description: The block time when submit event emits
         type: integer
-      totalSegNum:
+      txHash:
+        description: The transaction where the submit event is emitted
+        type: string
+      txSeq:
+        description: Submission index in submit event
+        type: integer
+    type: object
+  api.StorageTxDetail:
+    description: Submission transaction information
+    properties:
+      blockNumber:
+        description: The block where the submit event is emitted
+        type: integer
+      dataSize:
+        description: File size in bytes
+        type: integer
+      endPosition:
+        description: The ending position of the file stored in the storage node
+        type: integer
+      expiration:
+        description: Expiration date of the uploaded file
+        type: integer
+      from:
+        description: File uploader address
+        type: string
+      gasFee:
+        description: The gas fee of the transaction on layer1
+        type: integer
+      gasLimit:
+        description: The gas limit of the transaction on layer1
+        type: integer
+      gasUsed:
+        description: The gas used of the transaction on layer1
+        type: integer
+      method:
+        description: The name of the submit event is always `submit`
+        type: string
+      rootHash:
+        description: Merkle root of the file to upload
+        type: string
+      segments:
         description: The total number of segments the file is split into
+        type: integer
+      startPosition:
+        description: The starting position of the file stored in the storage node
+        type: integer
+      status:
+        description: File upload status, 0-not uploaded,1-uploading,2-uploaded
+        type: integer
+      storageFee:
+        description: The storage fee required to upload the file
+        type: number
+      timestamp:
+        description: The block time when submit event emits
+        type: integer
+      txHash:
+        description: The transaction where the submit event is emitted
+        type: string
+      txSeq:
+        description: Submission index in submit event
+        type: string
+    type: object
+  api.StorageTxInfo:
+    description: Submission transaction information
+    properties:
+      blockNumber:
+        description: The block where the submit event is emitted
+        type: integer
+      dataSize:
+        description: File size in bytes
+        type: integer
+      from:
+        description: File uploader address
+        type: string
+      method:
+        description: The name of the submit event is always `submit`
+        type: string
+      rootHash:
+        description: Merkle root of the file to upload
+        type: string
+      segments:
+        description: The total number of segments the file is split into
+        type: integer
+      status:
+        description: File upload status, 0-not uploaded,1-uploading,2-uploaded
+        type: integer
+      storageFee:
+        description: The storage fee required to upload the file
+        type: number
+      timestamp:
+        description: The block time when submit event emits
         type: integer
       txHash:
         description: The transaction where the submit event is emitted
@@ -141,9 +244,33 @@ definitions:
       txSeq:
         description: Submission index in submit event
         type: integer
-      uploadedSegNum:
+      uploadedSegments:
         description: The number of segments the file has been uploaded
         type: integer
+    type: object
+  api.StorageTxList:
+    description: Submission information list
+    properties:
+      list:
+        description: Submission list
+        items:
+          $ref: '#/definitions/api.StorageTxInfo'
+        type: array
+      total:
+        description: The total number of submission returned
+        type: integer
+    type: object
+  api.Summary:
+    description: Storage summary information
+    properties:
+      logSync:
+        allOf:
+        - $ref: '#/definitions/stat.LogSyncInfo'
+        description: Synchronization information of submit event
+      storageFee:
+        allOf:
+        - $ref: '#/definitions/api.StorageFeeStat'
+        description: Storage fee information
     type: object
   api.TokenInfo:
     description: Charge token information
@@ -157,6 +284,9 @@ definitions:
       name:
         description: Token name
         type: string
+      native:
+        description: True is native token, otherwise is not
+        type: boolean
       symbol:
         description: Token symbol
         type: string
@@ -265,10 +395,13 @@ definitions:
         type: integer
     type: object
   stat.LogSyncInfo:
+    description: Submit log sync information
     properties:
-      l2LogSyncHeight:
+      layer1-logSyncHeight:
+        description: Synchronization height of submit log on blockchain
         type: integer
       logSyncHeight:
+        description: Synchronization height of submit log on storage node
         type: integer
     type: object
 info:
@@ -277,6 +410,54 @@ info:
   title: 0G Storage Scan API
   version: "1.0"
 paths:
+  /accounts/{address}/txs:
+    get:
+      consumes:
+      - application/json
+      description: Query storage transactions for specified account, support root
+        hash filter
+      parameters:
+      - description: The submitter address of the uploaded file
+        in: path
+        name: address
+        type: string
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: The merkle root hash of the uploaded file
+        in: query
+        name: rootHash
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.StorageTxList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Account's storage transaction list
+      tags:
+      - account
   /statistic/dashboard:
     get:
       description: Query statistics dashboard includes `storage fee` and `log sync
@@ -299,7 +480,7 @@ paths:
             $ref: '#/definitions/api.BusinessError'
       summary: Statistics dashboard
       tags:
-      - statistic
+      - (deprecated)statistic
   /statistic/fee/list:
     get:
       consumes:
@@ -363,7 +544,7 @@ paths:
             $ref: '#/definitions/api.BusinessError'
       summary: fee statistics
       tags:
-      - statistic
+      - (deprecated)statistic
   /statistic/storage/list:
     get:
       consumes:
@@ -427,7 +608,7 @@ paths:
             $ref: '#/definitions/api.BusinessError'
       summary: Data storage statistics
       tags:
-      - statistic
+      - (deprecated)statistic
   /statistic/transaction/list:
     get:
       consumes:
@@ -491,6 +672,220 @@ paths:
             $ref: '#/definitions/api.BusinessError'
       summary: Transaction statistics
       tags:
+      - (deprecated)statistic
+  /stats/fee:
+    get:
+      consumes:
+      - application/json
+      description: Query fee statistics, including incremental and full data, and
+        support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.FeeStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Storage fee statistics
+      tags:
+      - statistic
+  /stats/layer1-tx:
+    get:
+      consumes:
+      - application/json
+      description: Query transaction statistics, including incremental and full data,
+        and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.TxStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Layer1 transaction statistics
+      tags:
+      - statistic
+  /stats/storage:
+    get:
+      consumes:
+      - application/json
+      description: Query data storage statistics, including incremental and full data,
+        and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.DataStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Data storage statistics
+      tags:
+      - statistic
+  /stats/summary:
+    get:
+      description: Query statistics summary includes `storage fee` and `log sync height`
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.Summary'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Statistics summary
+      tags:
       - statistic
   /transaction/brief:
     get:
@@ -521,7 +916,7 @@ paths:
             $ref: '#/definitions/api.BusinessError'
       summary: Layer2 transaction overview
       tags:
-      - transaction
+      - (deprecated)transaction
   /transaction/detail:
     get:
       consumes:
@@ -551,7 +946,7 @@ paths:
             $ref: '#/definitions/api.BusinessError'
       summary: Layer2 transaction advanced info
       tags:
-      - transaction
+      - (deprecated)transaction
   /transaction/list:
     get:
       consumes:
@@ -597,6 +992,75 @@ paths:
           schema:
             $ref: '#/definitions/api.BusinessError'
       summary: Layer2 transaction list
+      tags:
+      - (deprecated)transaction
+  /txs:
+    get:
+      consumes:
+      - application/json
+      description: Query storage transactions, support address and root hash filter
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.StorageTxList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Storage transaction list
+      tags:
+      - transaction
+  /txs/{txSeq}:
+    get:
+      consumes:
+      - application/json
+      description: Query storage transaction by txSeq
+      parameters:
+      - description: storage transaction sequence number
+        in: path
+        name: txSeq
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.StorageTxDetail'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Storage transaction information
       tags:
       - transaction
 swagger: "2.0"

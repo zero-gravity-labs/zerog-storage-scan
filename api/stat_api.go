@@ -105,14 +105,48 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		list := make([]FeeStat, 0)
 		for _, r := range records {
 			list = append(list, FeeStat{
-				StatTime:     r.StatTime,
-				BaseFee:      r.BaseFee,
-				BaseFeeTotal: r.BaseFeeTotal,
+				StatTime:        r.StatTime,
+				StorageFee:      r.BaseFee,
+				StorageFeeTotal: r.BaseFeeTotal,
 			})
 		}
 		result["list"] = list
 	default:
 		return nil, ErrStatTypeNotSupported
+	}
+
+	return result, nil
+}
+
+func summary(_ *gin.Context) (interface{}, error) {
+	value, exist, err := db.ConfigStore.Get(store.KeyLogSyncInfo)
+	if err != nil {
+		return nil, commonApi.ErrInternal(err)
+	}
+	if !exist {
+		return nil, ErrConfigNotFound
+	}
+
+	var logSyncInfo stat.LogSyncInfo
+	if err := json.Unmarshal([]byte(value), &logSyncInfo); err != nil {
+		return nil, commonApi.ErrInternal(err)
+	}
+
+	submitStat, err := db.SubmitStatStore.LastByType(store.Day)
+	if err != nil {
+		return nil, commonApi.ErrInternal(err)
+	}
+	if submitStat == nil {
+		return nil, ErrStorageBaseFeeNotStat
+	}
+
+	storageFee := StorageFeeStat{
+		TokenInfo:       *chargeToken,
+		StorageFeeTotal: submitStat.BaseFeeTotal,
+	}
+	result := Summary{
+		StorageFeeStat: storageFee,
+		LogSyncInfo:    logSyncInfo,
 	}
 
 	return result, nil

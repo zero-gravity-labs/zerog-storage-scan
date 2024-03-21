@@ -66,8 +66,8 @@ func (s *LogSyncInfoStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 		}
 
 		status := LogSyncInfo{
-			LogSyncHeight:   block.BlockNumber,
-			L2LogSyncHeight: nodeStatus.LogSyncHeight,
+			Layer1LogSyncHeight: block.BlockNumber,
+			LogSyncHeight:       nodeStatus.LogSyncHeight,
 		}
 		statusBytes, err := json.Marshal(status)
 		if err != nil {

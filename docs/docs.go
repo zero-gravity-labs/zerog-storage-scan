@@ -15,6 +15,78 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/accounts/{address}/txs": {
+            "get": {
+                "description": "Query storage transactions for specified account, support root hash filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "account"
+                ],
+                "summary": "Account's storage transaction list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submitter address of the uploaded file",
+                        "name": "address",
+                        "in": "path"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The merkle root hash of the uploaded file",
+                        "name": "rootHash",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.StorageTxList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/statistic/dashboard": {
             "get": {
                 "description": "Query statistics dashboard includes ` + "`" + `storage fee` + "`" + ` and ` + "`" + `log sync height` + "`" + `",
@@ -22,7 +94,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "statistic"
+                    "(deprecated)statistic"
                 ],
                 "summary": "Statistics dashboard",
                 "responses": {
@@ -63,7 +135,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "statistic"
+                    "(deprecated)statistic"
                 ],
                 "summary": "fee statistics",
                 "parameters": [
@@ -157,7 +229,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "statistic"
+                    "(deprecated)statistic"
                 ],
                 "summary": "Data storage statistics",
                 "parameters": [
@@ -251,7 +323,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "statistic"
+                    "(deprecated)statistic"
                 ],
                 "summary": "Transaction statistics",
                 "parameters": [
@@ -335,6 +407,326 @@ const docTemplate = `{
                 }
             }
         },
+        "/stats/fee": {
+            "get": {
+                "description": "Query fee statistics, including incremental and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Storage fee statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.FeeStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/layer1-tx": {
+            "get": {
+                "description": "Query transaction statistics, including incremental and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Layer1 transaction statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.TxStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/storage": {
+            "get": {
+                "description": "Query data storage statistics, including incremental and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Data storage statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.DataStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/summary": {
+            "get": {
+                "description": "Query statistics summary includes ` + "`" + `storage fee` + "`" + ` and ` + "`" + `log sync height` + "`" + `",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Statistics summary",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.Summary"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/transaction/brief": {
             "get": {
                 "description": "Query layer2 transaction overview by txSeq",
@@ -345,7 +737,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "transaction"
+                    "(deprecated)transaction"
                 ],
                 "summary": "Layer2 transaction overview",
                 "parameters": [
@@ -395,7 +787,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "transaction"
+                    "(deprecated)transaction"
                 ],
                 "summary": "Layer2 transaction advanced info",
                 "parameters": [
@@ -445,7 +837,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "transaction"
+                    "(deprecated)transaction"
                 ],
                 "summary": "Layer2 transaction list",
                 "parameters": [
@@ -492,6 +884,116 @@ const docTemplate = `{
                                     "properties": {
                                         "Data": {
                                             "$ref": "#/definitions/api.TxList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/txs": {
+            "get": {
+                "description": "Query storage transactions, support address and root hash filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Storage transaction list",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.StorageTxList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/txs/{txSeq}": {
+            "get": {
+                "description": "Query storage transaction by txSeq",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transaction"
+                ],
+                "summary": "Storage transaction information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "storage transaction sequence number",
+                        "name": "txSeq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.StorageTxDetail"
                                         }
                                     }
                                 }
@@ -608,17 +1110,17 @@ const docTemplate = `{
             "description": "Storage fee information",
             "type": "object",
             "properties": {
-                "baseFee": {
-                    "description": "The base fee for storage in a specific time interval",
-                    "type": "number"
-                },
-                "baseFeeTotal": {
-                    "description": "The total base fee for storage by a certain time",
-                    "type": "number"
-                },
                 "statTime": {
                     "description": "Statistics time",
                     "type": "string"
+                },
+                "storageFee": {
+                    "description": "The base fee for storage in a specific time interval",
+                    "type": "number"
+                },
+                "storageFeeTotal": {
+                    "description": "The total base fee for storage by a certain time",
+                    "type": "number"
                 }
             }
         },
@@ -659,9 +1161,31 @@ const docTemplate = `{
                     "description": "Token name",
                     "type": "string"
                 },
+                "native": {
+                    "description": "True is native token, otherwise is not",
+                    "type": "boolean"
+                },
                 "symbol": {
                     "description": "Token symbol",
                     "type": "string"
+                }
+            }
+        },
+        "api.StorageFeeStat": {
+            "description": "Stat storage fee information",
+            "type": "object",
+            "properties": {
+                "chargeToken": {
+                    "description": "Charge token info",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.TokenInfo"
+                        }
+                    ]
+                },
+                "storageFeeTotal": {
+                    "description": "Total storage fee",
+                    "type": "number"
                 }
             }
         },
@@ -674,7 +1198,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "baseFee": {
-                    "description": "The token fee required to upload the file",
+                    "description": "The storage fee required to upload the file",
                     "type": "number"
                 },
                 "blockNum": {
@@ -701,8 +1225,128 @@ const docTemplate = `{
                     "description": "The block time when submit event emits",
                     "type": "integer"
                 },
-                "totalSegNum": {
+                "txHash": {
+                    "description": "The transaction where the submit event is emitted",
+                    "type": "string"
+                },
+                "txSeq": {
+                    "description": "Submission index in submit event",
+                    "type": "integer"
+                }
+            }
+        },
+        "api.StorageTxDetail": {
+            "description": "Submission transaction information",
+            "type": "object",
+            "properties": {
+                "blockNumber": {
+                    "description": "The block where the submit event is emitted",
+                    "type": "integer"
+                },
+                "dataSize": {
+                    "description": "File size in bytes",
+                    "type": "integer"
+                },
+                "endPosition": {
+                    "description": "The ending position of the file stored in the storage node",
+                    "type": "integer"
+                },
+                "expiration": {
+                    "description": "Expiration date of the uploaded file",
+                    "type": "integer"
+                },
+                "from": {
+                    "description": "File uploader address",
+                    "type": "string"
+                },
+                "gasFee": {
+                    "description": "The gas fee of the transaction on layer1",
+                    "type": "integer"
+                },
+                "gasLimit": {
+                    "description": "The gas limit of the transaction on layer1",
+                    "type": "integer"
+                },
+                "gasUsed": {
+                    "description": "The gas used of the transaction on layer1",
+                    "type": "integer"
+                },
+                "method": {
+                    "description": "The name of the submit event is always ` + "`" + `submit` + "`" + `",
+                    "type": "string"
+                },
+                "rootHash": {
+                    "description": "Merkle root of the file to upload",
+                    "type": "string"
+                },
+                "segments": {
                     "description": "The total number of segments the file is split into",
+                    "type": "integer"
+                },
+                "startPosition": {
+                    "description": "The starting position of the file stored in the storage node",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "File upload status, 0-not uploaded,1-uploading,2-uploaded",
+                    "type": "integer"
+                },
+                "storageFee": {
+                    "description": "The storage fee required to upload the file",
+                    "type": "number"
+                },
+                "timestamp": {
+                    "description": "The block time when submit event emits",
+                    "type": "integer"
+                },
+                "txHash": {
+                    "description": "The transaction where the submit event is emitted",
+                    "type": "string"
+                },
+                "txSeq": {
+                    "description": "Submission index in submit event",
+                    "type": "string"
+                }
+            }
+        },
+        "api.StorageTxInfo": {
+            "description": "Submission transaction information",
+            "type": "object",
+            "properties": {
+                "blockNumber": {
+                    "description": "The block where the submit event is emitted",
+                    "type": "integer"
+                },
+                "dataSize": {
+                    "description": "File size in bytes",
+                    "type": "integer"
+                },
+                "from": {
+                    "description": "File uploader address",
+                    "type": "string"
+                },
+                "method": {
+                    "description": "The name of the submit event is always ` + "`" + `submit` + "`" + `",
+                    "type": "string"
+                },
+                "rootHash": {
+                    "description": "Merkle root of the file to upload",
+                    "type": "string"
+                },
+                "segments": {
+                    "description": "The total number of segments the file is split into",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "File upload status, 0-not uploaded,1-uploading,2-uploaded",
+                    "type": "integer"
+                },
+                "storageFee": {
+                    "description": "The storage fee required to upload the file",
+                    "type": "number"
+                },
+                "timestamp": {
+                    "description": "The block time when submit event emits",
                     "type": "integer"
                 },
                 "txHash": {
@@ -713,9 +1357,48 @@ const docTemplate = `{
                     "description": "Submission index in submit event",
                     "type": "integer"
                 },
-                "uploadedSegNum": {
+                "uploadedSegments": {
                     "description": "The number of segments the file has been uploaded",
                     "type": "integer"
+                }
+            }
+        },
+        "api.StorageTxList": {
+            "description": "Submission information list",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Submission list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.StorageTxInfo"
+                    }
+                },
+                "total": {
+                    "description": "The total number of submission returned",
+                    "type": "integer"
+                }
+            }
+        },
+        "api.Summary": {
+            "description": "Storage summary information",
+            "type": "object",
+            "properties": {
+                "logSync": {
+                    "description": "Synchronization information of submit event",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/stat.LogSyncInfo"
+                        }
+                    ]
+                },
+                "storageFee": {
+                    "description": "Storage fee information",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.StorageFeeStat"
+                        }
+                    ]
                 }
             }
         },
@@ -734,6 +1417,10 @@ const docTemplate = `{
                 "name": {
                     "description": "Token name",
                     "type": "string"
+                },
+                "native": {
+                    "description": "True is native token, otherwise is not",
+                    "type": "boolean"
                 },
                 "symbol": {
                     "description": "Token symbol",
@@ -886,12 +1573,15 @@ const docTemplate = `{
             }
         },
         "stat.LogSyncInfo": {
+            "description": "Submit log sync information",
             "type": "object",
             "properties": {
-                "l2LogSyncHeight": {
+                "layer1-logSyncHeight": {
+                    "description": "Synchronization height of submit log on blockchain",
                     "type": "integer"
                 },
                 "logSyncHeight": {
+                    "description": "Synchronization height of submit log on storage node",
                     "type": "integer"
                 }
             }
