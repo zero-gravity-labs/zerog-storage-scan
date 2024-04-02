@@ -71,7 +71,7 @@ func NewSubmit(blockTime time.Time, log types.Log, filter *contract.FlowFilterer
 		BlockNumber:     log.BlockNumber,
 		BlockTime:       blockTime,
 		TxHash:          log.TxHash.String(),
-		Fee:             decimal.NewFromBigInt(big.NewInt(0), 0),
+		Fee:             decimal.NewFromBigInt(flowSubmit.Submission.Fee(), 0),
 		TotalSegNum:     (length-1)/core.DefaultSegmentSize + 1,
 		Extra:           extra,
 	}

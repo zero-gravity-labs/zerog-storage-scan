@@ -3,6 +3,7 @@ module github.com/0glabs/0g-storage-scan
 go 1.21.0
 
 require (
+	github.com/0glabs/0g-storage-client v0.1.15
 	github.com/Conflux-Chain/go-conflux-util v0.1.0
 	github.com/deckarep/golang-set v1.8.0
 	github.com/ethereum/go-ethereum v1.12.2
@@ -20,7 +21,6 @@ require (
 )
 
 require (
-	github.com/0glabs/0g-storage-client v0.1.14-0.20240310090450-1d09ec4f0b9c // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0 // indirect
