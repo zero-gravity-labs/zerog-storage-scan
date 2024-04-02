@@ -29,7 +29,7 @@ type Submit struct {
 	SenderID        uint64 `gorm:"not null"`
 	Length          uint64 `gorm:"not null"`
 
-	BlockNumber uint64    `gorm:"not null"`
+	BlockNumber uint64    `gorm:"not null;index:idx_bn"`
 	BlockTime   time.Time `gorm:"not null"`
 	TxHash      string    `gorm:"size:66;not null"`
 
@@ -153,7 +153,7 @@ func (ss *SubmitStore) List(rootHash *string, idDesc bool, skip, limit int) (int
 
 func (ss *SubmitStore) BatchGetNotFinalized(batch int) ([]Submit, error) {
 	submits := new([]Submit)
-	if err := ss.DB.Raw("select submission_index, sender_id from submits where status < ? limit ?",
+	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where status < ? limit ?",
 		Uploaded, batch).Scan(submits).Error; err != nil {
 		return nil, err
 	}

@@ -9,12 +9,12 @@ import (
 )
 
 type AddressSubmit struct {
-	SenderID        uint64 `gorm:"primary_key;autoIncrement:false"`
-	SubmissionIndex uint64 `gorm:"primary_key;autoIncrement:false"`
+	SenderID        uint64 `gorm:"primaryKey;autoIncrement:false"`
+	SubmissionIndex uint64 `gorm:"primaryKey;autoIncrement:false"`
 	RootHash        string `gorm:"size:66;index:idx_root"`
 	Length          uint64 `gorm:"not null"`
 
-	BlockNumber uint64    `gorm:"not null"`
+	BlockNumber uint64    `gorm:"not null;index:idx_bn"`
 	BlockTime   time.Time `gorm:"not null"`
 	TxHash      string    `gorm:"size:66;not null"`
 
@@ -40,6 +40,10 @@ func newAddressSubmitStore(db *gorm.DB) *AddressSubmitStore {
 
 func (ass *AddressSubmitStore) Add(dbTx *gorm.DB, addressSubmits []AddressSubmit) error {
 	return dbTx.CreateInBatches(addressSubmits, batchSizeInsert).Error
+}
+
+func (ass *AddressSubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
+	return dbTx.Where("block_number >= ?", block).Delete(&AddressSubmit{}).Error
 }
 
 func (ass *AddressSubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *AddressSubmit) error {

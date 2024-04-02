@@ -57,6 +57,13 @@ charge:
   # Token decimals
   decimals: 18
 
+# Reward contract info configurations
+reward:
+  # Reward contract address
+  address: 0x7a6bb8a34cc7a418350d3cf2409c580ba9ef2dbf
+  # Distribute reward event signature
+  rewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
+
 # MySQL database configurations
 store:
   mysql:

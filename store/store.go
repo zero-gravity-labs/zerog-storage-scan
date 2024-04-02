@@ -20,6 +20,8 @@ type MysqlStore struct {
 	*SubmitStore
 	*SubmitStatStore
 	*AddressSubmitStore
+	*RewardStore
+	*AddressRewardStore
 }
 
 func MustNewStore(db *gorm.DB) *MysqlStore {
@@ -31,10 +33,12 @@ func MustNewStore(db *gorm.DB) *MysqlStore {
 		SubmitStore:        newSubmitStore(db),
 		SubmitStatStore:    newSubmitStatStore(db),
 		AddressSubmitStore: newAddressSubmitStore(db),
+		RewardStore:        newRewardStore(db),
+		AddressRewardStore: newAddressRewardStore(db),
 	}
 }
 
-func (ms *MysqlStore) Push(block *Block, submits []*Submit) error {
+func (ms *MysqlStore) Push(block *Block, submits []*Submit, rewards []*Reward) error {
 	addressSubmits := make([]AddressSubmit, 0)
 	if len(submits) > 0 {
 		for _, submit := range submits {
@@ -50,6 +54,21 @@ func (ms *MysqlStore) Push(block *Block, submits []*Submit) error {
 				TotalSegNum:     submit.TotalSegNum,
 			}
 			addressSubmits = append(addressSubmits, addressSubmit)
+		}
+	}
+
+	addressRewards := make([]AddressReward, 0)
+	if len(rewards) > 0 {
+		for _, reward := range rewards {
+			addressReward := AddressReward{
+				MinerID:      reward.MinerID,
+				PricingIndex: reward.PricingIndex,
+				Amount:       reward.Amount,
+				BlockNumber:  reward.BlockNumber,
+				BlockTime:    reward.BlockTime,
+				TxHash:       reward.TxHash,
+			}
+			addressRewards = append(addressRewards, addressReward)
 		}
 	}
 
@@ -69,6 +88,16 @@ func (ms *MysqlStore) Push(block *Block, submits []*Submit) error {
 			}
 		}
 
+		// save distribute rewards
+		if len(rewards) > 0 {
+			if err := ms.RewardStore.Add(dbTx, rewards); err != nil {
+				return errors.WithMessage(err, "failed to save rewards")
+			}
+			if err := ms.AddressRewardStore.Add(dbTx, addressRewards); err != nil {
+				return errors.WithMessage(err, "failed to save address rewards")
+			}
+		}
+
 		return nil
 	})
 }
@@ -84,10 +113,19 @@ func (ms *MysqlStore) Pop(block uint64) error {
 
 	return ms.Store.DB.Transaction(func(dbTx *gorm.DB) error {
 		if err := ms.BlockStore.Pop(dbTx, block); err != nil {
-			return errors.WithMessage(err, "failed to remove block")
+			return errors.WithMessage(err, "failed to remove blocks")
 		}
 		if err := ms.SubmitStore.Pop(dbTx, block); err != nil {
-			return errors.WithMessage(err, "failed to remove flow submits")
+			return errors.WithMessage(err, "failed to remove submits")
+		}
+		if err := ms.AddressSubmitStore.Pop(dbTx, block); err != nil {
+			return errors.WithMessage(err, "failed to remove address submits")
+		}
+		if err := ms.RewardStore.Pop(dbTx, block); err != nil {
+			return errors.WithMessage(err, "failed to remove rewards")
+		}
+		if err := ms.AddressRewardStore.Pop(dbTx, block); err != nil {
+			return errors.WithMessage(err, "failed to remove address rewards")
 		}
 		return nil
 	})

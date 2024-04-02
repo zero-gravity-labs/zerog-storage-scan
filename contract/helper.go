@@ -7,15 +7,21 @@ import (
 )
 
 var (
-	flowFilterer *contract.FlowFilterer
+	flowFilterer   *contract.FlowFilterer
+	rewardFilterer *OnePoolRewardFilterer
 )
 
 func init() {
 	flowFilterer, _ = contract.NewFlowFilterer(common.HexToAddress(""), nil)
+	rewardFilterer, _ = NewOnePoolRewardFilterer(common.HexToAddress(""), nil)
 }
 
 func DummyFlowFilterer() *contract.FlowFilterer {
 	return flowFilterer
+}
+
+func DummyRewardFilterer() *OnePoolRewardFilterer {
+	return rewardFilterer
 }
 
 func TokenInfo(w3c *web3go.Client, address string) (string, string, uint8, error) {
