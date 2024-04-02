@@ -17,40 +17,6 @@ const (
 	FeeStatType
 )
 
-func dashboard(_ *gin.Context) (interface{}, error) {
-	value, exist, err := db.ConfigStore.Get(store.KeyLogSyncInfo)
-	if err != nil {
-		return nil, commonApi.ErrInternal(err)
-	}
-	if !exist {
-		return nil, ErrConfigNotFound
-	}
-
-	var logSyncInfo stat.LogSyncInfo
-	if err := json.Unmarshal([]byte(value), &logSyncInfo); err != nil {
-		return nil, commonApi.ErrInternal(err)
-	}
-
-	submitStat, err := db.SubmitStatStore.LastByType(store.Day)
-	if err != nil {
-		return nil, commonApi.ErrInternal(err)
-	}
-	if submitStat == nil {
-		return nil, ErrStorageBaseFeeNotStat
-	}
-
-	storageBasicCost := StorageBasicCost{
-		TokenInfo:      *chargeToken,
-		BasicCostTotal: submitStat.BaseFeeTotal,
-	}
-	result := Dashboard{
-		StorageBasicCost: storageBasicCost,
-		LogSyncInfo:      logSyncInfo,
-	}
-
-	return result, nil
-}
-
 func listDataStat(c *gin.Context) (interface{}, error) {
 	return getSubmitStatByType(c, StorageStatType)
 }
