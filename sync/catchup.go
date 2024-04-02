@@ -141,7 +141,8 @@ func (s *CatchupSyncer) batchGetFlowSubmitsBestEffort(w3c *web3go.Client, bnFrom
 		}
 
 		if strings.Contains(err.Error(), "please narrow down your filter condition") ||
-			strings.Contains(err.Error(), "block range") {
+			strings.Contains(err.Error(), "block range") ||
+			strings.Contains(err.Error(), "blocks distance") {
 			end = start + (end-start)/2
 			continue
 		}
