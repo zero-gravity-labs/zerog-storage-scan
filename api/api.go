@@ -78,8 +78,12 @@ func RegisterRouter(router *gin.Engine) {
 	txsRoute.GET("", listTxsHandler)
 	txsRoute.GET(":txSeq", getTxHandler)
 
+	rewardsRoute := apiRoute.Group("/rewards")
+	rewardsRoute.GET("", listRewardsHandler)
+
 	accountsRoute := apiRoute.Group("/accounts")
 	accountsRoute.GET(":address/txs", listAddressTxsHandler)
+	accountsRoute.GET(":address/rewards", listAddressRewardsHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
@@ -160,7 +164,7 @@ func listFeeStatsHandler(c *gin.Context) {
 // listTxsHandler godoc
 //
 //	@Summary		Storage transaction list
-//	@Description	Query storage transactions, support address and root hash filter
+//	@Description	Query storage transactions
 //	@Tags			transaction
 //	@Accept			json
 //	@Produce		json
@@ -170,7 +174,7 @@ func listFeeStatsHandler(c *gin.Context) {
 //	@Failure		600		{object}	api.BusinessError
 //	@Router			/txs [get]
 func listTxsHandler(c *gin.Context) {
-	api.Wrap(listStorageTx)(c)
+	api.Wrap(listStorageTxs)(c)
 }
 
 // getTxHandler godoc
@@ -188,6 +192,22 @@ func getTxHandler(c *gin.Context) {
 	api.Wrap(getStorageTx)(c)
 }
 
+// listRewardsHandler godoc
+//
+//	@Summary		Storage reward list
+//	@Description	Query storage rewards
+//	@Tags			reward
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip	query		int	false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit	query		int	false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Success		200		{object}	api.BusinessError{Data=RewardList}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/rewards [get]
+func listRewardsHandler(c *gin.Context) {
+	api.Wrap(listStorageRewards)(c)
+}
+
 // listAddressTxsHandler godoc
 //
 //	@Summary		Account's storage transaction list
@@ -203,5 +223,22 @@ func getTxHandler(c *gin.Context) {
 //	@Failure		600			{object}	api.BusinessError
 //	@Router			/accounts/{address}/txs [get]
 func listAddressTxsHandler(c *gin.Context) {
-	api.Wrap(listAddressStorageTx)(c)
+	api.Wrap(listAddressStorageTxs)(c)
+}
+
+// listAddressRewardsHandler godoc
+//
+//	@Summary		Account's storage reward list
+//	@Description	Query storage rewards for specified account
+//	@Tags			account
+//	@Accept			json
+//	@Produce		json
+//	@Param			address	path		string	false	"The submitter address of the uploaded file"
+//	@Param			skip	query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit	query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Success		200		{object}	api.BusinessError{Data=RewardList}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/accounts/{address}/rewards [get]
+func listAddressRewardsHandler(c *gin.Context) {
+	api.Wrap(listAddressStorageRewards)(c)
 }

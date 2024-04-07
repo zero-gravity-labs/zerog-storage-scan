@@ -59,3 +59,22 @@ func (rs *RewardStore) Add(dbTx *gorm.DB, rewards []*Reward) error {
 func (rs *RewardStore) Pop(dbTx *gorm.DB, block uint64) error {
 	return dbTx.Where("block_number >= ?", block).Delete(&Reward{}).Error
 }
+
+func (rs *RewardStore) List(idDesc bool, skip, limit int) (int64, []Reward, error) {
+	dbRaw := rs.DB.Model(&Reward{})
+
+	var orderBy string
+	if idDesc {
+		orderBy = "pricing_index DESC"
+	} else {
+		orderBy = "pricing_index ASC"
+	}
+
+	list := new([]Reward)
+	total, err := rs.Store.ListByOrder(dbRaw, orderBy, skip, limit, list)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return total, *list, nil
+}

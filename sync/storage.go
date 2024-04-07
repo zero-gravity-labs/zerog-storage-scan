@@ -75,12 +75,13 @@ func (ss *StorageSyncer) syncFileInfo() error {
 			}
 		} else {
 			submit.Status = uint8(store.Uploaded)
+			submit.UploadedSegNum = submit.TotalSegNum // Field `uploadedSegNum` is set 0 by rpc when `finalized` is true
 		}
 
 		addressSubmit := store.AddressSubmit{
 			SenderID:        s.SenderID,
 			SubmissionIndex: s.SubmissionIndex,
-			UploadedSegNum:  info.UploadedSegNum,
+			UploadedSegNum:  submit.UploadedSegNum,
 			Status:          submit.Status,
 		}
 
