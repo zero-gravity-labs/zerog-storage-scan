@@ -47,6 +47,8 @@ var migrationModels = []interface{}{
 	&store.Submit{},
 	&store.AddressSubmit{},
 	&store.SubmitStat{},
+	&store.Reward{},
+	&store.AddressReward{},
 }
 
 func MustInitDataContext() DataContext {

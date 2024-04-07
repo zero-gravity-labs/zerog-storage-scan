@@ -75,7 +75,7 @@ func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, err
 	return &EthData{Number: blockNumber, Block: block, Receipts: txReceipts}, nil
 }
 
-func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, flowAddr common.Address, flowSubmitSig common.Hash) (*EthData, error) {
+func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common.Address, topics [][]common.Hash) (*EthData, error) {
 	// get block
 	block, err := w3c.Eth.BlockByNumber(types.BlockNumber(blockNumber), true)
 	if err != nil {
@@ -86,7 +86,8 @@ func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, flowAddr common.Ad
 	}
 
 	// batch get logs
-	logArray, err := batchGetFlowSubmits(w3c, blockNumber, blockNumber, flowAddr, flowSubmitSig)
+	//logArray, err := batchGetFlowSubmits(w3c, blockNumber, blockNumber, flowAddr, flowSubmitSig)
+	logArray, err := batchGetLogs(w3c, blockNumber, blockNumber, addresses, topics)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to get flow submits in batch at block %v", blockNumber)
 	}
@@ -130,6 +131,19 @@ func batchGetFlowSubmits(w3c *web3go.Client, blockFrom, blockTo uint64, flowAddr
 		ToBlock:   &bnTo,
 		Addresses: []common.Address{flowAddr},
 		Topics:    [][]common.Hash{{flowSubmitSig}},
+	}
+	return w3c.Eth.Logs(logFilter)
+}
+
+func batchGetLogs(w3c *web3go.Client, blockFrom, blockTo uint64, addresses []common.Address,
+	topics [][]common.Hash) ([]types.Log, error) {
+	bnFrom := types.NewBlockNumber(int64(blockFrom))
+	bnTo := types.NewBlockNumber(int64(blockTo))
+	logFilter := types.FilterQuery{
+		FromBlock: &bnFrom,
+		ToBlock:   &bnTo,
+		Addresses: addresses,
+		Topics:    topics,
 	}
 	return w3c.Eth.Logs(logFilter)
 }

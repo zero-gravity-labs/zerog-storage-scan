@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/store"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
@@ -35,10 +34,15 @@ type Syncer struct {
 	storageSyncer       *StorageSyncer
 	flowAddr            string
 	flowSubmitSig       string
+	rewardAddr          string
+	rewardSig           string
+	addresses           []common.Address
+	topics              [][]common.Hash
 }
 
 type storeData struct {
 	submits []*store.Submit
+	rewards []*store.Reward
 }
 
 // MustNewSyncer creates an instance of Syncer to sync blockchain data.
@@ -48,6 +52,12 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		SubmitEventSignature string
 	}
 	viperUtil.MustUnmarshalKey("flow", &flow)
+
+	var reward struct {
+		Address              string
+		RewardEventSignature string
+	}
+	viperUtil.MustUnmarshalKey("reward", &reward)
 
 	syncer := &Syncer{
 		conf:                &cf,
@@ -59,6 +69,10 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		storageSyncer:       ss,
 		flowAddr:            flow.Address,
 		flowSubmitSig:       flow.SubmitEventSignature,
+		rewardAddr:          reward.Address,
+		rewardSig:           reward.RewardEventSignature,
+		addresses:           []common.Address{common.HexToAddress(flow.Address), common.HexToAddress(reward.Address)},
+		topics:              [][]common.Hash{{common.HexToHash(flow.SubmitEventSignature), common.HexToHash(reward.RewardEventSignature)}},
 	}
 
 	// Load last sync block information
@@ -175,7 +189,7 @@ func (s *Syncer) syncOnce() (bool, error) {
 	// get eth data
 	var data *EthData
 	if syncDataByLogs {
-		data, err = getEthDataByLogs(s.sdk, curBlock, common.HexToAddress(s.flowAddr), common.HexToHash(s.flowSubmitSig))
+		data, err = getEthDataByLogs(s.sdk, curBlock, s.addresses, s.topics)
 	} else {
 		data, err = getEthDataByReceipts(s.sdk, curBlock)
 	}
@@ -201,7 +215,7 @@ func (s *Syncer) syncOnce() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if err = s.db.Push(block, sd.submits); err != nil {
+	if err = s.db.Push(block, sd.submits, sd.rewards); err != nil {
 		return false, err
 	}
 
@@ -293,63 +307,27 @@ func (s *Syncer) revertReorgData(revertBlock uint64) error {
 }
 
 func (s *Syncer) parseEthData(data *EthData) (*storeData, error) {
-	blockTime := time.Unix(int64(data.Block.Timestamp), 0)
-	var submits []*store.Submit
-
+	var logs []types.Log
 	if syncDataByLogs {
-		for _, log := range data.Logs {
-			if log.Removed {
-				continue
-			}
-
-			submit, err := s.decodeSubmit(blockTime, log)
-			if err != nil {
-				return nil, err
-			}
-			if submit != nil {
-				submits = append(submits, submit)
-			}
-		}
+		logs = data.Logs
 	} else {
 		for _, t := range data.Block.Transactions.Transactions() {
 			rcpt := data.Receipts[t.Hash]
 			if rcpt == nil || !isTxExecutedInBlock(t, *rcpt) {
 				continue
 			}
-
 			for _, log := range rcpt.Logs {
-				submit, err := s.decodeSubmit(blockTime, *log)
-				if err != nil {
-					return nil, err
-				}
-				if submit != nil {
-					submits = append(submits, submit)
-				}
+				logs = append(logs, *log)
 			}
 		}
 	}
 
-	return &storeData{submits}, nil
-}
+	bn2TimeMap := map[uint64]uint64{data.Block.Number.Uint64(): data.Block.Timestamp}
 
-func (s *Syncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.Submit, error) {
-	addr := log.Address.String()
-	sig := log.Topics[0].String()
-	if !strings.EqualFold(addr, s.flowAddr) || sig != s.flowSubmitSig {
-		return nil, nil
-	}
-
-	submit, err := store.NewSubmit(blkTime, log, nhContract.DummyFlowFilterer())
+	submits, rewards, err := s.catchupSyncer.convertLogs(logs, bn2TimeMap)
 	if err != nil {
 		return nil, err
 	}
 
-	senderID, err := s.db.AddressStore.Add(submit.Sender, blkTime)
-	if err != nil {
-		return nil, err
-	}
-
-	submit.SenderID = senderID
-
-	return submit, nil
+	return &storeData{submits, rewards}, nil
 }

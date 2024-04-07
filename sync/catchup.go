@@ -2,7 +2,6 @@ package sync
 
 import (
 	"context"
-	"math/big"
 	"strings"
 	"time"
 
@@ -22,8 +21,12 @@ type CatchupSyncer struct {
 	db             *store.MysqlStore
 	currentBlock   uint64
 	finalizedBlock uint64
-	flowAddr       common.Address
-	flowSubmitSig  common.Hash
+	flowAddr       string
+	flowSubmitSig  string
+	rewardAddr     string
+	rewardSig      string
+	addresses      []common.Address
+	topics         [][]common.Hash
 }
 
 func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncConfig) *CatchupSyncer {
@@ -33,18 +36,22 @@ func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncCon
 	}
 	viperUtil.MustUnmarshalKey("flow", &flow)
 
-	var charge struct {
-		Erc20TokenAddress           string
-		Erc20TransferEventSignature string
+	var reward struct {
+		Address              string
+		RewardEventSignature string
 	}
-	viperUtil.MustUnmarshalKey("charge", &charge)
+	viperUtil.MustUnmarshalKey("reward", &reward)
 
 	return &CatchupSyncer{
 		conf:          &conf,
 		sdk:           sdk,
 		db:            db,
-		flowAddr:      common.HexToAddress(flow.Address),
-		flowSubmitSig: common.HexToHash(flow.SubmitEventSignature),
+		flowAddr:      flow.Address,
+		flowSubmitSig: flow.SubmitEventSignature,
+		rewardAddr:    reward.Address,
+		rewardSig:     reward.RewardEventSignature,
+		addresses:     []common.Address{common.HexToAddress(flow.Address), common.HexToAddress(reward.Address)},
+		topics:        [][]common.Hash{{common.HexToHash(flow.SubmitEventSignature), common.HexToHash(reward.RewardEventSignature)}},
 	}
 }
 
@@ -73,33 +80,35 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 	for {
 		var logs []types.Log
 		var err error
-		logs, _, end, err = s.batchGetFlowSubmitsBestEffort(s.sdk, start, end, s.flowAddr, s.flowSubmitSig)
+		logs, _, end, err = s.batchGetLogsBestEffort(s.sdk, start, end, s.addresses, s.topics)
 		if err != nil {
 			return err
 		}
 
 		var bn2TimeMap map[uint64]uint64
-		var rangeEndBlock *types.Block
 		if len(logs) > 0 {
 			blockNums := make([]types.BlockNumber, 0)
 			for _, log := range logs {
 				blockNums = append(blockNums, types.BlockNumber(log.BlockNumber))
 			}
 			bn2TimeMap, err = batchGetBlockTimes(ctx, s.sdk, blockNums, s.conf.BatchBlocksOnBatchCall)
-		} else {
-			rangeEndBlock, err = s.sdk.Eth.BlockByNumber(types.BlockNumber(end), false)
 		}
 		if err != nil {
 			return err
 		}
 
-		block := s.convertBlock(logs, bn2TimeMap, rangeEndBlock)
-		submits, err := s.convertSubmits(logs, bn2TimeMap)
+		rangeEndBlock, err := s.sdk.Eth.BlockByNumber(types.BlockNumber(end), false)
 		if err != nil {
 			return err
 		}
 
-		err = s.db.Push(block, submits)
+		block := store.NewBlock(rangeEndBlock)
+		submits, rewards, err := s.convertLogs(logs, bn2TimeMap)
+		if err != nil {
+			return err
+		}
+
+		err = s.db.Push(block, submits, rewards)
 		if err != nil {
 			return err
 		}
@@ -131,18 +140,19 @@ func (s *CatchupSyncer) nextSyncRange(curStart, rangeEnd uint64) (uint64, uint64
 // It returns the logs, the actual start and end block numbers of the queried range, and an error if any.
 // It may not return all the data for the whole range, but only the available or feasible data.
 // It uses a binary search algorithm to find the optimal range that maximizes the number of logs returned.
-func (s *CatchupSyncer) batchGetFlowSubmitsBestEffort(w3c *web3go.Client, bnFrom, bnTo uint64, flowAddr common.Address, flowSubmitSig common.Hash) ([]types.Log, uint64, uint64, error) {
+func (s *CatchupSyncer) batchGetLogsBestEffort(w3c *web3go.Client, bnFrom, bnTo uint64,
+	addresses []common.Address, topics [][]common.Hash) ([]types.Log, uint64, uint64, error) {
 	start, end := bnFrom, bnTo
 
 	for {
-		logs, err := batchGetFlowSubmits(w3c, start, end, flowAddr, flowSubmitSig)
+		logs, err := batchGetLogs(w3c, start, end, addresses, topics)
 		if err == nil {
 			return logs, start, end, nil
 		}
 
-		if strings.Contains(err.Error(), "please narrow down your filter condition") ||
-			strings.Contains(err.Error(), "block range") ||
-			strings.Contains(err.Error(), "blocks distance") {
+		if strings.Contains(err.Error(), "please narrow down your filter condition") || // espace
+			strings.Contains(err.Error(), "block range") || // bsc
+			strings.Contains(err.Error(), "blocks distance") { // evmos
 			end = start + (end-start)/2
 			continue
 		}
@@ -187,46 +197,81 @@ func (s *CatchupSyncer) updateBlockRange() error {
 	return nil
 }
 
-func (s *CatchupSyncer) convertBlock(logs []types.Log, blockNum2TimeMap map[uint64]uint64, endBlk *types.Block) *store.Block {
-	var block *store.Block
-
-	if len(logs) > 0 {
-		log := (logs)[len(logs)-1]
-		ts := blockNum2TimeMap[log.BlockNumber]
-		blk := &types.Block{
-			Number:    new(big.Int).SetUint64(log.BlockNumber),
-			Hash:      log.BlockHash,
-			Timestamp: ts,
-		}
-		block = store.NewBlock(blk)
-	} else {
-		block = store.NewBlock(endBlk)
-	}
-
-	return block
-}
-
-func (s *CatchupSyncer) convertSubmits(logs []types.Log, blockNum2TimeMap map[uint64]uint64) ([]*store.Submit, error) {
-	submits := make([]*store.Submit, 0)
+func (s *CatchupSyncer) convertLogs(logs []types.Log, bn2TimeMap map[uint64]uint64) ([]*store.Submit,
+	[]*store.Reward, error) {
+	var submits []*store.Submit
+	var rewards []*store.Reward
 
 	for _, log := range logs {
-		ts := blockNum2TimeMap[log.BlockNumber]
+		if log.Removed {
+			continue
+		}
+
+		ts := bn2TimeMap[log.BlockNumber]
 		blockTime := time.Unix(int64(ts), 0)
-		submit, err := store.NewSubmit(blockTime, log, nhContract.DummyFlowFilterer())
+
+		submit, err := s.decodeSubmit(blockTime, log)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		if submit != nil {
+			submits = append(submits, submit)
 		}
 
-		senderID, err := s.db.AddressStore.Add(submit.Sender, blockTime)
+		reward, err := s.decodeReward(blockTime, log)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-
-		submit.SenderID = senderID
-		submits = append(submits, submit)
+		if reward != nil {
+			rewards = append(rewards, reward)
+		}
 	}
 
-	return submits, nil
+	return submits, rewards, nil
+}
+
+func (s *CatchupSyncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.Submit, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.flowAddr) || sig != s.flowSubmitSig {
+		return nil, nil
+	}
+
+	submit, err := store.NewSubmit(blkTime, log, nhContract.DummyFlowFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	senderID, err := s.db.AddressStore.Add(submit.Sender, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	submit.SenderID = senderID
+
+	return submit, nil
+}
+
+func (s *CatchupSyncer) decodeReward(blkTime time.Time, log types.Log) (*store.Reward, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.rewardAddr) || sig != s.rewardSig {
+		return nil, nil
+	}
+
+	reward, err := store.NewReward(blkTime, log, nhContract.DummyRewardFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	minerID, err := s.db.AddressStore.Add(reward.Miner, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	reward.MinerID = minerID
+
+	return reward, nil
 }
 
 func (s *CatchupSyncer) interrupted(ctx context.Context) bool {
