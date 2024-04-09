@@ -176,3 +176,9 @@ func MaxTimestamp(maxTimestamp int) func(db *gorm.DB) *gorm.DB {
 		return db.Where("stat_time <= ?", maxTimestamp)
 	}
 }
+
+func MinerID(mi uint64) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("miner_id = ?", mi)
+	}
+}

@@ -122,19 +122,6 @@ func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common
 	return &EthData{Number: blockNumber, Block: block, Logs: logs}, nil
 }
 
-func batchGetFlowSubmits(w3c *web3go.Client, blockFrom, blockTo uint64, flowAddr common.Address,
-	flowSubmitSig common.Hash) ([]types.Log, error) {
-	bnFrom := types.NewBlockNumber(int64(blockFrom))
-	bnTo := types.NewBlockNumber(int64(blockTo))
-	logFilter := types.FilterQuery{
-		FromBlock: &bnFrom,
-		ToBlock:   &bnTo,
-		Addresses: []common.Address{flowAddr},
-		Topics:    [][]common.Hash{{flowSubmitSig}},
-	}
-	return w3c.Eth.Logs(logFilter)
-}
-
 func batchGetLogs(w3c *web3go.Client, blockFrom, blockTo uint64, addresses []common.Address,
 	topics [][]common.Hash) ([]types.Log, error) {
 	bnFrom := types.NewBlockNumber(int64(blockFrom))
