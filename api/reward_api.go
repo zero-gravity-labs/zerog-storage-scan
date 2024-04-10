@@ -2,10 +2,7 @@ package api
 
 import (
 	"github.com/0glabs/0g-storage-scan/store"
-	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 func listStorageRewards(c *gin.Context) (interface{}, error) {
@@ -22,19 +19,11 @@ func listStorageRewards(c *gin.Context) (interface{}, error) {
 	return convertStorageRewards(total, rewards)
 }
 func listAddressStorageRewards(c *gin.Context) (interface{}, error) {
-	address := c.Param("address")
-	if address == "" {
-		logrus.Error("Failed to parse nil address")
-		return nil, errors.Errorf("Biz error, nil address %v", address)
-	}
-	addr, exist, err := db.AddressStore.Get(address)
+	addressInfo, err := getAddressInfo(c)
 	if err != nil {
-		return nil, commonApi.ErrInternal(err)
+		return nil, err
 	}
-	if !exist {
-		return RewardList{}, nil
-	}
-	addrIDPtr := &addr.ID
+	addrIDPtr := &addressInfo.addressId
 
 	var param PageParam
 	if err := c.ShouldBind(&param); err != nil {
@@ -87,7 +76,6 @@ func convertStorageRewards(total int64, rewards []store.Reward) (*RewardList, er
 	storageRewards := make([]Reward, 0)
 	for _, r := range rewards {
 		storageReward := Reward{
-			RewardSeq:   r.PricingIndex,
 			Miner:       addrMap[r.MinerID].Address,
 			Amount:      r.Amount,
 			BlockNumber: r.BlockNumber,

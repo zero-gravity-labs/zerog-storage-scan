@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
@@ -62,12 +63,13 @@ func (ass *AddressSubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *AddressSubmi
 
 func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, idDesc bool, skip, limit int) (int64,
 	[]AddressSubmit, error) {
-	dbRaw := ass.DB.Model(&AddressSubmit{})
-
-	var conds []func(db *gorm.DB) *gorm.DB
-	if addressID != nil {
-		conds = append(conds, SenderID(*addressID))
+	if addressID == nil {
+		return 0, nil, errors.New("nil addressID")
 	}
+
+	dbRaw := ass.DB.Model(&AddressSubmit{})
+	var conds []func(db *gorm.DB) *gorm.DB
+	conds = append(conds, SenderID(*addressID))
 	if rootHash != nil {
 		conds = append(conds, RootHash(*rootHash))
 	}
@@ -87,4 +89,20 @@ func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, idDesc 
 	}
 
 	return total, *list, nil
+}
+
+func (ass *AddressSubmitStore) Count(addressID *uint64) (*SubmitStatResult, error) {
+	if addressID == nil {
+		return nil, errors.New("nil addressID")
+	}
+
+	var result SubmitStatResult
+	err := ass.DB.Model(&AddressSubmit{}).Select(`count(submission_index) as file_count, 
+		IFNULL(sum(length), 0) as data_size, IFNULL(sum(fee), 0) as base_fee, count(distinct tx_hash) as tx_count`).
+		Where("sender_id = ?", addressID).Find(&result).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

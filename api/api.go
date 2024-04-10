@@ -5,9 +5,11 @@ import (
 	"github.com/0glabs/0g-storage-scan/docs"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/gin-gonic/gin"
 	"github.com/openweb3/web3go"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -82,6 +84,7 @@ func RegisterRouter(router *gin.Engine) {
 	rewardsRoute.GET("", listRewardsHandler)
 
 	accountsRoute := apiRoute.Group("/accounts")
+	accountsRoute.GET(":address", getAccountInfoHandler)
 	accountsRoute.GET(":address/txs", listAddressTxsHandler)
 	accountsRoute.GET(":address/rewards", listAddressRewardsHandler)
 
@@ -208,6 +211,21 @@ func listRewardsHandler(c *gin.Context) {
 	api.Wrap(listStorageRewards)(c)
 }
 
+// getAccountInfoHandler godoc
+//
+//	@Summary		Account's information
+//	@Description	Query account information for specified account
+//	@Tags			account
+//	@Accept			json
+//	@Produce		json
+//	@Param			address	path		string	false	"The account address"
+//	@Success		200		{object}	api.BusinessError{Data=AccountInfo}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/accounts/{address} [get]
+func getAccountInfoHandler(c *gin.Context) {
+	api.Wrap(getAccountInfo)(c)
+}
+
 // listAddressTxsHandler godoc
 //
 //	@Summary		Account's storage transaction list
@@ -241,4 +259,22 @@ func listAddressTxsHandler(c *gin.Context) {
 //	@Router			/accounts/{address}/rewards [get]
 func listAddressRewardsHandler(c *gin.Context) {
 	api.Wrap(listAddressStorageRewards)(c)
+}
+
+func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
+	address := c.Param("address")
+	if address == "" {
+		logrus.Error("Failed to parse nil address")
+		return nil, errors.Errorf("Biz error, nil address %v", address)
+	}
+
+	addressInfo, exist, err := db.AddressStore.Get(address)
+	if err != nil {
+		return nil, commonApi.ErrInternal(err)
+	}
+	if !exist {
+		return nil, ErrAddressNotFound
+	}
+
+	return &AddressInfo{address, addressInfo.ID}, nil
 }
