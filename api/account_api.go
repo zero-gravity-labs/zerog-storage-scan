@@ -32,18 +32,12 @@ func getAccountInfo(c *gin.Context) (interface{}, error) {
 	}
 
 	accountInfo := AccountInfo{
-		Balance:    decimal.NewFromBigInt(balance, 0),
-		FileCount:  submitStat.FileCount,
-		TxCount:    submitStat.TxCount,
-		DataSize:   submitStat.DataSize,
-		StorageFee: submitStat.BaseFee,
-	}
-
-	if accountInfo.TxCount > 0 {
-		accountInfo.TxTab = 1
-	}
-	if rewardStat.RewardCount > 0 {
-		accountInfo.RewardTab = 1
+		Balance:     decimal.NewFromBigInt(balance, 0),
+		FileCount:   submitStat.FileCount,
+		TxCount:     submitStat.TxCount,
+		DataSize:    submitStat.DataSize,
+		StorageFee:  submitStat.BaseFee,
+		RewardCount: rewardStat.RewardCount,
 	}
 
 	return accountInfo, nil

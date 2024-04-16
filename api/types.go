@@ -180,11 +180,10 @@ type AddressInfo struct {
 type AccountInfo struct {
 	Balance decimal.Decimal `json:"balance"` // The balance in layer 1
 
-	FileCount  uint64          `json:"fileTotal"`       // Total number of files
-	TxCount    uint64          `json:"txCount"`         // Number of layer1 transaction
+	FileCount  uint64          `json:"fileCount"`       // Total number of files
+	TxCount    uint64          `json:"txCount"`         // Total number of layer1 transaction
 	DataSize   uint64          `json:"dataTotal"`       // Total Size of storage data
 	StorageFee decimal.Decimal `json:"storageFeeTotal"` // Total storage fee
 
-	TxTab     uint8 `json:"txTab"`     // Flag to display the tx list, 1 - has tx list, 0 - hasn't tx list
-	RewardTab uint8 `json:"rewardTab"` // Flag to display the reward list, 1 - has reward list, 0 - hasn't reward list
+	RewardCount uint64 `json:"rewardCount"` // Total number of distributed reward recodes
 }
