@@ -1,4 +1,25 @@
 definitions:
+  api.AccountInfo:
+    properties:
+      balance:
+        description: The balance in layer 1
+        type: number
+      dataTotal:
+        description: Total Size of storage data
+        type: integer
+      fileCount:
+        description: Total number of files
+        type: integer
+      rewardCount:
+        description: Total number of distributed reward recodes
+        type: integer
+      storageFeeTotal:
+        description: Total storage fee
+        type: number
+      txCount:
+        description: Total number of layer1 transaction
+        type: integer
+    type: object
   api.BusinessError:
     properties:
       code:
@@ -61,6 +82,37 @@ definitions:
         type: array
       total:
         description: The total number of stat returned
+        type: integer
+    type: object
+  api.Reward:
+    description: Reward information
+    properties:
+      amount:
+        description: The reward amount
+        type: number
+      blockNumber:
+        description: The block where the reward event is emitted
+        type: integer
+      miner:
+        description: Miner address
+        type: string
+      timestamp:
+        description: The block time when reward event emits
+        type: integer
+      txHash:
+        description: The transaction where the reward event is emitted
+        type: string
+    type: object
+  api.RewardList:
+    description: Miner reward list
+    properties:
+      list:
+        description: Miner reward list
+        items:
+          $ref: '#/definitions/api.Reward'
+        type: array
+      total:
+        description: The total number of miner reward returned
         type: integer
     type: object
   api.StorageFeeStat:
@@ -128,6 +180,9 @@ definitions:
       txSeq:
         description: Submission index in submit event
         type: string
+      uploadedSegments:
+        description: The number of segments the file has been uploaded
+        type: integer
     type: object
   api.StorageTxInfo:
     description: Submission transaction information
@@ -253,6 +308,78 @@ info:
   title: 0G Storage Scan API
   version: "1.0"
 paths:
+  /accounts/{address}:
+    get:
+      consumes:
+      - application/json
+      description: Query account information for specified account
+      parameters:
+      - description: The account address
+        in: path
+        name: address
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.AccountInfo'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Account's information
+      tags:
+      - account
+  /accounts/{address}/rewards:
+    get:
+      consumes:
+      - application/json
+      description: Query storage rewards for specified account
+      parameters:
+      - description: The submitter address of the uploaded file
+        in: path
+        name: address
+        type: string
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.RewardList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Account's storage reward list
+      tags:
+      - account
   /accounts/{address}/txs:
     get:
       consumes:
@@ -301,6 +428,45 @@ paths:
       summary: Account's storage transaction list
       tags:
       - account
+  /rewards:
+    get:
+      consumes:
+      - application/json
+      description: Query storage rewards
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.RewardList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Storage reward list
+      tags:
+      - reward
   /stats/fee:
     get:
       consumes:
@@ -519,7 +685,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Query storage transactions, support address and root hash filter
+      description: Query storage transactions
       parameters:
       - default: 0
         description: The number of skipped records, usually it's pageSize * (pageNumber
