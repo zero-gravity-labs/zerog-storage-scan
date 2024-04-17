@@ -5,9 +5,6 @@ import (
 	"strconv"
 
 	"github.com/0glabs/0g-storage-client/core"
-
-	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
-
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -96,19 +93,11 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 }
 
 func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
-	address := c.Param("address")
-	if address == "" {
-		logrus.Error("Failed to parse nil address")
-		return nil, errors.Errorf("Biz error, nil address %v", address)
-	}
-	addr, exist, err := db.AddressStore.Get(address)
+	addressInfo, err := getAddressInfo(c)
 	if err != nil {
-		return nil, commonApi.ErrInternal(err)
+		return nil, err
 	}
-	if !exist {
-		return StorageTxList{}, nil
-	}
-	addrIDPtr := &addr.ID
+	addrIDPtr := &addressInfo.addressId
 
 	var param listAddressStorageTxParam
 	if err := c.ShouldBind(&param); err != nil {

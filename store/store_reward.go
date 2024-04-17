@@ -11,13 +11,13 @@ import (
 )
 
 type Reward struct {
-	PricingIndex uint64          `gorm:"primaryKey;autoIncrement:false"`
-	Miner        string          `gorm:"-"`
-	MinerID      uint64          `gorm:"not null"`
-	Amount       decimal.Decimal `gorm:"type:decimal(65);not null"`
-	BlockNumber  uint64          `gorm:"not null;index:idx_bn"`
+	BlockNumber  uint64          `gorm:"primaryKey;autoIncrement:false"`
 	BlockTime    time.Time       `gorm:"not null"`
 	TxHash       string          `gorm:"size:66;not null"`
+	Miner        string          `gorm:"-"`
+	MinerID      uint64          `gorm:"not null"`
+	PricingIndex uint64          `gorm:"not null"`
+	Amount       decimal.Decimal `gorm:"type:decimal(65);not null"`
 }
 
 func NewReward(blockTime time.Time, log types.Log, filter *nhContract.OnePoolRewardFilterer) (*Reward, error) {
@@ -65,9 +65,9 @@ func (rs *RewardStore) List(idDesc bool, skip, limit int) (int64, []Reward, erro
 
 	var orderBy string
 	if idDesc {
-		orderBy = "pricing_index DESC"
+		orderBy = "block_number DESC"
 	} else {
-		orderBy = "pricing_index ASC"
+		orderBy = "block_number ASC"
 	}
 
 	list := new([]Reward)

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/0glabs/0g-storage-scan/stat"
-
 	"github.com/shopspring/decimal"
 )
 
@@ -166,10 +165,25 @@ type RewardList struct {
 // Reward model info
 // @Description Reward information
 type Reward struct {
-	RewardSeq   uint64          `json:"rewardSeq"`   // Pricing index for reward
 	Miner       string          `json:"miner"`       // Miner address
 	Amount      decimal.Decimal `json:"amount"`      // The reward amount
 	BlockNumber uint64          `json:"blockNumber"` // The block where the reward event is emitted
 	TxHash      string          `json:"txHash"`      // The transaction where the reward event is emitted
 	Timestamp   int64           `json:"timestamp"`   // The block time when reward event emits
+}
+
+type AddressInfo struct {
+	address   string
+	addressId uint64
+}
+
+type AccountInfo struct {
+	Balance decimal.Decimal `json:"balance"` // The balance in layer 1
+
+	FileCount  uint64          `json:"fileCount"`       // Total number of files
+	TxCount    uint64          `json:"txCount"`         // Total number of layer1 transaction
+	DataSize   uint64          `json:"dataTotal"`       // Total Size of storage data
+	StorageFee decimal.Decimal `json:"storageFeeTotal"` // Total storage fee
+
+	RewardCount uint64 `json:"rewardCount"` // Total number of distributed reward recodes
 }
