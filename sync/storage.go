@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrNoFileInfoToSync         = errors.New("No file info to sync")
-	BatchGetSubmitsNotFinalized = 1000
+	BatchGetSubmitsNotFinalized = 10000
 )
 
 type StorageSyncer struct {
@@ -46,49 +46,56 @@ func (ss *StorageSyncer) Sync(ctx context.Context) {
 }
 
 func (ss *StorageSyncer) syncFileInfo() error {
-	submits, err := ss.db.SubmitStore.BatchGetNotFinalized(BatchGetSubmitsNotFinalized)
-	if err != nil {
-		return err
-	}
-	if len(submits) == 0 {
-		return ErrNoFileInfoToSync
-	}
-
-	for _, s := range submits {
-		info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
+	skip := 0
+	for {
+		submits, err := ss.db.SubmitStore.BatchGetNotFinalized(skip, BatchGetSubmitsNotFinalized)
 		if err != nil {
 			return err
 		}
-		if info == nil {
-			continue
+		if len(submits) == 0 {
+			return ErrNoFileInfoToSync
 		}
 
-		submit := store.Submit{
-			SubmissionIndex: s.SubmissionIndex,
-			UploadedSegNum:  info.UploadedSegNum,
-		}
-		if !info.Finalized {
-			if info.UploadedSegNum == 0 {
-				submit.Status = uint8(store.NotUploaded)
-			} else {
-				submit.Status = uint8(store.Uploading)
+		for _, s := range submits {
+			info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
+			if err != nil {
+				return err
 			}
+			if info == nil {
+				continue
+			}
+
+			submit := store.Submit{
+				SubmissionIndex: s.SubmissionIndex,
+				UploadedSegNum:  info.UploadedSegNum,
+			}
+			if !info.Finalized {
+				if info.UploadedSegNum == 0 {
+					submit.Status = uint8(store.NotUploaded)
+				} else {
+					submit.Status = uint8(store.Uploading)
+				}
+			} else {
+				submit.Status = uint8(store.Uploaded)
+				submit.UploadedSegNum = submit.TotalSegNum // Field `uploadedSegNum` is set 0 by rpc when `finalized` is true
+			}
+
+			addressSubmit := store.AddressSubmit{
+				SenderID:        s.SenderID,
+				SubmissionIndex: s.SubmissionIndex,
+				UploadedSegNum:  submit.UploadedSegNum,
+				Status:          submit.Status,
+			}
+
+			if err := ss.db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
+				return err
+			}
+		}
+
+		if len(submits) < BatchGetSubmitsNotFinalized {
+			return nil
 		} else {
-			submit.Status = uint8(store.Uploaded)
-			submit.UploadedSegNum = submit.TotalSegNum // Field `uploadedSegNum` is set 0 by rpc when `finalized` is true
-		}
-
-		addressSubmit := store.AddressSubmit{
-			SenderID:        s.SenderID,
-			SubmissionIndex: s.SubmissionIndex,
-			UploadedSegNum:  submit.UploadedSegNum,
-			Status:          submit.Status,
-		}
-
-		if err := ss.db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
-			return err
+			skip += BatchGetSubmitsNotFinalized
 		}
 	}
-
-	return nil
 }

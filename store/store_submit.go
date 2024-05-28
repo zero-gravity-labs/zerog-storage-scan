@@ -151,10 +151,10 @@ func (ss *SubmitStore) List(rootHash *string, idDesc bool, skip, limit int) (int
 	return total, *list, nil
 }
 
-func (ss *SubmitStore) BatchGetNotFinalized(batch int) ([]Submit, error) {
+func (ss *SubmitStore) BatchGetNotFinalized(skip, batch int) ([]Submit, error) {
 	submits := new([]Submit)
-	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where status < ? limit ?",
-		Uploaded, batch).Scan(submits).Error; err != nil {
+	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where status < ? limit ?,?",
+		Uploaded, skip, batch).Scan(submits).Error; err != nil {
 		return nil, err
 	}
 
