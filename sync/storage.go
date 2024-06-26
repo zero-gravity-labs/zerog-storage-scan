@@ -6,6 +6,7 @@ import (
 
 	"github.com/0glabs/0g-storage-client/node"
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -13,17 +14,23 @@ import (
 var (
 	ErrNoFileInfoToSync         = errors.New("No file info to sync")
 	BatchGetSubmitsNotFinalized = 10000
+	storageRpcHealth            = health.TimedCounter{}
 )
 
 type StorageSyncer struct {
-	l2Sdk *node.Client
-	db    *store.MysqlStore
+	l2Sdk        *node.Client
+	db           *store.MysqlStore
+	alertChannel string
+	healthReport health.TimedCounterConfig
 }
 
-func MustNewStorageSyncer(l2Sdk *node.Client, db *store.MysqlStore) *StorageSyncer {
+func MustNewStorageSyncer(l2Sdk *node.Client, db *store.MysqlStore, alertChannel string,
+	healthReport health.TimedCounterConfig) *StorageSyncer {
 	return &StorageSyncer{
-		l2Sdk: l2Sdk,
-		db:    db,
+		l2Sdk:        l2Sdk,
+		db:           db,
+		alertChannel: alertChannel,
+		healthReport: healthReport,
 	}
 }
 
@@ -36,7 +43,7 @@ func (ss *StorageSyncer) Sync(ctx context.Context) {
 		default:
 		}
 
-		if err := ss.syncFileInfo(); err != nil {
+		if err := ss.syncFileInfo(ctx); err != nil {
 			if !errors.Is(err, ErrNoFileInfoToSync) {
 				logrus.WithError(err).Error("Sync file info")
 			}
@@ -45,7 +52,7 @@ func (ss *StorageSyncer) Sync(ctx context.Context) {
 	}
 }
 
-func (ss *StorageSyncer) syncFileInfo() error {
+func (ss *StorageSyncer) syncFileInfo(ctx context.Context) error {
 	lastSubmissionIndex := uint64(0)
 	for {
 		submits, err := ss.db.SubmitStore.BatchGetNotFinalized(lastSubmissionIndex, BatchGetSubmitsNotFinalized)
@@ -58,6 +65,9 @@ func (ss *StorageSyncer) syncFileInfo() error {
 
 		for _, s := range submits {
 			info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
+			if e := alertErr(ctx, ss.alertChannel, "StorageRPCError", &storageRpcHealth, ss.healthReport, err); e != nil {
+				return e
+			}
 			if err != nil {
 				return err
 			}

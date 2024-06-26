@@ -2,7 +2,10 @@ package sync
 
 import (
 	"context"
+	"time"
 
+	"github.com/Conflux-Chain/go-conflux-util/alert"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	set "github.com/deckarep/golang-set"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/go-rpc-provider"
@@ -14,6 +17,7 @@ import (
 var (
 	ErrNotFound     = errors.New("not found")
 	ErrChainReorged = errors.New("chain re-orged")
+	nodeRpcHealth   = health.TimedCounter{}
 )
 
 type EthData struct {
@@ -178,4 +182,37 @@ func batchGetBlockTimes(ctx context.Context, w3c *web3go.Client, blkNums []types
 	}
 
 	return blockNum2Time, nil
+}
+
+type AlertContent struct {
+	Err     string
+	Elapsed time.Duration
+}
+
+func alertErr(ctx context.Context, channel, title string, health *health.TimedCounter,
+	report health.TimedCounterConfig, err error) error {
+
+	ch, ok := alert.DefaultManager().Channel(channel)
+	if !ok {
+		return errors.Errorf("Alert channel %s not found", channel)
+	}
+
+	if err == nil {
+		if recovered, elapsed := health.OnSuccess(report); recovered {
+			return ch.Send(ctx, &alert.Notification{
+				Title: title, Content: AlertContent{"Recovered", elapsed},
+				Severity: alert.SeverityLow,
+			})
+		}
+		return nil
+	}
+
+	if unhealthy, unrecovered, elapsed := health.OnFailure(report); unhealthy || unrecovered {
+		return ch.Send(ctx, &alert.Notification{
+			Title: title, Content: AlertContent{err.Error(), elapsed},
+			Severity: alert.SeverityHigh,
+		})
+	}
+
+	return nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/0glabs/0g-storage-client/node"
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
 	providers "github.com/openweb3/go-rpc-provider/provider_wrapper"
@@ -19,9 +20,11 @@ import (
 
 // DataContext context to hold sdk clients for blockchain interoperation.
 type DataContext struct {
-	Eth   *web3go.Client
-	L2Sdk *node.Client
-	DB    *store.MysqlStore
+	Eth      *web3go.Client
+	L2Sdk    *node.Client
+	DB       *store.MysqlStore
+	EthCfg   SdkConfig
+	L2SdkCfg L2SdkConfig
 }
 
 type SdkConfig struct {
@@ -30,6 +33,8 @@ type SdkConfig struct {
 	RetryInterval   time.Duration `default:"1s"`
 	RequestTimeout  time.Duration `default:"3s"`
 	MaxConnsPerHost int           `default:"1024"`
+	AlertChannel    string
+	HealthReport    health.TimedCounterConfig
 }
 
 type L2SdkConfig struct {
@@ -38,6 +43,8 @@ type L2SdkConfig struct {
 	RetryInterval   time.Duration `default:"1s"`
 	RequestTimeout  time.Duration `default:"3s"`
 	MaxConnsPerHost int           `default:"1024"`
+	AlertChannel    string
+	HealthReport    health.TimedCounterConfig
 }
 
 var migrationModels = []interface{}{
@@ -75,9 +82,11 @@ func MustInitDataContext() DataContext {
 	l2Sdk := node.MustNewClient(l2SdkCfg.URL, opt2)
 
 	return DataContext{
-		DB:    store.MustNewStore(db),
-		L2Sdk: l2Sdk,
-		Eth:   eth,
+		DB:       store.MustNewStore(db),
+		L2Sdk:    l2Sdk,
+		Eth:      eth,
+		EthCfg:   sdkCfg,
+		L2SdkCfg: l2SdkCfg,
 	}
 }
 

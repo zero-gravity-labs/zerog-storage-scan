@@ -7,6 +7,7 @@ import (
 
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
@@ -27,9 +28,12 @@ type CatchupSyncer struct {
 	rewardSig      string
 	addresses      []common.Address
 	topics         [][]common.Hash
+	alertChannel   string
+	healthReport   health.TimedCounterConfig
 }
 
-func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncConfig) *CatchupSyncer {
+func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncConfig, alertChannel string,
+	healthReport health.TimedCounterConfig) *CatchupSyncer {
 	var flow struct {
 		Address              string
 		SubmitEventSignature string
@@ -52,13 +56,15 @@ func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncCon
 		rewardSig:     reward.RewardEventSignature,
 		addresses:     []common.Address{common.HexToAddress(flow.Address), common.HexToAddress(reward.Address)},
 		topics:        [][]common.Hash{{common.HexToHash(flow.SubmitEventSignature), common.HexToHash(reward.RewardEventSignature)}},
+		alertChannel:  alertChannel,
+		healthReport:  healthReport,
 	}
 }
 
 func (s *CatchupSyncer) Sync(ctx context.Context) {
 	logrus.Info("Catchup syncer starting to sync data")
 	for {
-		needProcess := s.tryBlockRange()
+		needProcess := s.tryBlockRange(ctx)
 		if !needProcess || s.interrupted(ctx) {
 			return
 		}
@@ -161,9 +167,9 @@ func (s *CatchupSyncer) batchGetLogsBestEffort(w3c *web3go.Client, bnFrom, bnTo 
 	}
 }
 
-func (s *CatchupSyncer) tryBlockRange() bool {
+func (s *CatchupSyncer) tryBlockRange(ctx context.Context) bool {
 	for try := 1; ; try++ {
-		err := s.updateBlockRange()
+		err := s.updateBlockRange(ctx)
 		if err != nil {
 			logrus.WithError(err).WithFields(logrus.Fields{
 				"try":      try,
@@ -177,7 +183,7 @@ func (s *CatchupSyncer) tryBlockRange() bool {
 	}
 }
 
-func (s *CatchupSyncer) updateBlockRange() error {
+func (s *CatchupSyncer) updateBlockRange(ctx context.Context) error {
 	maxBlock, ok, err := s.db.MaxBlock()
 	if err != nil {
 		return errors.WithMessage(err, "failed to get max block from db")
@@ -189,6 +195,9 @@ func (s *CatchupSyncer) updateBlockRange() error {
 	}
 
 	finalizedBlock, err := s.sdk.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
+	if e := alertErr(ctx, s.alertChannel, "NodeRPCError", &nodeRpcHealth, s.healthReport, err); e != nil {
+		return e
+	}
 	if err != nil {
 		return errors.WithMessage(err, "failed to get finalized block")
 	}

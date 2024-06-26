@@ -30,8 +30,8 @@ func startSyncService(*cobra.Command, []string) {
 	var conf nhSync.SyncConfig
 	viperUtil.MustUnmarshalKey("sync", &conf)
 
-	cs := nhSync.MustNewCatchupSyncer(dataCtx.Eth, dataCtx.DB, conf)
-	ss := nhSync.MustNewStorageSyncer(dataCtx.L2Sdk, dataCtx.DB)
+	cs := nhSync.MustNewCatchupSyncer(dataCtx.Eth, dataCtx.DB, conf, dataCtx.EthCfg.AlertChannel, dataCtx.EthCfg.HealthReport)
+	ss := nhSync.MustNewStorageSyncer(dataCtx.L2Sdk, dataCtx.DB, dataCtx.L2SdkCfg.AlertChannel, dataCtx.L2SdkCfg.HealthReport)
 	syncer := nhSync.MustNewSyncer(dataCtx.Eth, dataCtx.DB, conf, cs, ss)
 
 	ctx, cancel := context.WithCancel(context.Background())
