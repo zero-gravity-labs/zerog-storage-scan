@@ -6,24 +6,31 @@ import (
 
 	"github.com/0glabs/0g-storage-client/node"
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 var (
 	ErrNoFileInfoToSync         = errors.New("No file info to sync")
-	BatchGetSubmitsNotFinalized = 1000
+	BatchGetSubmitsNotFinalized = 10000
+	storageRpcHealth            = health.TimedCounter{}
 )
 
 type StorageSyncer struct {
-	l2Sdk *node.Client
-	db    *store.MysqlStore
+	l2Sdk        *node.Client
+	db           *store.MysqlStore
+	alertChannel string
+	healthReport health.TimedCounterConfig
 }
 
-func MustNewStorageSyncer(l2Sdk *node.Client, db *store.MysqlStore) *StorageSyncer {
+func MustNewStorageSyncer(l2Sdk *node.Client, db *store.MysqlStore, alertChannel string,
+	healthReport health.TimedCounterConfig) *StorageSyncer {
 	return &StorageSyncer{
-		l2Sdk: l2Sdk,
-		db:    db,
+		l2Sdk:        l2Sdk,
+		db:           db,
+		alertChannel: alertChannel,
+		healthReport: healthReport,
 	}
 }
 
@@ -36,7 +43,7 @@ func (ss *StorageSyncer) Sync(ctx context.Context) {
 		default:
 		}
 
-		if err := ss.syncFileInfo(); err != nil {
+		if err := ss.syncFileInfo(ctx); err != nil {
 			if !errors.Is(err, ErrNoFileInfoToSync) {
 				logrus.WithError(err).Error("Sync file info")
 			}
@@ -45,50 +52,55 @@ func (ss *StorageSyncer) Sync(ctx context.Context) {
 	}
 }
 
-func (ss *StorageSyncer) syncFileInfo() error {
-	submits, err := ss.db.SubmitStore.BatchGetNotFinalized(BatchGetSubmitsNotFinalized)
-	if err != nil {
-		return err
-	}
-	if len(submits) == 0 {
-		return ErrNoFileInfoToSync
-	}
-
-	for _, s := range submits {
-		info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
+func (ss *StorageSyncer) syncFileInfo(ctx context.Context) error {
+	lastSubmissionIndex := uint64(0)
+	for {
+		submits, err := ss.db.SubmitStore.BatchGetNotFinalized(lastSubmissionIndex, BatchGetSubmitsNotFinalized)
 		if err != nil {
 			return err
 		}
-		if info == nil {
-			continue
+		if len(submits) == 0 {
+			return ErrNoFileInfoToSync
 		}
 
-		submit := store.Submit{
-			SubmissionIndex: s.SubmissionIndex,
-			UploadedSegNum:  info.UploadedSegNum,
-		}
-		if !info.Finalized {
-			if info.UploadedSegNum == 0 {
-				submit.Status = uint8(store.NotUploaded)
-			} else {
-				submit.Status = uint8(store.Uploading)
+		for _, s := range submits {
+			info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
+			if e := alertErr(ctx, ss.alertChannel, "StorageRPCError", &storageRpcHealth, ss.healthReport, err); e != nil {
+				return e
 			}
-		} else {
-			submit.Status = uint8(store.Uploaded)
-			submit.UploadedSegNum = submit.TotalSegNum // Field `uploadedSegNum` is set 0 by rpc when `finalized` is true
-		}
+			if err != nil {
+				return err
+			}
+			if info == nil {
+				continue
+			}
 
-		addressSubmit := store.AddressSubmit{
-			SenderID:        s.SenderID,
-			SubmissionIndex: s.SubmissionIndex,
-			UploadedSegNum:  submit.UploadedSegNum,
-			Status:          submit.Status,
-		}
+			submit := store.Submit{
+				SubmissionIndex: s.SubmissionIndex,
+				UploadedSegNum:  info.UploadedSegNum,
+			}
+			if !info.Finalized {
+				if info.UploadedSegNum == 0 {
+					submit.Status = uint8(store.NotUploaded)
+				} else {
+					submit.Status = uint8(store.Uploading)
+				}
+			} else {
+				submit.Status = uint8(store.Uploaded)
+				submit.UploadedSegNum = submit.TotalSegNum // Field `uploadedSegNum` is set 0 by rpc when `finalized` is true
+			}
 
-		if err := ss.db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
-			return err
+			addressSubmit := store.AddressSubmit{
+				SenderID:        s.SenderID,
+				SubmissionIndex: s.SubmissionIndex,
+				UploadedSegNum:  submit.UploadedSegNum,
+				Status:          submit.Status,
+			}
+
+			if err := ss.db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
+				return err
+			}
 		}
+		lastSubmissionIndex = submits[len(submits)-1].SubmissionIndex + 1
 	}
-
-	return nil
 }

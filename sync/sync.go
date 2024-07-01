@@ -133,7 +133,7 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 			logrus.Info("DB syncer shutdown ok")
 			return
 		case <-ticker.C:
-			if err := s.doTicker(ticker); err != nil {
+			if err := s.doTicker(ctx, ticker); err != nil {
 				logrus.WithError(err).
 					WithField("currentBlock", s.currentBlock).
 					Warn("Syncer failed to sync eth data")
@@ -142,10 +142,10 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func (s *Syncer) doTicker(ticker *time.Ticker) error {
+func (s *Syncer) doTicker(ctx context.Context, ticker *time.Ticker) error {
 	logrus.Debug("Syncer ticking")
 
-	complete, err := s.syncOnce()
+	complete, err := s.syncOnce(ctx)
 
 	switch {
 	case err != nil:
@@ -165,9 +165,13 @@ var (
 	syncDataByLogs        bool
 )
 
-func (s *Syncer) syncOnce() (bool, error) {
+func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 	// get the latest block
 	latestBlock, err := s.sdk.Eth.BlockNumber()
+	if e := alertErr(ctx, s.catchupSyncer.alertChannel, "NodeRPCError", &nodeRpcHealth, s.catchupSyncer.healthReport,
+		err); e != nil {
+		return false, e
+	}
 	if err != nil {
 		return false, err
 	}

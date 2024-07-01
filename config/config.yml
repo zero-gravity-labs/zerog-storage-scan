@@ -10,6 +10,12 @@ eth:
   # requestTimeout: 3s
   # Max connections allowed per fullnode
   # maxConnsPerHost: 1024
+  # Health report config
+  # healthReport:
+  #   threshold: 1m
+  #   remind: 5m
+  # Alert channel
+  # alertChannel: tgRobot
 
 # storage SDK client configurations
 storage:
@@ -23,6 +29,12 @@ storage:
   # requestTimeout: 3s
   # Max connections allowed per storage node
   # maxConnsPerHost: 1024
+  # Health report config
+  # healthReport:
+  #   threshold: 1m
+  #   remind: 5m
+  # Alert channel
+  # alertChannel: tgRobot
 
 # Blockchain sync configurations
 sync:
@@ -97,3 +109,20 @@ log:
   # Available levels are `trace`, `debug`, `info`, `error` and `fatal`
   level: info
   forceColor: false
+
+# Alert Configurations
+#alert:
+#  # Custom tags are used to distinguish between different networks and environments.
+#  # For example, they can be used to differentiate between mainnet/testnet, prod/test/dev, etc.
+#  customTags: [dev]
+#  # Channels are used for sending notifications.
+#  # Each channel is identified by a unique key (e.g., channel ID), which is case insensitive.
+#  # The value for each key is the configuration for that channel.
+#  channels:
+#    tgrobot:
+#      # The type of the channel. In this case, it's 'telegram'.
+#      platform: telegram
+#      # The API token for the Telegram robot.
+#      apiToken: ${your_api_token}
+#      # The chat ID for the Telegram chat where the alerts are sent.
+#      chatId: ${your_chat_id}
