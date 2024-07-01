@@ -13,12 +13,12 @@ import (
 )
 
 func listStorageTxs(c *gin.Context) (interface{}, error) {
-	var param PageParam
+	var param listStorageTxParam
 	if err := c.ShouldBind(&param); err != nil {
 		return nil, err
 	}
 
-	total, submits, err := listSubmits(nil, nil, param.isDesc(), param.Skip, param.Limit)
+	total, submits, err := listSubmits(nil, param.RootHash, param.TxHash, param.isDesc(), param.Skip, param.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	total, submits, err := listSubmits(addrIDPtr, param.RootHash, param.isDesc(), param.Skip, param.Limit)
+	total, submits, err := listSubmits(addrIDPtr, param.RootHash, param.TxHash, param.isDesc(), param.Skip, param.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -112,12 +112,13 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 	return convertStorageTxs(total, submits)
 }
 
-func listSubmits(addressID *uint64, rootHash *string, idDesc bool, skip, limit int) (int64, []store.Submit, error) {
+func listSubmits(addressID *uint64, rootHash *string, txHash *string, idDesc bool, skip, limit int) (int64,
+	[]store.Submit, error) {
 	if addressID == nil {
-		return db.SubmitStore.List(rootHash, idDesc, skip, limit)
+		return db.SubmitStore.List(rootHash, txHash, idDesc, skip, limit)
 	}
 
-	total, addrSubmits, err := db.AddressSubmitStore.List(addressID, rootHash, idDesc, skip, limit)
+	total, addrSubmits, err := db.AddressSubmitStore.List(addressID, rootHash, txHash, idDesc, skip, limit)
 	if err != nil {
 		return 0, nil, err
 	}

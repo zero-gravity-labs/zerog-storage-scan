@@ -127,11 +127,14 @@ func (ss *SubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *Submit) error {
 	return nil
 }
 
-func (ss *SubmitStore) List(rootHash *string, idDesc bool, skip, limit int) (int64, []Submit, error) {
+func (ss *SubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip, limit int) (int64, []Submit, error) {
 	dbRaw := ss.DB.Model(&Submit{})
 	var conds []func(db *gorm.DB) *gorm.DB
 	if rootHash != nil {
 		conds = append(conds, RootHash(*rootHash))
+	}
+	if txHash != nil {
+		conds = append(conds, TxHash(*txHash))
 	}
 	dbRaw.Scopes(conds...)
 

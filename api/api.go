@@ -171,10 +171,12 @@ func listFeeStatsHandler(c *gin.Context) {
 //	@Tags			transaction
 //	@Accept			json
 //	@Produce		json
-//	@Param			skip	query		int	false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
-//	@Param			limit	query		int	false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
-//	@Success		200		{object}	api.BusinessError{Data=StorageTxList}
-//	@Failure		600		{object}	api.BusinessError
+//	@Param			skip		query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit		query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Param			rootHash	query		string	false	"The merkle root hash of the uploaded file"
+//	@Param			txHash		query		string	false	"The layer1 tx hash of the submission"
+//	@Success		200			{object}	api.BusinessError{Data=StorageTxList}
+//	@Failure		600			{object}	api.BusinessError
 //	@Router			/txs [get]
 func listTxsHandler(c *gin.Context) {
 	api.Wrap(listStorageTxs)(c)
@@ -237,6 +239,7 @@ func getAccountInfoHandler(c *gin.Context) {
 //	@Param			skip		query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
 //	@Param			limit		query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
 //	@Param			rootHash	query		string	false	"The merkle root hash of the uploaded file"
+//	@Param			txHash		query		string	false	"The layer1 tx hash of the submission"
 //	@Success		200			{object}	api.BusinessError{Data=StorageTxList}
 //	@Failure		600			{object}	api.BusinessError
 //	@Router			/accounts/{address}/txs [get]

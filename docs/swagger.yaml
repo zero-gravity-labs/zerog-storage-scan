@@ -409,6 +409,10 @@ paths:
         in: query
         name: rootHash
         type: string
+      - description: The layer1 tx hash of the submission
+        in: query
+        name: txHash
+        type: string
       produces:
       - application/json
       responses:
@@ -701,6 +705,14 @@ paths:
         minimum: 1
         name: limit
         type: integer
+      - description: The merkle root hash of the uploaded file
+        in: query
+        name: rootHash
+        type: string
+      - description: The layer1 tx hash of the submission
+        in: query
+        name: txHash
+        type: string
       produces:
       - application/json
       responses:

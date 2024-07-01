@@ -172,6 +172,12 @@ const docTemplate = `{
                         "description": "The merkle root hash of the uploaded file",
                         "name": "rootHash",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The layer1 tx hash of the submission",
+                        "name": "txHash",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -611,6 +617,18 @@ const docTemplate = `{
                         "default": 10,
                         "description": "The number of records displayed on the page",
                         "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The merkle root hash of the uploaded file",
+                        "name": "rootHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The layer1 tx hash of the submission",
+                        "name": "txHash",
                         "in": "query"
                     }
                 ],

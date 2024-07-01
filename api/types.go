@@ -18,6 +18,12 @@ func (sp *PageParam) isDesc() bool {
 	return strings.EqualFold(sp.Sort, "desc")
 }
 
+type listStorageTxParam struct {
+	PageParam
+	RootHash *string `form:"rootHash" binding:"omitempty"`
+	TxHash   *string `form:"txHash" binding:"omitempty"`
+}
+
 type statParam struct {
 	PageParam
 	MinTimestamp *int   `form:"minTimestamp" binding:"omitempty,number"`
@@ -99,6 +105,7 @@ type TokenInfo struct {
 type listAddressStorageTxParam struct {
 	PageParam
 	RootHash *string `form:"rootHash" binding:"omitempty"`
+	TxHash   *string `form:"txHash" binding:"omitempty"`
 }
 
 // StorageTxList model info

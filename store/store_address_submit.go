@@ -61,8 +61,8 @@ func (ass *AddressSubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *AddressSubmi
 	return nil
 }
 
-func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, idDesc bool, skip, limit int) (int64,
-	[]AddressSubmit, error) {
+func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, txHash *string, idDesc bool, skip, limit int) (
+	int64, []AddressSubmit, error) {
 	if addressID == nil {
 		return 0, nil, errors.New("nil addressID")
 	}
@@ -72,6 +72,9 @@ func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, idDesc 
 	conds = append(conds, SenderID(*addressID))
 	if rootHash != nil {
 		conds = append(conds, RootHash(*rootHash))
+	}
+	if txHash != nil {
+		conds = append(conds, TxHash(*txHash))
 	}
 	dbRaw.Scopes(conds...)
 

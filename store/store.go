@@ -159,6 +159,12 @@ func RootHash(rh string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
+func TxHash(rh string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("tx_hash = ?", strings.ToLower(rh))
+	}
+}
+
 func StatType(t string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("stat_type = ?", t)
