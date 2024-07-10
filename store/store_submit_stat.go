@@ -73,10 +73,11 @@ func (t *SubmitStatStore) LastByType(statType string) (*SubmitStat, error) {
 }
 
 type SubmitStatResult struct {
-	FileCount uint64
-	DataSize  uint64
-	BaseFee   decimal.Decimal
-	TxCount   uint64
+	FileCount   uint64
+	DataSize    uint64
+	BaseFee     decimal.Decimal
+	TxCount     uint64
+	SenderCount uint64
 }
 
 func (t *SubmitStatStore) Sum(startTime, endTime time.Time, statType string) (*SubmitStatResult, error) {

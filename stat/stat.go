@@ -20,14 +20,16 @@ var (
 )
 
 type StatConfig struct {
-	BlockOnStatBegin           uint64
-	MinStatIntervalDailyTx     string `default:"10m"`
-	MinStatIntervalDailySubmit string `default:"10m"`
+	BlockOnStatBegin            uint64
+	MinStatIntervalDailyTx      string `default:"10m"`
+	MinStatIntervalDailySubmit  string `default:"10m"`
+	MinStatIntervalDailyAddress string `default:"10m"`
 }
 
 type TimeRange struct {
-	start time.Time
-	end   time.Time
+	start        time.Time
+	end          time.Time
+	intervalType string
 }
 
 type BaseStat struct {
@@ -39,10 +41,20 @@ type BaseStat struct {
 
 func (bs *BaseStat) calStatRange(rangeStart time.Time, interval time.Duration) (*TimeRange, error) {
 	rangeEnd := rangeStart.Add(interval)
-	timeRange := TimeRange{
-		start: rangeStart,
-		end:   rangeEnd,
+
+	var timeRange TimeRange
+	if interval < 0 {
+		timeRange = TimeRange{
+			start: rangeEnd,
+			end:   rangeStart,
+		}
+	} else {
+		timeRange = TimeRange{
+			start: rangeStart,
+			end:   rangeEnd,
+		}
 	}
+
 	return &timeRange, nil
 }
 

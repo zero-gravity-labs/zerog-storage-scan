@@ -39,6 +39,8 @@ func startStatService(*cobra.Command, []string) {
 	go stSubmit.DoStat(ctx, &wg)
 	stSyncStatus := stat.MustNewSyncStatusStat(dataCtx.DB, dataCtx.L2Sdk)
 	go stSyncStatus.DoStat(ctx, &wg)
+	stAddress := stat.MustNewStatAddress(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
+	go stAddress.DoStat(ctx, &wg)
 
 	GracefulShutdown(&wg, cancel)
 }

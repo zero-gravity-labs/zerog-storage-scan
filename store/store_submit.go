@@ -30,8 +30,8 @@ type Submit struct {
 	Length          uint64 `gorm:"not null"`
 
 	BlockNumber uint64    `gorm:"not null;index:idx_bn"`
-	BlockTime   time.Time `gorm:"not null"`
-	TxHash      string    `gorm:"size:66;not null"`
+	BlockTime   time.Time `gorm:"not null;index:idx_bt"`
+	TxHash      string    `gorm:"size:66;not null;index:idx_txHash,length:10"`
 
 	TotalSegNum    uint64          `gorm:"not null;default:0"`
 	UploadedSegNum uint64          `gorm:"not null;default:0"`
@@ -103,8 +103,9 @@ func (ss *SubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
 
 func (ss *SubmitStore) Count(startTime, endTime time.Time) (*SubmitStatResult, error) {
 	var result SubmitStatResult
-	err := ss.DB.Model(&Submit{}).Select(`count(submission_index) as file_count, 
-		IFNULL(sum(length), 0) as data_size, IFNULL(sum(fee), 0) as base_fee, count(distinct tx_hash) as tx_count`).
+	err := ss.DB.Model(&Submit{}).Select(`count(*) as file_count, 
+		IFNULL(sum(length), 0) as data_size, IFNULL(sum(fee), 0) as base_fee, count(distinct tx_hash) as tx_count,
+		count(distinct sender_id) as sender_count`).
 		Where("block_time >= ? and block_time < ?", startTime, endTime).Find(&result).Error
 	if err != nil {
 		return nil, err

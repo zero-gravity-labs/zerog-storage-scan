@@ -94,6 +94,8 @@ stat:
   # minStatIntervalDailyTx: 10m
   # The minimum interval for submit stat
   # minStatIntervalDailySubmit: 10m
+  # The minimum interval for address stat
+  # minStatIntervalDailyAddress: 10m
   # The interval for data uplink rate stat
   # statIntervalDataUplinkRate: 1s
 
