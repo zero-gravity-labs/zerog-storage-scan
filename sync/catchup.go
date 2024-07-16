@@ -278,6 +278,11 @@ func (s *CatchupSyncer) decodeReward(blkTime time.Time, log types.Log) (*store.R
 		return nil, err
 	}
 
+	_, err = s.db.MinerStore.Add(minerID, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
 	reward.MinerID = minerID
 
 	return reward, nil

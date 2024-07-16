@@ -24,6 +24,7 @@ type StatConfig struct {
 	MinStatIntervalDailyTx      string `default:"10m"`
 	MinStatIntervalDailySubmit  string `default:"10m"`
 	MinStatIntervalDailyAddress string `default:"10m"`
+	MinStatIntervalDailyMiner   string `default:"1h"`
 }
 
 type TimeRange struct {

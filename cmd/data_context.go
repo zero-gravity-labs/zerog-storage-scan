@@ -57,6 +57,8 @@ var migrationModels = []interface{}{
 	&store.Reward{},
 	&store.AddressReward{},
 	&store.AddressStat{},
+	&store.Miner{},
+	&store.MinerStat{},
 }
 
 func MustInitDataContext() DataContext {

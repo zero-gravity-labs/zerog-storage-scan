@@ -96,6 +96,8 @@ stat:
   # minStatIntervalDailySubmit: 10m
   # The minimum interval for address stat
   # minStatIntervalDailyAddress: 10m
+  # The minimum interval for miner stat
+  # minStatIntervalDailyMiner: 1h
   # The interval for data uplink rate stat
   # statIntervalDataUplinkRate: 1s
 

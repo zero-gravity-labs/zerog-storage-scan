@@ -78,3 +78,24 @@ func (rs *RewardStore) List(idDesc bool, skip, limit int) (int64, []Reward, erro
 
 	return total, *list, nil
 }
+
+func (rs *RewardStore) CountActive(startTime, endTime time.Time) (uint64, error) {
+	db := rs.DB.Model(&Reward{})
+
+	nilTime := time.Time{}
+	if startTime != nilTime && endTime != nilTime {
+		db = db.Where("block_time >= ? and block_time < ?", startTime, endTime)
+	}
+	if startTime == nilTime && endTime != nilTime {
+		db = db.Where("block_time < ?", endTime)
+	}
+
+	var countActive int64
+	err := db.Select(`count(distinct miner_id) as miner_count`).
+		Find(&countActive).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(countActive), nil
+}
