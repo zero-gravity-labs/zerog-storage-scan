@@ -20,6 +20,34 @@ definitions:
         description: Total number of layer1 transaction
         type: integer
     type: object
+  api.AddressStat:
+    description: Hex40 stat data information
+    properties:
+      addressActive:
+        description: Number of active hex40 in a specific time interval
+        type: integer
+      addressNew:
+        description: Number of newly increased hex40 in a specific time interval
+        type: integer
+      addressTotal:
+        description: Total number of hex40 by a certain time
+        type: integer
+      statTime:
+        description: Statistics time
+        type: string
+    type: object
+  api.AddressStatList:
+    description: Hex40 address stat list
+    properties:
+      list:
+        description: Stat list
+        items:
+          $ref: '#/definitions/api.AddressStat'
+        type: array
+      total:
+        description: The total number of stat returned
+        type: integer
+    type: object
   api.BusinessError:
     properties:
       code:
@@ -79,6 +107,34 @@ definitions:
         description: Stat list
         items:
           $ref: '#/definitions/api.FeeStat'
+        type: array
+      total:
+        description: The total number of stat returned
+        type: integer
+    type: object
+  api.MinerStat:
+    description: Miner stat data information
+    properties:
+      minerActive:
+        description: Number of active miner in a specific time interval
+        type: integer
+      minerNew:
+        description: Number of newly increased miner in a specific time interval
+        type: integer
+      minerTotal:
+        description: Total number of miner by a certain time
+        type: integer
+      statTime:
+        description: Statistics time
+        type: string
+    type: object
+  api.MinerStatList:
+    description: Miner stat list
+    properties:
+      list:
+        description: Stat list
+        items:
+          $ref: '#/definitions/api.MinerStat'
         type: array
       total:
         description: The total number of stat returned
@@ -471,6 +527,70 @@ paths:
       summary: Storage reward list
       tags:
       - reward
+  /stats/address:
+    get:
+      consumes:
+      - application/json
+      description: Query hex40 address statistics, including incremental, active and
+        full data, and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.AddressStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Address statistics
+      tags:
+      - statistic
   /stats/fee:
     get:
       consumes:
@@ -597,6 +717,70 @@ paths:
           schema:
             $ref: '#/definitions/api.BusinessError'
       summary: Layer1 transaction statistics
+      tags:
+      - statistic
+  /stats/miner:
+    get:
+      consumes:
+      - application/json
+      description: Query miner statistics, including incremental, active and full
+        data, and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.MinerStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Miner statistics
       tags:
       - statistic
   /stats/storage:

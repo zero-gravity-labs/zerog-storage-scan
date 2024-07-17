@@ -268,6 +268,100 @@ const docTemplate = `{
                 }
             }
         },
+        "/stats/address": {
+            "get": {
+                "description": "Query hex40 address statistics, including incremental, active and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Address statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.AddressStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/stats/fee": {
             "get": {
                 "description": "Query fee statistics, including incremental and full data, and support querying at hourly or daily time intervals",
@@ -441,6 +535,100 @@ const docTemplate = `{
                                     "properties": {
                                         "Data": {
                                             "$ref": "#/definitions/api.TxStatList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/miner": {
+            "get": {
+                "description": "Query miner statistics, including incremental, active and full data, and support querying at hourly or daily time intervals",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Miner statistics",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2000,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "hour",
+                            "day"
+                        ],
+                        "type": "string",
+                        "default": "day",
+                        "description": "Statistics interval",
+                        "name": "intervalType",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "default": "desc",
+                        "description": "Sort by timestamp",
+                        "name": "sort",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.MinerStatList"
                                         }
                                     }
                                 }
@@ -741,6 +929,45 @@ const docTemplate = `{
                 }
             }
         },
+        "api.AddressStat": {
+            "description": "Hex40 stat data information",
+            "type": "object",
+            "properties": {
+                "addressActive": {
+                    "description": "Number of active hex40 in a specific time interval",
+                    "type": "integer"
+                },
+                "addressNew": {
+                    "description": "Number of newly increased hex40 in a specific time interval",
+                    "type": "integer"
+                },
+                "addressTotal": {
+                    "description": "Total number of hex40 by a certain time",
+                    "type": "integer"
+                },
+                "statTime": {
+                    "description": "Statistics time",
+                    "type": "string"
+                }
+            }
+        },
+        "api.AddressStatList": {
+            "description": "Hex40 address stat list",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Stat list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.AddressStat"
+                    }
+                },
+                "total": {
+                    "description": "The total number of stat returned",
+                    "type": "integer"
+                }
+            }
+        },
         "api.BusinessError": {
             "type": "object",
             "properties": {
@@ -823,6 +1050,45 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api.FeeStat"
+                    }
+                },
+                "total": {
+                    "description": "The total number of stat returned",
+                    "type": "integer"
+                }
+            }
+        },
+        "api.MinerStat": {
+            "description": "Miner stat data information",
+            "type": "object",
+            "properties": {
+                "minerActive": {
+                    "description": "Number of active miner in a specific time interval",
+                    "type": "integer"
+                },
+                "minerNew": {
+                    "description": "Number of newly increased miner in a specific time interval",
+                    "type": "integer"
+                },
+                "minerTotal": {
+                    "description": "Total number of miner by a certain time",
+                    "type": "integer"
+                },
+                "statTime": {
+                    "description": "Statistics time",
+                    "type": "string"
+                }
+            }
+        },
+        "api.MinerStatList": {
+            "description": "Miner stat list",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Stat list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.MinerStat"
                     }
                 },
                 "total": {
