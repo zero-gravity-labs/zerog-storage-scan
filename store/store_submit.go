@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"encoding/json"
 	"math/big"
 	"time"
@@ -147,6 +148,30 @@ func (ss *SubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip,
 	}
 
 	list := new([]Submit)
+
+	if len(conds) == 0 {
+		var maxId sql.NullInt64
+		if err := ss.DB.Model(&Submit{}).Select("MAX(submission_index)").Find(&maxId).Error; err != nil {
+			return 0, nil, err
+		}
+		if !maxId.Valid {
+			return 0, nil, nil
+		}
+
+		if skip > 0 {
+			if idDesc {
+				dbRaw.Where("submission_index <= ?", maxId.Int64-int64(skip))
+			} else {
+				dbRaw.Where("submission_index > ?", skip)
+			}
+		}
+		if err := dbRaw.Order(orderBy).Limit(limit).Find(list).Error; err != nil {
+			return 0, nil, err
+		}
+
+		return maxId.Int64, *list, nil
+	}
+
 	total, err := ss.Store.ListByOrder(dbRaw, orderBy, skip, limit, list)
 	if err != nil {
 		return 0, nil, err

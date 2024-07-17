@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -40,6 +41,14 @@ func (cs *ConfigStore) Upsert(name, value string) error {
 
 func (cs *ConfigStore) Get(name string) (string, bool, error) {
 	var cfg Config
-	exist, err := cs.Exists(&cfg, "name = ?", name)
-	return cfg.Value, exist, err
+	err := cs.DB.Where("name = ?", name).Take(&cfg).Error
+	if err == nil {
+		return cfg.Value, true, nil
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return cfg.Value, false, nil
+	}
+
+	return cfg.Value, false, err
 }
