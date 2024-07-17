@@ -84,6 +84,64 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 	return result, nil
 }
 
+func listAddressStat(c *gin.Context) (interface{}, error) {
+	var statP statParam
+	if err := c.ShouldBind(&statP); err != nil {
+		return nil, err
+	}
+
+	total, records, err := db.AddressStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
+		statP.isDesc(), statP.Skip, statP.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{})
+	result["total"] = total
+
+	list := make([]AddressStat, 0)
+	for _, r := range records {
+		list = append(list, AddressStat{
+			StatTime:      r.StatTime,
+			AddressNew:    r.AddrCount,
+			AddressActive: r.AddrActive,
+			AddressTotal:  r.AddrTotal,
+		})
+	}
+	result["list"] = list
+
+	return result, nil
+}
+
+func listMinerStat(c *gin.Context) (interface{}, error) {
+	var statP statParam
+	if err := c.ShouldBind(&statP); err != nil {
+		return nil, err
+	}
+
+	total, records, err := db.MinerStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
+		statP.isDesc(), statP.Skip, statP.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]interface{})
+	result["total"] = total
+
+	list := make([]MinerStat, 0)
+	for _, r := range records {
+		list = append(list, MinerStat{
+			StatTime:    r.StatTime,
+			MinerNew:    r.MinerCount,
+			MinerActive: r.MinerActive,
+			MinerTotal:  r.MinerTotal,
+		})
+	}
+	result["list"] = list
+
+	return result, nil
+}
+
 func summary(_ *gin.Context) (interface{}, error) {
 	value, exist, err := db.ConfigStore.Get(store.KeyLogSyncInfo)
 	if err != nil {

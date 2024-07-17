@@ -52,6 +52,20 @@ type FeeStatList struct {
 	List  []FeeStat `json:"list"`  // Stat list
 }
 
+// AddressStatList model info
+// @Description Hex40 address stat list
+type AddressStatList struct {
+	Total int64         `json:"total"` // The total number of stat returned
+	List  []AddressStat `json:"list"`  // Stat list
+}
+
+// MinerStatList model info
+// @Description Miner stat list
+type MinerStatList struct {
+	Total int64       `json:"total"` // The total number of stat returned
+	List  []MinerStat `json:"list"`  // Stat list
+}
+
 // DataStat model info
 // @Description Storage data information
 type DataStat struct {
@@ -76,6 +90,24 @@ type FeeStat struct {
 	StatTime        time.Time       `json:"statTime"`        // Statistics time
 	StorageFee      decimal.Decimal `json:"storageFee"`      // The base fee for storage in a specific time interval
 	StorageFeeTotal decimal.Decimal `json:"storageFeeTotal"` // The total base fee for storage by a certain time
+}
+
+// AddressStat model info
+// @Description Hex40 stat data information
+type AddressStat struct {
+	StatTime      time.Time `json:"statTime"`      // Statistics time
+	AddressNew    uint64    `json:"addressNew"`    // Number of newly increased hex40 in a specific time interval
+	AddressActive uint64    `json:"addressActive"` // Number of active hex40 in a specific time interval
+	AddressTotal  uint64    `json:"addressTotal"`  // Total number of hex40 by a certain time
+}
+
+// MinerStat model info
+// @Description Miner stat data information
+type MinerStat struct {
+	StatTime    time.Time `json:"statTime"`    // Statistics time
+	MinerNew    uint64    `json:"minerNew"`    // Number of newly increased miner in a specific time interval
+	MinerActive uint64    `json:"minerActive"` // Number of active miner in a specific time interval
+	MinerTotal  uint64    `json:"minerTotal"`  // Total number of miner by a certain time
 }
 
 // Summary model info

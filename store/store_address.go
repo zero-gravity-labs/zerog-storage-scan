@@ -135,6 +135,35 @@ func (t *AddressStatStore) Del(dbTx *gorm.DB, addressStat *AddressStat) error {
 	return dbTx.Where("stat_type = ? and stat_time = ?", addressStat.StatType, addressStat.StatTime).Delete(&AddressStat{}).Error
 }
 
+func (t *AddressStatStore) List(intervalType *string, minTimestamp, maxTimestamp *int, desc bool, skip, limit int) (int64,
+	[]AddressStat, error) {
+	var conds []func(db *gorm.DB) *gorm.DB
+
+	if intervalType != nil {
+		intervalType := IntervalTypes[*intervalType]
+		conds = append(conds, StatType(intervalType))
+	}
+
+	if minTimestamp != nil {
+		conds = append(conds, MinTimestamp(*minTimestamp))
+	}
+
+	if maxTimestamp != nil {
+		conds = append(conds, MaxTimestamp(*maxTimestamp))
+	}
+
+	dbRaw := t.DB.Model(&AddressStat{})
+	dbRaw.Scopes(conds...)
+
+	list := new([]AddressStat)
+	total, err := t.Store.List(dbRaw, desc, skip, limit, list)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return total, *list, nil
+}
+
 type Miner struct {
 	ID              uint64
 	FirstMiningTime time.Time `gorm:"not null"`
@@ -237,4 +266,33 @@ func (t *MinerStatStore) Add(dbTx *gorm.DB, minerStats []*MinerStat) error {
 
 func (t *MinerStatStore) Del(dbTx *gorm.DB, minerStat *MinerStat) error {
 	return dbTx.Where("stat_type = ? and stat_time = ?", minerStat.StatType, minerStat.StatTime).Delete(&MinerStat{}).Error
+}
+
+func (t *MinerStatStore) List(intervalType *string, minTimestamp, maxTimestamp *int, desc bool, skip, limit int) (int64,
+	[]MinerStat, error) {
+	var conds []func(db *gorm.DB) *gorm.DB
+
+	if intervalType != nil {
+		intervalType := IntervalTypes[*intervalType]
+		conds = append(conds, StatType(intervalType))
+	}
+
+	if minTimestamp != nil {
+		conds = append(conds, MinTimestamp(*minTimestamp))
+	}
+
+	if maxTimestamp != nil {
+		conds = append(conds, MaxTimestamp(*maxTimestamp))
+	}
+
+	dbRaw := t.DB.Model(&MinerStat{})
+	dbRaw.Scopes(conds...)
+
+	list := new([]MinerStat)
+	total, err := t.Store.List(dbRaw, desc, skip, limit, list)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return total, *list, nil
 }

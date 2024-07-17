@@ -75,6 +75,8 @@ func RegisterRouter(router *gin.Engine) {
 	statsRoute.GET("layer1-tx", listTxStatsHandler)
 	statsRoute.GET("storage", listDataStatsHandler)
 	statsRoute.GET("fee", listFeeStatsHandler)
+	statsRoute.GET("address", listAddressStatsHandler)
+	statsRoute.GET("miner", listMinerStatsHandler)
 
 	txsRoute := apiRoute.Group("/txs")
 	txsRoute.GET("", listTxsHandler)
@@ -162,6 +164,46 @@ func listDataStatsHandler(c *gin.Context) {
 //	@Router			/stats/fee [get]
 func listFeeStatsHandler(c *gin.Context) {
 	api.Wrap(listFeeStat)(c)
+}
+
+// listAddressStatsHandler godoc
+//
+//	@Summary		Address statistics
+//	@Description	Query hex40 address statistics, including incremental, active and full data, and support querying at hourly or daily time intervals
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip			query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit			query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(2000)	default(10)
+//	@Param			minTimestamp	query		int		false	"Timestamp in seconds"
+//	@Param			maxTimestamp	query		int		false	"Timestamp in seconds"
+//	@Param			intervalType	query		string	false	"Statistics interval"	Enums(hour, day)	default(day)
+//	@Param			sort			query		string	false	"Sort by timestamp"		Enums(asc, desc)	default(desc)
+//	@Success		200				{object}	api.BusinessError{Data=AddressStatList}
+//	@Failure		600				{object}	api.BusinessError
+//	@Router			/stats/address [get]
+func listAddressStatsHandler(c *gin.Context) {
+	api.Wrap(listAddressStat)(c)
+}
+
+// listMinerStatsHandler godoc
+//
+//	@Summary		Miner statistics
+//	@Description	Query miner statistics, including incremental, active and full data, and support querying at hourly or daily time intervals
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip			query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit			query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(2000)	default(10)
+//	@Param			minTimestamp	query		int		false	"Timestamp in seconds"
+//	@Param			maxTimestamp	query		int		false	"Timestamp in seconds"
+//	@Param			intervalType	query		string	false	"Statistics interval"	Enums(hour, day)	default(day)
+//	@Param			sort			query		string	false	"Sort by timestamp"		Enums(asc, desc)	default(desc)
+//	@Success		200				{object}	api.BusinessError{Data=MinerStatList}
+//	@Failure		600				{object}	api.BusinessError
+//	@Router			/stats/miner [get]
+func listMinerStatsHandler(c *gin.Context) {
+	api.Wrap(listMinerStat)(c)
 }
 
 // listTxsHandler godoc
