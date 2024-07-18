@@ -80,10 +80,18 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 		logrus.WithError(err).WithField("txSeq", txSeq).Error("Failed to get transaction")
 		return nil, errors.Errorf("Get tx error, txSeq %v", txSeq)
 	}
+	if tx == nil {
+		logrus.WithField("txSeq", txSeq).Error("Nil transaction")
+		return nil, ErrLayer1TxPruned
+	}
 	rcpt, err := sdk.Eth.TransactionReceipt(hash)
 	if err != nil {
 		logrus.WithError(err).WithField("txSeq", txSeq).Error("Failed to get receipt")
 		return nil, errors.Errorf("Get receitp error, txSeq %v", txSeq)
+	}
+	if rcpt == nil {
+		logrus.WithField("txSeq", txSeq).Error("Nil receipt")
+		return nil, ErrLayer1ReceiptPruned
 	}
 	result.GasFee = tx.GasPrice.Uint64() * rcpt.GasUsed
 	result.GasUsed = rcpt.GasUsed
