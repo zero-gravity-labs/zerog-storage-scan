@@ -22,14 +22,24 @@ type CatchupSyncer struct {
 	db             *store.MysqlStore
 	currentBlock   uint64
 	finalizedBlock uint64
-	flowAddr       string
-	flowSubmitSig  string
-	rewardAddr     string
-	rewardSig      string
-	addresses      []common.Address
-	topics         [][]common.Hash
-	alertChannel   string
-	healthReport   health.TimedCounterConfig
+
+	flowAddr      string
+	flowSubmitSig string
+	rewardAddr    string
+	rewardSig     string
+
+	daEntranceAddr    string
+	dataUploadSig     string
+	commitVerifiedSig string
+	daRewardSig       string
+	daSignersAddr     string
+	newSignerSig      string
+	socketUpdatedSig  string
+
+	addresses    []common.Address
+	topics       [][]common.Hash
+	alertChannel string
+	healthReport health.TimedCounterConfig
 }
 
 func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncConfig, alertChannel string,
@@ -46,18 +56,57 @@ func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncCon
 	}
 	viperUtil.MustUnmarshalKey("reward", &reward)
 
+	var daEntrance struct {
+		Address                            string
+		DataUploadSignature                string
+		ErasureCommitmentVerifiedSignature string
+		DARewardSignature                  string
+	}
+	viperUtil.MustUnmarshalKey("daEntrance", &daEntrance)
+
+	var daSigners struct {
+		Address                string
+		NewSignerSignature     string
+		SocketUpdatedSignature string
+	}
+	viperUtil.MustUnmarshalKey("daSigners", &daSigners)
+
 	return &CatchupSyncer{
-		conf:          &conf,
-		sdk:           sdk,
-		db:            db,
+		conf: &conf,
+		sdk:  sdk,
+		db:   db,
+
 		flowAddr:      flow.Address,
 		flowSubmitSig: flow.SubmitEventSignature,
 		rewardAddr:    reward.Address,
 		rewardSig:     reward.RewardEventSignature,
-		addresses:     []common.Address{common.HexToAddress(flow.Address), common.HexToAddress(reward.Address)},
-		topics:        [][]common.Hash{{common.HexToHash(flow.SubmitEventSignature), common.HexToHash(reward.RewardEventSignature)}},
-		alertChannel:  alertChannel,
-		healthReport:  healthReport,
+
+		daEntranceAddr:    daEntrance.Address,
+		dataUploadSig:     daEntrance.DataUploadSignature,
+		commitVerifiedSig: daEntrance.ErasureCommitmentVerifiedSignature,
+		daRewardSig:       daEntrance.DARewardSignature,
+		daSignersAddr:     daSigners.Address,
+		newSignerSig:      daSigners.NewSignerSignature,
+		socketUpdatedSig:  daSigners.SocketUpdatedSignature,
+
+		addresses: []common.Address{
+			common.HexToAddress(flow.Address),
+			common.HexToAddress(reward.Address),
+			common.HexToAddress(daEntrance.Address),
+			common.HexToAddress(daSigners.Address),
+		},
+		topics: [][]common.Hash{{
+			common.HexToHash(flow.SubmitEventSignature),
+			common.HexToHash(reward.RewardEventSignature),
+			common.HexToHash(daEntrance.DataUploadSignature),
+			common.HexToHash(daEntrance.ErasureCommitmentVerifiedSignature),
+			common.HexToHash(daEntrance.DARewardSignature),
+			common.HexToHash(daSigners.NewSignerSignature),
+			common.HexToHash(daSigners.SocketUpdatedSignature),
+		}},
+
+		alertChannel: alertChannel,
+		healthReport: healthReport,
 	}
 }
 
@@ -109,12 +158,12 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 		}
 
 		block := store.NewBlock(rangeEndBlock)
-		submits, rewards, err := s.convertLogs(logs, bn2TimeMap)
+		decodedLogs, err := s.convertLogs(logs, bn2TimeMap)
 		if err != nil {
 			return err
 		}
 
-		err = s.db.Push(block, submits, rewards)
+		err = s.db.Push(block, decodedLogs)
 		if err != nil {
 			return err
 		}
@@ -158,7 +207,8 @@ func (s *CatchupSyncer) batchGetLogsBestEffort(w3c *web3go.Client, bnFrom, bnTo 
 
 		if strings.Contains(err.Error(), "please narrow down your filter condition") || // espace
 			strings.Contains(err.Error(), "block range") || // bsc
-			strings.Contains(err.Error(), "blocks distance") { // evmos
+			strings.Contains(err.Error(), "blocks distance") || // evmos
+			strings.Contains(err.Error(), "returned more than") { // kava
 			end = start + (end-start)/2
 			continue
 		}
@@ -195,8 +245,10 @@ func (s *CatchupSyncer) updateBlockRange(ctx context.Context) error {
 	}
 
 	finalizedBlock, err := s.sdk.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
-	if e := alertErr(ctx, s.alertChannel, "NodeRPCError", &nodeRpcHealth, s.healthReport, err); e != nil {
-		return e
+	if s.alertChannel != "" {
+		if e := alertErr(ctx, s.alertChannel, "NodeRPCError", &nodeRpcHealth, s.healthReport, err); e != nil {
+			return e
+		}
 	}
 	if err != nil {
 		return errors.WithMessage(err, "failed to get finalized block")
@@ -206,10 +258,8 @@ func (s *CatchupSyncer) updateBlockRange(ctx context.Context) error {
 	return nil
 }
 
-func (s *CatchupSyncer) convertLogs(logs []types.Log, bn2TimeMap map[uint64]uint64) ([]*store.Submit,
-	[]*store.Reward, error) {
-	var submits []*store.Submit
-	var rewards []*store.Reward
+func (s *CatchupSyncer) convertLogs(logs []types.Log, bn2TimeMap map[uint64]uint64) (*store.DecodedLogs, error) {
+	var decodedLogs store.DecodedLogs
 
 	for _, log := range logs {
 		if log.Removed {
@@ -219,24 +269,69 @@ func (s *CatchupSyncer) convertLogs(logs []types.Log, bn2TimeMap map[uint64]uint
 		ts := bn2TimeMap[log.BlockNumber]
 		blockTime := time.Unix(int64(ts), 0)
 
-		submit, err := s.decodeSubmit(blockTime, log)
-		if err != nil {
-			return nil, nil, err
-		}
-		if submit != nil {
-			submits = append(submits, submit)
-		}
-
-		reward, err := s.decodeReward(blockTime, log)
-		if err != nil {
-			return nil, nil, err
-		}
-		if reward != nil {
-			rewards = append(rewards, reward)
+		switch log.Topics[0].String() {
+		case s.flowSubmitSig:
+			submit, err := s.decodeSubmit(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if submit != nil {
+				decodedLogs.Submits = append(decodedLogs.Submits, *submit)
+			}
+		case s.rewardSig:
+			reward, err := s.decodeReward(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if reward != nil {
+				decodedLogs.Rewards = append(decodedLogs.Rewards, *reward)
+			}
+		case s.newSignerSig:
+			signer, err := s.decodeNewSigner(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if signer != nil {
+				decodedLogs.DASigners = append(decodedLogs.DASigners, *signer)
+			}
+		case s.socketUpdatedSig:
+			signer, err := s.decodeSocketUpdated(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if signer != nil {
+				decodedLogs.DASignersWithSocketUpdated = append(decodedLogs.DASignersWithSocketUpdated, *signer)
+			}
+		case s.dataUploadSig:
+			daSubmit, err := s.decodeDataUpload(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if daSubmit != nil {
+				decodedLogs.DASubmits = append(decodedLogs.DASubmits, *daSubmit)
+			}
+		case s.commitVerifiedSig:
+			daSubmit, err := s.decodeCommitVerified(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if daSubmit != nil {
+				decodedLogs.DASubmitsWithVerified = append(decodedLogs.DASubmitsWithVerified, *daSubmit)
+			}
+		case s.daRewardSig:
+			daReward, err := s.decodeDAReward(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if daReward != nil {
+				decodedLogs.DARewards = append(decodedLogs.DARewards, *daReward)
+			}
+		default:
+			return nil, errors.Errorf("Faild to decode log, sig %v", log.Topics[0].String())
 		}
 	}
 
-	return submits, rewards, nil
+	return &decodedLogs, nil
 }
 
 func (s *CatchupSyncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.Submit, error) {
@@ -286,6 +381,95 @@ func (s *CatchupSyncer) decodeReward(blkTime time.Time, log types.Log) (*store.R
 	reward.MinerID = minerID
 
 	return reward, nil
+}
+
+func (s *CatchupSyncer) decodeNewSigner(blkTime time.Time, log types.Log) (*store.DASigner, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.daSignersAddr) || sig != s.newSignerSig {
+		return nil, nil
+	}
+
+	signer, err := store.NewDASigner(blkTime, log, nhContract.DummyDASignersFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	signerID, err := s.db.AddressStore.Add(signer.Address, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	signer.SignerID = signerID
+
+	return signer, nil
+}
+
+func (s *CatchupSyncer) decodeSocketUpdated(blkTime time.Time, log types.Log) (*store.DASigner, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.daSignersAddr) || sig != s.socketUpdatedSig {
+		return nil, nil
+	}
+
+	signer, err := store.NewDASignerSocket(log, nhContract.DummyDASignersFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	signerID, err := s.db.AddressStore.Add(signer.Address, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	signer.SignerID = signerID
+
+	return signer, nil
+}
+
+func (s *CatchupSyncer) decodeDataUpload(blkTime time.Time, log types.Log) (*store.DASubmit, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.daEntranceAddr) || sig != s.dataUploadSig {
+		return nil, nil
+	}
+
+	daSubmit, err := store.NewDASubmit(blkTime, log, nhContract.DummyDAEntranceFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	return daSubmit, nil
+}
+
+func (s *CatchupSyncer) decodeCommitVerified(blkTime time.Time, log types.Log) (*store.DASubmit, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.daEntranceAddr) || sig != s.commitVerifiedSig {
+		return nil, nil
+	}
+
+	daSubmit, err := store.NewDASubmitVerified(blkTime, log, nhContract.DummyDAEntranceFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	return daSubmit, nil
+}
+
+func (s *CatchupSyncer) decodeDAReward(blkTime time.Time, log types.Log) (*store.DAReward, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.daEntranceAddr) || sig != s.daRewardSig {
+		return nil, nil
+	}
+
+	daReward, err := store.NewDAReward(blkTime, log, nhContract.DummyDAEntranceFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	return daReward, nil
 }
 
 func (s *CatchupSyncer) interrupted(ctx context.Context) bool {

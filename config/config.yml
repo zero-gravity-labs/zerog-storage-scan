@@ -76,6 +76,26 @@ reward:
   # Distribute reward event signature
   rewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
 
+# DAEntrance contract info configurations
+daEntrance:
+  # DAEntrance contract address
+  address: 0xDFC8B84e3C98e8b550c7FEF00BCB2d8742d80a69
+  # Data upload event signature
+  dataUploadSignature: 0xf0bf37f8713754493879920443065424c575888634675f146c115709bbb59acb
+  # Erasure commitment verified event signature
+  erasureCommitmentVerifiedSignature: 0x0f1b20d87bebd11dddaaab51f01cf2726880cb3f8073b636dbafa2aa8cacd256
+  # DA reward event signature
+  DARewardSignature: 0xc3898eb7106c1cb2f727da316a76320c0035f5692950aa7f6b65d20a5efaedc5
+
+# DASigners contract info configurations
+daSigners:
+  # DASigners contract address
+  address: 0x0000000000000000000000000000000000001000
+  # New signer event signature
+  newSignerSignature: 0x679917c2006df1daaa987a56bf1d66e99764d5ad317892d9e83a6eb4e3f051e7
+  # Socket updated event signature
+  socketUpdatedSignature: 0x09617a966176a40f8f1410768b118506db0096484acd5811064fcc12038798de
+
 # MySQL database configurations
 store:
   mysql:

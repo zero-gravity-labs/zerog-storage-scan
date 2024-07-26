@@ -7,13 +7,17 @@ import (
 )
 
 var (
-	flowFilterer   *contract.FlowFilterer
-	rewardFilterer *OnePoolRewardFilterer
+	flowFilterer       *contract.FlowFilterer
+	rewardFilterer     *OnePoolRewardFilterer
+	daSignersFilterer  *DASignersFilterer
+	daEntranceFilterer *DAEntranceFilterer
 )
 
 func init() {
 	flowFilterer, _ = contract.NewFlowFilterer(common.HexToAddress(""), nil)
 	rewardFilterer, _ = NewOnePoolRewardFilterer(common.HexToAddress(""), nil)
+	daSignersFilterer, _ = NewDASignersFilterer(common.HexToAddress(""), nil)
+	daEntranceFilterer, _ = NewDAEntranceFilterer(common.HexToAddress(""), nil)
 }
 
 func DummyFlowFilterer() *contract.FlowFilterer {
@@ -22,6 +26,14 @@ func DummyFlowFilterer() *contract.FlowFilterer {
 
 func DummyRewardFilterer() *OnePoolRewardFilterer {
 	return rewardFilterer
+}
+
+func DummyDASignersFilterer() *DASignersFilterer {
+	return daSignersFilterer
+}
+
+func DummyDAEntranceFilterer() *DAEntranceFilterer {
+	return daEntranceFilterer
 }
 
 func TokenInfo(w3c *web3go.Client, address string) (string, string, uint8, error) {

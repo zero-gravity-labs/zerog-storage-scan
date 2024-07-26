@@ -94,7 +94,7 @@ func newSubmitStore(db *gorm.DB) *SubmitStore {
 	}
 }
 
-func (ss *SubmitStore) Add(dbTx *gorm.DB, submits []*Submit) error {
+func (ss *SubmitStore) Add(dbTx *gorm.DB, submits []Submit) error {
 	return dbTx.CreateInBatches(submits, batchSizeInsert).Error
 }
 

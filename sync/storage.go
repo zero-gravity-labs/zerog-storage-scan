@@ -65,8 +65,10 @@ func (ss *StorageSyncer) syncFileInfo(ctx context.Context) error {
 
 		for _, s := range submits {
 			info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
-			if e := alertErr(ctx, ss.alertChannel, "StorageRPCError", &storageRpcHealth, ss.healthReport, err); e != nil {
-				return e
+			if ss.alertChannel != "" {
+				if e := alertErr(ctx, ss.alertChannel, "StorageRPCError", &storageRpcHealth, ss.healthReport, err); e != nil {
+					return e
+				}
 			}
 			if err != nil {
 				return err

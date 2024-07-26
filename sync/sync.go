@@ -32,17 +32,21 @@ type Syncer struct {
 	syncIntervalCatchUp time.Duration
 	catchupSyncer       *CatchupSyncer
 	storageSyncer       *StorageSyncer
-	flowAddr            string
-	flowSubmitSig       string
-	rewardAddr          string
-	rewardSig           string
-	addresses           []common.Address
-	topics              [][]common.Hash
-}
 
-type storeData struct {
-	submits []*store.Submit
-	rewards []*store.Reward
+	flowAddr      string
+	flowSubmitSig string
+	rewardAddr    string
+	rewardSig     string
+
+	daEntranceAddr    string
+	dataUploadSig     string
+	commitVerifiedSig string
+	daSignersAddr     string
+	newSignerSig      string
+	socketUpdatedSig  string
+
+	addresses []common.Address
+	topics    [][]common.Hash
 }
 
 // MustNewSyncer creates an instance of Syncer to sync blockchain data.
@@ -59,6 +63,20 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 	}
 	viperUtil.MustUnmarshalKey("reward", &reward)
 
+	var daEntrance struct {
+		Address                            string
+		DataUploadSignature                string
+		ErasureCommitmentVerifiedSignature string
+	}
+	viperUtil.MustUnmarshalKey("daEntrance", &daEntrance)
+
+	var daSigners struct {
+		Address                string
+		NewSignerSignature     string
+		SocketUpdatedSignature string
+	}
+	viperUtil.MustUnmarshalKey("daSigners", &daSigners)
+
 	syncer := &Syncer{
 		conf:                &cf,
 		sdk:                 sdk,
@@ -67,12 +85,33 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		syncIntervalCatchUp: time.Millisecond,
 		catchupSyncer:       cs,
 		storageSyncer:       ss,
-		flowAddr:            flow.Address,
-		flowSubmitSig:       flow.SubmitEventSignature,
-		rewardAddr:          reward.Address,
-		rewardSig:           reward.RewardEventSignature,
-		addresses:           []common.Address{common.HexToAddress(flow.Address), common.HexToAddress(reward.Address)},
-		topics:              [][]common.Hash{{common.HexToHash(flow.SubmitEventSignature), common.HexToHash(reward.RewardEventSignature)}},
+
+		flowAddr:      flow.Address,
+		flowSubmitSig: flow.SubmitEventSignature,
+		rewardAddr:    reward.Address,
+		rewardSig:     reward.RewardEventSignature,
+
+		daEntranceAddr:    daEntrance.Address,
+		dataUploadSig:     daEntrance.DataUploadSignature,
+		commitVerifiedSig: daEntrance.ErasureCommitmentVerifiedSignature,
+		daSignersAddr:     daSigners.Address,
+		newSignerSig:      daSigners.NewSignerSignature,
+		socketUpdatedSig:  daSigners.SocketUpdatedSignature,
+
+		addresses: []common.Address{
+			common.HexToAddress(flow.Address),
+			common.HexToAddress(reward.Address),
+			common.HexToAddress(daEntrance.Address),
+			common.HexToAddress(daSigners.Address),
+		},
+		topics: [][]common.Hash{{
+			common.HexToHash(flow.SubmitEventSignature),
+			common.HexToHash(reward.RewardEventSignature),
+			common.HexToHash(daEntrance.DataUploadSignature),
+			common.HexToHash(daEntrance.ErasureCommitmentVerifiedSignature),
+			common.HexToHash(daSigners.NewSignerSignature),
+			common.HexToHash(daSigners.SocketUpdatedSignature),
+		}},
 	}
 
 	// Load last sync block information
@@ -168,9 +207,11 @@ var (
 func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 	// get the latest block
 	latestBlock, err := s.sdk.Eth.BlockNumber()
-	if e := alertErr(ctx, s.catchupSyncer.alertChannel, "NodeRPCError", &nodeRpcHealth, s.catchupSyncer.healthReport,
-		err); e != nil {
-		return false, e
+	if s.catchupSyncer.alertChannel != "" {
+		if e := alertErr(ctx, s.catchupSyncer.alertChannel, "NodeRPCError", &nodeRpcHealth, s.catchupSyncer.healthReport,
+			err); e != nil {
+			return false, e
+		}
 	}
 	if err != nil {
 		return false, err
@@ -215,11 +256,11 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 
 	// persist db
 	block := store.NewBlock(data.Block)
-	sd, err := s.parseEthData(data)
+	decodedLogs, err := s.parseEthData(data)
 	if err != nil {
 		return false, err
 	}
-	if err = s.db.Push(block, sd.submits, sd.rewards); err != nil {
+	if err = s.db.Push(block, decodedLogs); err != nil {
 		return false, err
 	}
 
@@ -310,7 +351,7 @@ func (s *Syncer) revertReorgData(revertBlock uint64) error {
 	return nil
 }
 
-func (s *Syncer) parseEthData(data *EthData) (*storeData, error) {
+func (s *Syncer) parseEthData(data *EthData) (*store.DecodedLogs, error) {
 	var logs []types.Log
 	if syncDataByLogs {
 		logs = data.Logs
@@ -328,10 +369,10 @@ func (s *Syncer) parseEthData(data *EthData) (*storeData, error) {
 
 	bn2TimeMap := map[uint64]uint64{data.Block.Number.Uint64(): data.Block.Timestamp}
 
-	submits, rewards, err := s.catchupSyncer.convertLogs(logs, bn2TimeMap)
+	decodedLogs, err := s.catchupSyncer.convertLogs(logs, bn2TimeMap)
 	if err != nil {
 		return nil, err
 	}
 
-	return &storeData{submits, rewards}, nil
+	return decodedLogs, nil
 }

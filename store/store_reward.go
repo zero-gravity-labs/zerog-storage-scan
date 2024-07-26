@@ -52,7 +52,7 @@ func newRewardStore(db *gorm.DB) *RewardStore {
 	}
 }
 
-func (rs *RewardStore) Add(dbTx *gorm.DB, rewards []*Reward) error {
+func (rs *RewardStore) Add(dbTx *gorm.DB, rewards []Reward) error {
 	return dbTx.CreateInBatches(rewards, batchSizeInsert).Error
 }
 
