@@ -90,6 +90,9 @@ func RegisterRouter(router *gin.Engine) {
 	accountsRoute.GET(":address/txs", listAddressTxsHandler)
 	accountsRoute.GET(":address/rewards", listAddressRewardsHandler)
 
+	daTxsRoute := apiRoute.Group("/da/txs")
+	daTxsRoute.GET("", listDATxsHandler)
+
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
@@ -322,4 +325,22 @@ func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
 	}
 
 	return &AddressInfo{address, addressInfo.ID}, nil
+}
+
+// listTxsHandler godoc
+//
+//	@Summary		DA transaction list
+//	@Description	Query DA transactions
+//	@Tags			DA transaction
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip		query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit		query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Param			rootHash	query		string	false	"The merkle root hash of the uploaded file"
+//	@Param			txHash		query		string	false	"The layer1 tx hash of the submission"
+//	@Success		200			{object}	api.BusinessError{Data=DATxList}
+//	@Failure		600			{object}	api.BusinessError
+//	@Router			/da/txs [get]
+func listDATxsHandler(c *gin.Context) {
+	api.Wrap(listDATxs)(c)
 }

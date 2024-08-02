@@ -3,21 +3,21 @@ package store
 import (
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-
 	"github.com/0glabs/0g-storage-scan/contract"
-
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
 type DASubmit struct {
-	BlockNumber uint64 `gorm:"primaryKey;autoIncrement:false"`
-	Epoch       uint64 `gorm:"primaryKey;autoIncrement:false"`
-	QuorumID    uint64 `gorm:"primaryKey;autoIncrement:false"`
-	RootHash    string `gorm:"primaryKey;autoIncrement:false;size:66;index:idx_root"`
-	Verified    bool   `gorm:"not null;default:false"`
+	BlockNumber uint64          `gorm:"primaryKey;autoIncrement:false"`
+	Epoch       uint64          `gorm:"primaryKey;autoIncrement:false"`
+	QuorumID    uint64          `gorm:"primaryKey;autoIncrement:false"`
+	RootHash    string          `gorm:"primaryKey;autoIncrement:false;size:66;index:idx_root"`
+	BlobPrice   decimal.Decimal `gorm:"type:decimal(65);not null"`
+	Verified    bool            `gorm:"not null;default:false"`
 
 	BlockTime           time.Time  `gorm:"not null;index:idx_bt"`
 	TxHash              string     `gorm:"size:66;not null;index:idx_txHash,length:10"`
@@ -33,9 +33,10 @@ func NewDASubmit(blockTime time.Time, log types.Log, filter *contract.DAEntrance
 	}
 
 	submit := &DASubmit{
-		Epoch:    dataUpload.Epoch.Uint64(),
-		QuorumID: dataUpload.QuorumId.Uint64(),
-		RootHash: common.Hash(dataUpload.DataRoot[:]).String(),
+		Epoch:     dataUpload.Epoch.Uint64(),
+		QuorumID:  dataUpload.QuorumId.Uint64(),
+		RootHash:  common.Hash(dataUpload.DataRoot[:]).String(),
+		BlobPrice: decimal.NewFromBigInt(dataUpload.BlobPrice, 0),
 
 		BlockNumber: log.BlockNumber,
 		BlockTime:   blockTime,
@@ -100,4 +101,32 @@ func (ss *DASubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s DASubmit) error {
 	}
 
 	return nil
+}
+
+func (ss *DASubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip, limit int) (int64, []DASubmit, error) {
+	dbRaw := ss.DB.Model(&DASubmit{})
+
+	var conds []func(db *gorm.DB) *gorm.DB
+	if rootHash != nil {
+		conds = append(conds, RootHash(*rootHash))
+	}
+	if txHash != nil {
+		conds = append(conds, TxHash(*txHash))
+	}
+	dbRaw.Scopes(conds...)
+
+	var orderBy string
+	if idDesc {
+		orderBy = "block_number DESC, epoch DESC, quorum_id DESC"
+	} else {
+		orderBy = "block_number ASC, epoch ASC, quorum_id ASC"
+	}
+
+	list := new([]DASubmit)
+	total, err := ss.Store.ListByOrder(dbRaw, orderBy, skip, limit, list)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return total, *list, nil
 }

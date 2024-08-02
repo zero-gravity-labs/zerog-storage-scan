@@ -1,9 +1,11 @@
 package store
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
+	set "github.com/deckarep/golang-set"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -129,7 +131,17 @@ func (ms *MysqlStore) Push(block *Block, decodedLogs *DecodedLogs) error {
 
 		// save DA submits
 		if len(decodedLogs.DASubmits) > 0 {
-			if err := ms.DASubmitStore.Add(dbTx, decodedLogs.DASubmits); err != nil {
+			// dedup
+			var daSubmits []DASubmit
+			daSubmitKeySet := set.NewSet()
+			for _, submit := range decodedLogs.DASubmits {
+				key := fmt.Sprintf("%v_%v_%v_%v", submit.BlockNumber, submit.Epoch, submit.QuorumID, submit.RootHash)
+				if !daSubmitKeySet.Contains(key) {
+					daSubmits = append(daSubmits, submit)
+					daSubmitKeySet.Add(key)
+				}
+			}
+			if err := ms.DASubmitStore.Add(dbTx, daSubmits); err != nil {
 				return errors.WithMessage(err, "failed to save DA submits")
 			}
 		}

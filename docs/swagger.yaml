@@ -56,6 +56,43 @@ definitions:
       message:
         type: string
     type: object
+  api.DATxInfo:
+    description: DA submission transaction information
+    properties:
+      blockNumber:
+        description: The block where the submit event is emitted
+        type: integer
+      from:
+        description: QuorumID in DataUpload event
+        type: integer
+      rootHash:
+        description: Merkle root of the data to upload
+        type: string
+      status:
+        description: Data upload status, 0-not verified,1-verified
+        type: integer
+      timestamp:
+        description: The block time when submit event emits
+        type: integer
+      txHash:
+        description: The transaction where the submit event is emitted
+        type: string
+      txSeq:
+        description: Epoch index in DataUpload event
+        type: integer
+    type: object
+  api.DATxList:
+    description: DA submission information list
+    properties:
+      list:
+        description: DA submission list
+        items:
+          $ref: '#/definitions/api.DATxInfo'
+        type: array
+      total:
+        description: The total number of da submission returned
+        type: integer
+    type: object
   api.DataStat:
     description: Storage data information
     properties:
@@ -488,6 +525,53 @@ paths:
       summary: Account's storage transaction list
       tags:
       - account
+  /da/txs:
+    get:
+      consumes:
+      - application/json
+      description: Query DA transactions
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: The merkle root hash of the uploaded file
+        in: query
+        name: rootHash
+        type: string
+      - description: The layer1 tx hash of the submission
+        in: query
+        name: txHash
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.DATxList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: DA transaction list
+      tags:
+      - DA transaction
   /rewards:
     get:
       consumes:

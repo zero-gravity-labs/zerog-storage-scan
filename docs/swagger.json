@@ -200,6 +200,78 @@
                 }
             }
         },
+        "/da/txs": {
+            "get": {
+                "description": "Query DA transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DA transaction"
+                ],
+                "summary": "DA transaction list",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The merkle root hash of the uploaded file",
+                        "name": "rootHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "The layer1 tx hash of the submission",
+                        "name": "txHash",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.DATxList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/rewards": {
             "get": {
                 "description": "Query storage rewards",
@@ -969,6 +1041,57 @@
                 "data": {},
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "api.DATxInfo": {
+            "description": "DA submission transaction information",
+            "type": "object",
+            "properties": {
+                "blockNumber": {
+                    "description": "The block where the submit event is emitted",
+                    "type": "integer"
+                },
+                "from": {
+                    "description": "QuorumID in DataUpload event",
+                    "type": "integer"
+                },
+                "rootHash": {
+                    "description": "Merkle root of the data to upload",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Data upload status, 0-not verified,1-verified",
+                    "type": "integer"
+                },
+                "timestamp": {
+                    "description": "The block time when submit event emits",
+                    "type": "integer"
+                },
+                "txHash": {
+                    "description": "The transaction where the submit event is emitted",
+                    "type": "string"
+                },
+                "txSeq": {
+                    "description": "Epoch index in DataUpload event",
+                    "type": "integer"
+                }
+            }
+        },
+        "api.DATxList": {
+            "description": "DA submission information list",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "DA submission list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DATxInfo"
+                    }
+                },
+                "total": {
+                    "description": "The total number of da submission returned",
+                    "type": "integer"
                 }
             }
         },

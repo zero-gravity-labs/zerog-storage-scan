@@ -226,3 +226,28 @@ type AccountInfo struct {
 
 	RewardCount uint64 `json:"rewardCount"` // Total number of distributed reward recodes
 }
+
+type listDATxParam struct {
+	PageParam
+	RootHash *string `form:"rootHash" binding:"omitempty"`
+	TxHash   *string `form:"txHash" binding:"omitempty"`
+}
+
+// DATxList model info
+// @Description DA submission information list
+type DATxList struct {
+	Total int64      `json:"total"` // The total number of da submission returned
+	List  []DATxInfo `json:"list"`  // DA submission list
+}
+
+// DATxInfo model info
+// @Description DA submission transaction information
+type DATxInfo struct {
+	BlockNumber uint64 `json:"blockNumber"` // The block where the submit event is emitted
+	TxHash      string `json:"txHash"`      // The transaction where the submit event is emitted
+	Timestamp   int64  `json:"timestamp"`   // The block time when submit event emits
+	Epoch       uint64 `json:"txSeq"`       // Epoch index in DataUpload event
+	QuorumID    uint64 `json:"from"`        // QuorumID in DataUpload event
+	RootHash    string `json:"rootHash"`    // Merkle root of the data to upload
+	Status      uint8  `json:"status"`      // Data upload status, 0-not verified,1-verified
+}
