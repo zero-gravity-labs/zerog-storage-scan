@@ -246,8 +246,12 @@ type DATxInfo struct {
 	BlockNumber uint64 `json:"blockNumber"` // The block where the submit event is emitted
 	TxHash      string `json:"txHash"`      // The transaction where the submit event is emitted
 	Timestamp   int64  `json:"timestamp"`   // The block time when submit event emits
-	Epoch       uint64 `json:"txSeq"`       // Epoch index in DataUpload event
-	QuorumID    uint64 `json:"from"`        // QuorumID in DataUpload event
-	RootHash    string `json:"rootHash"`    // Merkle root of the data to upload
-	Status      uint8  `json:"status"`      // Data upload status, 0-not verified,1-verified
+	From        string `json:"from"`        // File uploader address
+	Method      string `json:"method"`      // The name of the submit event
+
+	Epoch      uint64          `json:"epoch"`      // Epoch index in DataUpload event
+	QuorumID   uint64          `json:"quorumID"`   // QuorumID in DataUpload event
+	RootHash   string          `json:"rootHash"`   // Merkle root of the data to upload
+	StorageFee decimal.Decimal `json:"storageFee"` // The storage fee required to upload the file
+	Status     uint8           `json:"status"`     // Data upload status, 0-not verified,1-verified
 }

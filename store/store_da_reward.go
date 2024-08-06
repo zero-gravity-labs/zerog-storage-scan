@@ -3,25 +3,27 @@ package store
 import (
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
 type DAReward struct {
-	BlockNumber uint64    `gorm:"primaryKey;autoIncrement:false"`
-	BlockTime   time.Time `gorm:"not null"`
-	TxHash      string    `gorm:"size:66;not null"`
-	Miner       string    `gorm:"-"`
-	MinerID     uint64    `gorm:"not null"`
+	BlockNumber uint64 `gorm:"primaryKey;autoIncrement:false"`
+	Epoch       uint64 `gorm:"primaryKey;autoIncrement:false"`
+	QuorumID    uint64 `gorm:"primaryKey;autoIncrement:false"`
+	Miner       string `gorm:"-"`
+	MinerID     uint64 `gorm:"primaryKey;autoIncrement:false"`
+	RootHash    string `gorm:"size:66;index:idx_root"`
+
+	BlockTime time.Time `gorm:"not null"`
+	TxHash    string    `gorm:"size:66;not null"`
 
 	SampleRound  uint64          `gorm:"not null"`
-	Epoch        uint64          `gorm:"not null"`
-	QuorumId     uint64          `gorm:"not null"`
-	DataRoot     string          `gorm:"size:66;not null"`
 	Quality      uint64          `gorm:"not null"`
 	LineIndex    uint64          `gorm:"not null"`
 	SubLineIndex uint64          `gorm:"not null"`
@@ -36,14 +38,14 @@ func NewDAReward(blockTime time.Time, log types.Log, filter *nhContract.DAEntran
 
 	reward := &DAReward{
 		BlockNumber: log.BlockNumber,
-		BlockTime:   blockTime,
-		TxHash:      log.TxHash.String(),
+		Epoch:       daReward.Epoch.Uint64(),
+		QuorumID:    daReward.QuorumId.Uint64(),
+		RootHash:    common.Hash(daReward.DataRoot[:]).String(),
 		Miner:       daReward.Beneficiary.String(),
 
+		BlockTime:    blockTime,
+		TxHash:       log.TxHash.String(),
 		SampleRound:  daReward.SampleRound.Uint64(),
-		Epoch:        daReward.Epoch.Uint64(),
-		QuorumId:     daReward.QuorumId.Uint64(),
-		DataRoot:     common.Hash(daReward.DataRoot[:]).String(),
 		Quality:      daReward.Quality.Uint64(),
 		LineIndex:    daReward.LineIndex.Uint64(),
 		SubLineIndex: daReward.SublineIndex.Uint64(),

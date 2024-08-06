@@ -12,18 +12,21 @@ import (
 )
 
 type DASubmit struct {
-	BlockNumber uint64          `gorm:"primaryKey;autoIncrement:false"`
-	Epoch       uint64          `gorm:"primaryKey;autoIncrement:false"`
-	QuorumID    uint64          `gorm:"primaryKey;autoIncrement:false"`
-	RootHash    string          `gorm:"primaryKey;autoIncrement:false;size:66;index:idx_root"`
-	BlobPrice   decimal.Decimal `gorm:"type:decimal(65);not null"`
-	Verified    bool            `gorm:"not null;default:false"`
+	BlockNumber uint64 `gorm:"primaryKey;autoIncrement:false"`
+	Epoch       uint64 `gorm:"primaryKey;autoIncrement:false"`
+	QuorumID    uint64 `gorm:"primaryKey;autoIncrement:false"`
+	Sender      string `gorm:"-"`
+	SenderID    uint64 `gorm:"primaryKey;autoIncrement:false"`
+	RootHash    string `gorm:"size:66;index:idx_root"`
 
-	BlockTime           time.Time  `gorm:"not null;index:idx_bt"`
-	TxHash              string     `gorm:"size:66;not null;index:idx_txHash,length:10"`
-	BlockNumberVerified *uint64    `gorm:"index:idx_bn_verified"`
-	BlockTimeVerified   *time.Time `gorm:"index:idx_bt_verified"`
-	TxHashVerified      *string    `gorm:"size:66;index:idx_txHash_verified,length:10"`
+	BlockTime time.Time `gorm:"not null;index:idx_bt"`
+	TxHash    string    `gorm:"size:66;not null;index:idx_txHash,length:10"`
+
+	BlobPrice           decimal.Decimal `gorm:"type:decimal(65);not null"`
+	Verified            bool            `gorm:"not null;default:false"`
+	BlockNumberVerified *uint64         `gorm:"index:idx_bn_verified"`
+	BlockTimeVerified   *time.Time      `gorm:"index:idx_bt_verified"`
+	TxHashVerified      *string         `gorm:"size:66;index:idx_txHash_verified,length:10"`
 }
 
 func NewDASubmit(blockTime time.Time, log types.Log, filter *contract.DAEntranceFilterer) (*DASubmit, error) {
@@ -36,6 +39,7 @@ func NewDASubmit(blockTime time.Time, log types.Log, filter *contract.DAEntrance
 		Epoch:     dataUpload.Epoch.Uint64(),
 		QuorumID:  dataUpload.QuorumId.Uint64(),
 		RootHash:  common.Hash(dataUpload.DataRoot[:]).String(),
+		Sender:    dataUpload.Sender.String(),
 		BlobPrice: decimal.NewFromBigInt(dataUpload.BlobPrice, 0),
 
 		BlockNumber: log.BlockNumber,

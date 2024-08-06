@@ -439,6 +439,13 @@ func (s *CatchupSyncer) decodeDataUpload(blkTime time.Time, log types.Log) (*sto
 		return nil, err
 	}
 
+	senderID, err := s.db.AddressStore.Add(daSubmit.Sender, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	daSubmit.SenderID = senderID
+
 	return daSubmit, nil
 }
 
@@ -468,6 +475,13 @@ func (s *CatchupSyncer) decodeDAReward(blkTime time.Time, log types.Log) (*store
 	if err != nil {
 		return nil, err
 	}
+
+	minerID, err := s.db.AddressStore.Add(daReward.Miner, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	daReward.MinerID = minerID
 
 	return daReward, nil
 }

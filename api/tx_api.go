@@ -116,6 +116,12 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(submits) == 0 {
+		return &StorageTxList{
+			Total: total,
+			List:  make([]StorageTxInfo, 0),
+		}, nil
+	}
 
 	return convertStorageTxs(total, submits)
 }

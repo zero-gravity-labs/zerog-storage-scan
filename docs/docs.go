@@ -1060,7 +1060,19 @@ const docTemplate = `{
                     "description": "The block where the submit event is emitted",
                     "type": "integer"
                 },
+                "epoch": {
+                    "description": "Epoch index in DataUpload event",
+                    "type": "integer"
+                },
                 "from": {
+                    "description": "File uploader address",
+                    "type": "string"
+                },
+                "method": {
+                    "description": "The name of the submit event",
+                    "type": "string"
+                },
+                "quorumID": {
                     "description": "QuorumID in DataUpload event",
                     "type": "integer"
                 },
@@ -1072,6 +1084,10 @@ const docTemplate = `{
                     "description": "Data upload status, 0-not verified,1-verified",
                     "type": "integer"
                 },
+                "storageFee": {
+                    "description": "The storage fee required to upload the file",
+                    "type": "number"
+                },
                 "timestamp": {
                     "description": "The block time when submit event emits",
                     "type": "integer"
@@ -1079,10 +1095,6 @@ const docTemplate = `{
                 "txHash": {
                     "description": "The transaction where the submit event is emitted",
                     "type": "string"
-                },
-                "txSeq": {
-                    "description": "Epoch index in DataUpload event",
-                    "type": "integer"
                 }
             }
         },
