@@ -581,6 +581,52 @@ paths:
       summary: DA transaction list
       tags:
       - DA transaction
+  /da/txs/{blockNumber}/{epoch}/{quorumID}/{dataRoot}:
+    get:
+      consumes:
+      - application/json
+      description: Query DA transaction by blockNumber, epoch, quorumId, dataRoot
+      parameters:
+      - description: Block number at which the file is uploaded
+        in: path
+        name: blockNumber
+        required: true
+        type: string
+      - description: The consecutive blocks in 0g chain is divided into groups of
+          EpochBlocks and each group is an epoch
+        in: path
+        name: epoch
+        required: true
+        type: string
+      - description: Quorum id in an epoch
+        in: path
+        name: quorumID
+        required: true
+        type: string
+      - description: Data root
+        in: path
+        name: dataRoot
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/api.DATxInfo'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: DA transaction information
+      tags:
+      - DA transaction
   /rewards:
     get:
       consumes:

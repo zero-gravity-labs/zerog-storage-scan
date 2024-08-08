@@ -280,6 +280,77 @@ const docTemplate = `{
                 }
             }
         },
+        "/da/txs/{blockNumber}/{epoch}/{quorumID}/{dataRoot}": {
+            "get": {
+                "description": "Query DA transaction by blockNumber, epoch, quorumId, dataRoot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DA transaction"
+                ],
+                "summary": "DA transaction information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Block number at which the file is uploaded",
+                        "name": "blockNumber",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The consecutive blocks in 0g chain is divided into groups of EpochBlocks and each group is an epoch",
+                        "name": "epoch",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Quorum id in an epoch",
+                        "name": "quorumID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Data root",
+                        "name": "dataRoot",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/api.DATxInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/rewards": {
             "get": {
                 "description": "Query storage rewards",

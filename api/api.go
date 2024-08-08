@@ -92,6 +92,7 @@ func RegisterRouter(router *gin.Engine) {
 
 	daTxsRoute := apiRoute.Group("/da/txs")
 	daTxsRoute.GET("", listDATxsHandler)
+	daTxsRoute.GET(":blockNumber/:epoch/:quorumID/:dataRoot", getDATxHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
@@ -343,4 +344,22 @@ func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
 //	@Router			/da/txs [get]
 func listDATxsHandler(c *gin.Context) {
 	api.Wrap(listDATxs)(c)
+}
+
+// getDATxHandler godoc
+//
+//	@Summary		DA transaction information
+//	@Description	Query DA transaction by blockNumber, epoch, quorumId, dataRoot
+//	@Tags			DA transaction
+//	@Accept			json
+//	@Produce		json
+//	@Param			blockNumber	path		string	true	"Block number at which the file is uploaded"
+//	@Param			epoch		path		string	true	"The consecutive blocks in 0g chain is divided into groups of EpochBlocks and each group is an epoch"
+//	@Param			quorumID	path		string	true	"Quorum id in an epoch"
+//	@Param			dataRoot	path		string	true	"Data root"
+//	@Success		200			{object}	api.BusinessError{Data=DATxInfo}
+//	@Failure		600			{object}	api.BusinessError
+//	@Router			/da/txs/{blockNumber}/{epoch}/{quorumID}/{dataRoot} [get]
+func getDATxHandler(c *gin.Context) {
+	api.Wrap(getDATx)(c)
 }
