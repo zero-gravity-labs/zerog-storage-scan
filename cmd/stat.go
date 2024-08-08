@@ -43,6 +43,8 @@ func startStatService(*cobra.Command, []string) {
 	go stAddress.DoStat(ctx, &wg)
 	stMiner := stat.MustNewStatMiner(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
 	go stMiner.DoStat(ctx, &wg)
+	stDASubmit := stat.MustNewDAStatSubmit(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
+	go stDASubmit.DoStat(ctx, &wg)
 
 	GracefulShutdown(&wg, cancel)
 }

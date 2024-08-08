@@ -20,11 +20,12 @@ var (
 )
 
 type StatConfig struct {
-	BlockOnStatBegin            uint64
-	MinStatIntervalDailyTx      string `default:"10m"`
-	MinStatIntervalDailySubmit  string `default:"10m"`
-	MinStatIntervalDailyAddress string `default:"10m"`
-	MinStatIntervalDailyMiner   string `default:"1h"`
+	BlockOnStatBegin             uint64
+	MinStatIntervalDailyTx       string `default:"10m"`
+	MinStatIntervalDailySubmit   string `default:"10m"`
+	MinStatIntervalDailyAddress  string `default:"10m"`
+	MinStatIntervalDailyMiner    string `default:"1h"`
+	MinStatIntervalDailyDASubmit string `default:"10m"`
 }
 
 type TimeRange struct {

@@ -93,6 +93,17 @@ func (ss *DASubmitStore) Pop(dbTx *gorm.DB, block uint64) error {
 	return dbTx.Where("block_number >= ?", block).Delete(&DASubmit{}).Error
 }
 
+func (ss *DASubmitStore) Count(startTime, endTime time.Time) (*DASubmitStatResult, error) {
+	var result DASubmitStatResult
+	err := ss.DB.Model(&DASubmit{}).Select(`count(*) as blobs, IFNULL(sum(blob_price), 0) as storage_fee`).
+		Where("block_time >= ? and block_time < ?", startTime, endTime).Find(&result).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (ss *DASubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s DASubmit) error {
 	db := ss.DB
 	if dbTx != nil {

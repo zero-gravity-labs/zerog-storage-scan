@@ -1,7 +1,7 @@
 # EVM space SDK client configurations
 eth:
   # Fullnode HTTP endpoint
-  url: http://15.152.71.57:8545
+  url: https://evmtestnet.confluxrpc.com/
   # Retry times if failure, if 0 never
   # retry: 0
   # Interval duration before each retry
@@ -10,11 +10,17 @@ eth:
   # requestTimeout: 3s
   # Max connections allowed per fullnode
   # maxConnsPerHost: 1024
+  # Health report config
+  # healthReport:
+  #   threshold: 1m
+  #   remind: 5m
+  # Alert channel
+  # alertChannel: tgRobot
 
 # storage SDK client configurations
 storage:
   # Storage node rpc url
-  url: http://54.219.26.22:5678
+  url: :5678
   # Retry times if failure, if 0 never
   # retry: 0
   # Interval duration before each retry
@@ -23,13 +29,17 @@ storage:
   # requestTimeout: 3s
   # Max connections allowed per storage node
   # maxConnsPerHost: 1024
+  # Health report config
+  # healthReport:
+  #   threshold: 1m
+  #   remind: 5m
+  # Alert channel
+  # alertChannel: tgRobot
 
 # Blockchain sync configurations
 sync:
   # The block number from which to sync flow submit
-  blockWhenFlowCreated: 1
-  # The blockchain type from which to sync data
-  # syncFromConflux: false
+  blockWhenFlowCreated: 134253185
   # To avoid pivot switch frequently, skip some blocks ahead of the latest block
   # delayBlocksAgainstLatest: 30
   # The number of blocks to query at a time during catchup, 0 means no limit
@@ -42,7 +52,7 @@ sync:
 # Flow contract info configurations
 flow:
   # Flow contract address
-  address: 0x8873cc79c5b3b5666535C825205C9a128B1D75F1
+  address: 0xcb7afff6f048ec1fb033aa7b495ed0dd932c8656
   # Flow submit event signature
   submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
 
@@ -51,7 +61,7 @@ flow:
 # When charging in native token, configure `symbol` and `decimals`
 charge:
   # Charge in ERC20 token address
-  erc20TokenAddress:
+  erc20TokenAddress: 0x7d682e65efc5c13bf4e394b8f376c48e6bae0355
   # ERC20 transfer event signature
   erc20TransferEventSignature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
   # Token symbol
@@ -62,16 +72,16 @@ charge:
 # Reward contract info configurations
 reward:
   # Reward contract address
-  address: 0x233B2768332e4Bae542824c93cc5c8ad5d44517E
+  address: 0x7a6bb8a34cc7a418350d3cf2409c580ba9ef2dbf
   # Distribute reward event signature
   rewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
 
 # DAEntrance contract info configurations
 daEntrance:
   # DAEntrance contract address
-  address: 0x5ea5BDF94909EF030C0F36d0F3BEd04Ed87489B1
+  address: 0xDFC8B84e3C98e8b550c7FEF00BCB2d8742d80a69
   # Data upload event signature
-  dataUploadSignature: 0x57b8b1a6583dc6ce934dfba3d66f2a8e1591b6e171bb2e0921cc64640277087b
+  dataUploadSignature: 0xf0bf37f8713754493879920443065424c575888634675f146c115709bbb59acb
   # Erasure commitment verified event signature
   erasureCommitmentVerifiedSignature: 0x0f1b20d87bebd11dddaaab51f01cf2726880cb3f8073b636dbafa2aa8cacd256
   # DA reward event signature
@@ -80,7 +90,7 @@ daEntrance:
 # DASigners contract info configurations
 daSigners:
   # DASigners contract address
-  address: "0x0000000000000000000000000000000000001000"
+  address: 0x0000000000000000000000000000000000001000
   # New signer event signature
   newSignerSignature: 0x679917c2006df1daaa987a56bf1d66e99764d5ad317892d9e83a6eb4e3f051e7
   # Socket updated event signature
@@ -89,21 +99,25 @@ daSigners:
 # MySQL database configurations
 store:
   mysql:
-    host: 127.0.0.1:3306
-    username: root
-    password: Crb229!@#
-    database: storage_scan_local
+    host: :3306
+    username:
+    password:
+    database:
     # connMaxLifeTime: 3m
     # maxOpenConns: 10
     # maxIdleConns: 10
 
 stat:
   # The block number from which to stat
-  blockOnStatBegin: 471900
+  blockOnStatBegin: 134253185
   # The minimum interval for tx stat
   # minStatIntervalDailyTx: 10m
   # The minimum interval for submit stat
   # minStatIntervalDailySubmit: 10m
+  # The minimum interval for address stat
+  # minStatIntervalDailyAddress: 10m
+  # The minimum interval for miner stat
+  # minStatIntervalDailyMiner: 1h
   # The interval for data uplink rate stat
   # statIntervalDataUplinkRate: 1s
 
@@ -124,7 +138,7 @@ log:
 #alert:
 #  # Custom tags are used to distinguish between different networks and environments.
 #  # For example, they can be used to differentiate between mainnet/testnet, prod/test/dev, etc.
-#  customTags: [local]
+#  customTags: [dev]
 #  # Channels are used for sending notifications.
 #  # Each channel is identified by a unique key (e.g., channel ID), which is case insensitive.
 #  # The value for each key is the configuration for that channel.
@@ -133,6 +147,6 @@ log:
 #      # The type of the channel. In this case, it's 'telegram'.
 #      platform: telegram
 #      # The API token for the Telegram robot.
-#      apiToken: 7224540870:AAEZbgMcOcCRRWQfrKuPSSreXgmZ72OeL7k
+#      apiToken: ${your_api_token}
 #      # The chat ID for the Telegram chat where the alerts are sent.
-#      chatId: "-1002154262394"
+#      chatId: ${your_chat_id}
