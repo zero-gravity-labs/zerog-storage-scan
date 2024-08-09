@@ -14,7 +14,7 @@ type StatDASubmit struct {
 	statType string
 }
 
-func MustNewDAStatSubmit(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client, startTime time.Time) *AbsStat {
+func MustNewStatDASubmit(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client, startTime time.Time) *AbsStat {
 	baseStat := &BaseStat{
 		Config:    cfg,
 		DB:        db,

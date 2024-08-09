@@ -145,3 +145,24 @@ func (ss *DASubmitStore) List(rootHash *string, txHash *string, idDesc bool, ski
 
 	return total, *list, nil
 }
+
+func (ss *DASubmitStore) CountActive(startTime, endTime time.Time) (uint64, error) {
+	db := ss.DB.Model(&DASubmit{})
+
+	nilTime := time.Time{}
+	if startTime != nilTime && endTime != nilTime {
+		db = db.Where("block_time >= ? and block_time < ?", startTime, endTime)
+	}
+	if startTime == nilTime && endTime != nilTime {
+		db = db.Where("block_time < ?", endTime)
+	}
+
+	var clientActive int64
+	err := db.Select(`count(distinct sender_id) as client_active`).
+		Find(&clientActive).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(clientActive), nil
+}

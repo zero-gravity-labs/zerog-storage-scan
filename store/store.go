@@ -32,6 +32,7 @@ type MysqlStore struct {
 	*DARewardStore
 	*DASubmitStatStore
 	*DAClientStore
+	*DAClientStatStore
 }
 
 func MustNewStore(db *gorm.DB) *MysqlStore {
@@ -53,6 +54,7 @@ func MustNewStore(db *gorm.DB) *MysqlStore {
 		DARewardStore:      newDARewardStore(db),
 		DASubmitStatStore:  newDASubmitStatStore(db),
 		DAClientStore:      newDAClientStore(db),
+		DAClientStatStore:  newDAClientStatStore(db),
 	}
 }
 

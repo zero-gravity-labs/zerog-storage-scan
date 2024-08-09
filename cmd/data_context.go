@@ -63,6 +63,8 @@ var migrationModels = []interface{}{
 	&store.DASubmit{},
 	&store.DAReward{},
 	&store.DASubmitStat{},
+	&store.DAClient{},
+	&store.DAClientStat{},
 }
 
 func MustInitDataContext() DataContext {
