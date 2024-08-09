@@ -444,6 +444,11 @@ func (s *CatchupSyncer) decodeDataUpload(blkTime time.Time, log types.Log) (*sto
 		return nil, err
 	}
 
+	_, err = s.db.DAClientStore.Add(senderID, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
 	daSubmit.SenderID = senderID
 
 	return daSubmit, nil
