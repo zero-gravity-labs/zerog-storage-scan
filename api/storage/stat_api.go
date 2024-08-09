@@ -1,10 +1,13 @@
-package api
+package storage
 
 import (
 	"encoding/json"
 
+	"github.com/pkg/errors"
+
 	"github.com/0glabs/0g-storage-scan/stat"
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/api"
 	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
 )
@@ -32,13 +35,13 @@ func listFeeStat(c *gin.Context) (interface{}, error) {
 func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 	var statP statParam
 	if err := c.ShouldBind(&statP); err != nil {
-		return nil, err
+		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
 	total, records, err := db.SubmitStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
 		statP.isDesc(), statP.Skip, statP.Limit)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	result := make(map[string]interface{})
@@ -78,7 +81,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 		}
 		result["list"] = list
 	default:
-		return nil, ErrStatTypeNotSupported
+		return nil, commonApi.ErrValidation(errors.Errorf("Invalid stat type %v", t))
 	}
 
 	return result, nil
@@ -87,13 +90,13 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 func listAddressStat(c *gin.Context) (interface{}, error) {
 	var statP statParam
 	if err := c.ShouldBind(&statP); err != nil {
-		return nil, err
+		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
 	total, records, err := db.AddressStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
 		statP.isDesc(), statP.Skip, statP.Limit)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	result := make(map[string]interface{})
@@ -116,13 +119,13 @@ func listAddressStat(c *gin.Context) (interface{}, error) {
 func listMinerStat(c *gin.Context) (interface{}, error) {
 	var statP statParam
 	if err := c.ShouldBind(&statP); err != nil {
-		return nil, err
+		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
 	total, records, err := db.MinerStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
 		statP.isDesc(), statP.Skip, statP.Limit)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	result := make(map[string]interface{})
@@ -148,7 +151,7 @@ func summary(_ *gin.Context) (interface{}, error) {
 		return nil, commonApi.ErrInternal(err)
 	}
 	if !exist {
-		return nil, ErrConfigNotFound
+		return nil, commonApi.ErrInternal(errors.Errorf("Log sync info not sync"))
 	}
 
 	var logSyncInfo stat.LogSyncInfo
@@ -161,7 +164,7 @@ func summary(_ *gin.Context) (interface{}, error) {
 		return nil, commonApi.ErrInternal(err)
 	}
 	if submitStat == nil {
-		return nil, ErrStorageBaseFeeNotStat
+		return nil, commonApi.ErrInternal(errors.Errorf("Storage base fee not stat"))
 	}
 
 	storageFee := StorageFeeStat{

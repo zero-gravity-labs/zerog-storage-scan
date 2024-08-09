@@ -1,14 +1,16 @@
-package api
+package storage
 
 import (
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 )
 
 func listStorageRewards(c *gin.Context) (interface{}, error) {
 	var param PageParam
 	if err := c.ShouldBind(&param); err != nil {
-		return nil, err
+		return nil, api.ErrValidation(errors.Errorf("Page param error"))
 	}
 
 	total, rewards, err := listRewards(nil, param.isDesc(), param.Skip, param.Limit)
@@ -27,7 +29,7 @@ func listAddressStorageRewards(c *gin.Context) (interface{}, error) {
 
 	var param PageParam
 	if err := c.ShouldBind(&param); err != nil {
-		return nil, err
+		return nil, api.ErrValidation(errors.Errorf("Page param error"))
 	}
 
 	total, rewards, err := listRewards(addrIDPtr, param.isDesc(), param.Skip, param.Limit)
@@ -40,12 +42,16 @@ func listAddressStorageRewards(c *gin.Context) (interface{}, error) {
 
 func listRewards(addressID *uint64, idDesc bool, skip, limit int) (int64, []store.Reward, error) {
 	if addressID == nil {
-		return db.RewardStore.List(idDesc, skip, limit)
+		total, rewards, err := db.RewardStore.List(idDesc, skip, limit)
+		if err != nil {
+			return 0, nil, api.ErrInternal(err)
+		}
+		return total, rewards, nil
 	}
 
 	total, addrRewards, err := db.AddressRewardStore.List(addressID, idDesc, skip, limit)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, api.ErrInternal(err)
 	}
 
 	rewards := make([]store.Reward, 0)
@@ -70,7 +76,7 @@ func convertStorageRewards(total int64, rewards []store.Reward) (*RewardList, er
 	}
 	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	storageRewards := make([]Reward, 0)

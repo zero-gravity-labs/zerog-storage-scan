@@ -1,9 +1,12 @@
-package api
+package da
 
 import (
 	"strconv"
 
+	scanApi "github.com/0glabs/0g-storage-scan/api"
+
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -12,12 +15,12 @@ import (
 func listDATxs(c *gin.Context) (interface{}, error) {
 	var param listDATxParam
 	if err := c.ShouldBind(&param); err != nil {
-		return nil, err
+		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
 	total, submits, err := db.DASubmitStore.List(param.RootHash, param.TxHash, param.isDesc(), param.Skip, param.Limit)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 	if len(submits) == 0 {
 		return &DATxList{
@@ -34,19 +37,19 @@ func getDATx(c *gin.Context) (interface{}, error) {
 	blockNumber, err := strconv.ParseUint(blockNumberParam, 10, 64)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to parse blockNumber")
-		return nil, errors.Errorf("Biz error, invalid blockNumber %v", blockNumberParam)
+		return nil, api.ErrValidation(errors.Errorf("Invalid blockNumber %v", blockNumberParam))
 	}
 	epochParam := c.Param("epoch")
 	epoch, err := strconv.ParseUint(epochParam, 10, 64)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to parse epoch")
-		return nil, errors.Errorf("Biz error, invalid epoch %v", epochParam)
+		return nil, api.ErrValidation(errors.Errorf("Invalid epoch %v", epochParam))
 	}
 	quorumIDParam := c.Param("quorumID")
 	quorumID, err := strconv.ParseUint(quorumIDParam, 10, 64)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to parse quorumID")
-		return nil, errors.Errorf("Biz error, invalid quorumID %v", quorumIDParam)
+		return nil, api.ErrValidation(errors.Errorf("Invalid quorumID %v", quorumIDParam))
 	}
 	dataRoot := c.Param("dataRoot")
 
@@ -55,18 +58,17 @@ func getDATx(c *gin.Context) (interface{}, error) {
 		blockNumber, epoch, quorumID, dataRoot)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to query databases")
-		return nil, errors.Errorf("Biz error, blockNumber %v blockNumber %v blockNumber %v blockNumber %v",
-			blockNumber, epoch, quorumID, dataRoot)
+		return nil, api.ErrInternal(err)
 	}
 	if !exist {
-		return nil, errors.Errorf("Record not found, blockNumber %v blockNumber %v blockNumber %v blockNumber %v",
-			blockNumber, epoch, quorumID, dataRoot)
+		return nil, scanApi.ErrNoMatchingRecords(errors.Errorf("DA tx, blockNumber %v epoch %v quorumID %v dataRoot %v",
+			blockNumber, epoch, quorumID, dataRoot))
 	}
 
 	addrIDs := []uint64{submit.SenderID}
 	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	var status uint8
@@ -97,7 +99,7 @@ func convertDATxs(total int64, submits []store.DASubmit) (*DATxList, error) {
 	}
 	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	daTxs := make([]DATxInfo, 0)

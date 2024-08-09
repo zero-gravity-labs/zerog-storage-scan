@@ -1,9 +1,10 @@
-package api
+package storage
 
 import (
+	"github.com/0glabs/0g-storage-scan/api"
+	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/sirupsen/logrus"
 )
@@ -18,17 +19,17 @@ func getAccountInfo(c *gin.Context) (interface{}, error) {
 	balance, err := sdk.Eth.Balance(addr, nil)
 	if err != nil {
 		logrus.WithError(err).WithField("address", addressInfo.address).Error("Failed to get balance")
-		return nil, errors.Errorf("Get balance error, address %v", addressInfo.address)
+		return nil, api.ErrBlockchainRPC(err)
 	}
 
 	submitStat, err := db.AddressSubmitStore.Count(&addressInfo.addressId)
 	if err != nil {
-		return nil, err
+		return nil, commonApi.ErrInternal(err)
 	}
 
 	rewardStat, err := db.AddressRewardStore.Count(&addressInfo.addressId)
 	if err != nil {
-		return nil, err
+		return nil, commonApi.ErrInternal(err)
 	}
 
 	accountInfo := AccountInfo{

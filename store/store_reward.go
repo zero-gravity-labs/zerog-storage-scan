@@ -12,10 +12,10 @@ import (
 
 type Reward struct {
 	BlockNumber  uint64          `gorm:"primaryKey;autoIncrement:false"`
-	BlockTime    time.Time       `gorm:"not null"`
-	TxHash       string          `gorm:"size:66;not null"`
 	Miner        string          `gorm:"-"`
-	MinerID      uint64          `gorm:"not null"`
+	MinerID      uint64          `gorm:"primaryKey;autoIncrement:false"`
+	TxHash       string          `gorm:"size:66;primaryKey;autoIncrement:false"`
+	BlockTime    time.Time       `gorm:"not null"`
 	PricingIndex uint64          `gorm:"not null"`
 	Amount       decimal.Decimal `gorm:"type:decimal(65);not null"`
 }

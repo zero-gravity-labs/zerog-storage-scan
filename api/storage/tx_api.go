@@ -1,11 +1,13 @@
-package api
+package storage
 
 import (
 	"encoding/json"
 	"strconv"
 
 	"github.com/0glabs/0g-storage-client/core"
+	scanApi "github.com/0glabs/0g-storage-scan/api"
 	"github.com/0glabs/0g-storage-scan/store"
+	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -15,12 +17,12 @@ import (
 func listStorageTxs(c *gin.Context) (interface{}, error) {
 	var param listStorageTxParam
 	if err := c.ShouldBind(&param); err != nil {
-		return nil, err
+		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
 	total, submits, err := listSubmits(nil, param.RootHash, param.TxHash, param.isDesc(), param.Skip, param.Limit)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	return convertStorageTxs(total, submits)
@@ -31,23 +33,23 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	txSeq, err := strconv.ParseUint(txSeqParam, 10, 64)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to parse txSeq")
-		return nil, errors.Errorf("Biz error, invalid txSeq %v", txSeq)
+		return nil, api.ErrValidation(errors.Errorf("Invalid txSeq %v", txSeq))
 	}
 
 	var submit store.Submit
 	exist, err := db.Store.Exists(&submit, "submission_index = ?", txSeq)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to query databases")
-		return nil, errors.Errorf("Biz error, txSeq %v", txSeq)
+		return nil, api.ErrInternal(err)
 	}
 	if !exist {
-		return nil, errors.Errorf("Record not found, txSeq %v", txSeq)
+		return nil, scanApi.ErrNoMatchingRecords(errors.Errorf("Storage tx, txSeq %v", txSeq))
 	}
 
 	addrIDs := []uint64{submit.SenderID}
 	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	result := StorageTxDetail{
@@ -66,7 +68,7 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	var extra store.SubmitExtra
 	if err := json.Unmarshal(submit.Extra, &extra); err != nil {
 		logrus.WithError(err).Error("Failed to unmarshal submit extra")
-		return nil, errors.Errorf("Unmarshal submit extra error, txSeq %v", txSeq)
+		return nil, api.ErrInternal(err)
 	}
 	result.StartPosition = extra.StartPos.Uint64()
 	trunksWithoutPadding := (submit.Length-1)/core.DefaultChunkSize + 1
@@ -78,20 +80,20 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	tx, err := sdk.Eth.TransactionByHash(hash)
 	if err != nil {
 		logrus.WithError(err).WithField("txSeq", txSeq).Error("Failed to get transaction")
-		return nil, errors.Errorf("Get tx error, txSeq %v", txSeq)
+		return nil, scanApi.ErrBlockchainRPC(err)
 	}
 	if tx == nil {
 		logrus.WithField("txSeq", txSeq).Error("Nil transaction")
-		return nil, ErrLayer1TxPruned
+		return nil, scanApi.ErrBlockchainRPC(errors.Errorf("Transaction pruned"))
 	}
 	rcpt, err := sdk.Eth.TransactionReceipt(hash)
 	if err != nil {
 		logrus.WithError(err).WithField("txSeq", txSeq).Error("Failed to get receipt")
-		return nil, errors.Errorf("Get receitp error, txSeq %v", txSeq)
+		return nil, scanApi.ErrBlockchainRPC(err)
 	}
 	if rcpt == nil {
 		logrus.WithField("txSeq", txSeq).Error("Nil receipt")
-		return nil, ErrLayer1ReceiptPruned
+		return nil, scanApi.ErrBlockchainRPC(errors.Errorf("Transaction's receipt pruned"))
 	}
 	result.GasFee = tx.GasPrice.Uint64() * rcpt.GasUsed
 	result.GasUsed = rcpt.GasUsed
@@ -109,7 +111,8 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 
 	var param listAddressStorageTxParam
 	if err := c.ShouldBind(&param); err != nil {
-		return nil, err
+		logrus.WithError(err).Error("Failed to parse listAddressStorageTxParam")
+		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
 	total, submits, err := listSubmits(addrIDPtr, param.RootHash, param.TxHash, param.isDesc(), param.Skip, param.Limit)
@@ -129,12 +132,16 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 func listSubmits(addressID *uint64, rootHash *string, txHash *string, idDesc bool, skip, limit int) (int64,
 	[]store.Submit, error) {
 	if addressID == nil {
-		return db.SubmitStore.List(rootHash, txHash, idDesc, skip, limit)
+		total, submits, err := db.SubmitStore.List(rootHash, txHash, idDesc, skip, limit)
+		if err != nil {
+			return 0, nil, api.ErrInternal(err)
+		}
+		return total, submits, nil
 	}
 
 	total, addrSubmits, err := db.AddressSubmitStore.List(addressID, rootHash, txHash, idDesc, skip, limit)
 	if err != nil {
-		return 0, nil, err
+		return 0, nil, api.ErrInternal(err)
 	}
 
 	submits := make([]store.Submit, 0)
@@ -164,7 +171,7 @@ func convertStorageTxs(total int64, submits []store.Submit) (*StorageTxList, err
 	}
 	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
-		return nil, err
+		return nil, api.ErrInternal(err)
 	}
 
 	storageTxs := make([]StorageTxInfo, 0)

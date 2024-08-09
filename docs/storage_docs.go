@@ -3,7 +3,7 @@ package docs
 
 import "github.com/swaggo/swag"
 
-const docTemplate = `{
+const docTemplatestorage = `{
     "schemes": {{ marshal .Schemes }},
     "swagger": "2.0",
     "info": {
@@ -48,7 +48,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.AccountInfo"
+                                            "$ref": "#/definitions/storage.AccountInfo"
                                         }
                                     }
                                 }
@@ -114,7 +114,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.RewardList"
+                                            "$ref": "#/definitions/storage.RewardList"
                                         }
                                     }
                                 }
@@ -192,150 +192,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.StorageTxList"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/api.BusinessError"
-                        }
-                    }
-                }
-            }
-        },
-        "/da/txs": {
-            "get": {
-                "description": "Query DA transactions",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "DA transaction"
-                ],
-                "summary": "DA transaction list",
-                "parameters": [
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "default": 0,
-                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
-                        "name": "skip",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "default": 10,
-                        "description": "The number of records displayed on the page",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "The merkle root hash of the uploaded file",
-                        "name": "rootHash",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "The layer1 tx hash of the submission",
-                        "name": "txHash",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/api.DATxList"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/api.BusinessError"
-                        }
-                    }
-                }
-            }
-        },
-        "/da/txs/{blockNumber}/{epoch}/{quorumID}/{dataRoot}": {
-            "get": {
-                "description": "Query DA transaction by blockNumber, epoch, quorumId, dataRoot",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "DA transaction"
-                ],
-                "summary": "DA transaction information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Block number at which the file is uploaded",
-                        "name": "blockNumber",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "The consecutive blocks in 0g chain is divided into groups of EpochBlocks and each group is an epoch",
-                        "name": "epoch",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Quorum id in an epoch",
-                        "name": "quorumID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Data root",
-                        "name": "dataRoot",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/api.DATxInfo"
+                                            "$ref": "#/definitions/storage.StorageTxList"
                                         }
                                     }
                                 }
@@ -395,7 +252,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.RewardList"
+                                            "$ref": "#/definitions/storage.RewardList"
                                         }
                                     }
                                 }
@@ -489,7 +346,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.AddressStatList"
+                                            "$ref": "#/definitions/storage.AddressStatList"
                                         }
                                     }
                                 }
@@ -583,7 +440,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.FeeStatList"
+                                            "$ref": "#/definitions/storage.FeeStatList"
                                         }
                                     }
                                 }
@@ -677,7 +534,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.TxStatList"
+                                            "$ref": "#/definitions/storage.TxStatList"
                                         }
                                     }
                                 }
@@ -771,7 +628,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.MinerStatList"
+                                            "$ref": "#/definitions/storage.MinerStatList"
                                         }
                                     }
                                 }
@@ -865,7 +722,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.DataStatList"
+                                            "$ref": "#/definitions/storage.DataStatList"
                                         }
                                     }
                                 }
@@ -903,7 +760,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.Summary"
+                                            "$ref": "#/definitions/storage.Summary"
                                         }
                                     }
                                 }
@@ -975,7 +832,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.StorageTxList"
+                                            "$ref": "#/definitions/storage.StorageTxList"
                                         }
                                     }
                                 }
@@ -1025,7 +882,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "Data": {
-                                            "$ref": "#/definitions/api.StorageTxDetail"
+                                            "$ref": "#/definitions/storage.StorageTxDetail"
                                         }
                                     }
                                 }
@@ -1043,7 +900,33 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "api.AccountInfo": {
+        "api.BusinessError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {},
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "stat.LogSyncInfo": {
+            "description": "Submit log sync information",
+            "type": "object",
+            "properties": {
+                "layer1-logSyncHeight": {
+                    "description": "Synchronization height of submit log on blockchain",
+                    "type": "integer"
+                },
+                "logSyncHeight": {
+                    "description": "Synchronization height of submit log on storage node",
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.AccountInfo": {
             "type": "object",
             "properties": {
                 "balance": {
@@ -1072,7 +955,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.AddressStat": {
+        "storage.AddressStat": {
             "description": "Hex40 stat data information",
             "type": "object",
             "properties": {
@@ -1094,7 +977,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.AddressStatList": {
+        "storage.AddressStatList": {
             "description": "Hex40 address stat list",
             "type": "object",
             "properties": {
@@ -1102,7 +985,7 @@ const docTemplate = `{
                     "description": "Stat list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.AddressStat"
+                        "$ref": "#/definitions/storage.AddressStat"
                     }
                 },
                 "total": {
@@ -1111,82 +994,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.BusinessError": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "integer"
-                },
-                "data": {},
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DATxInfo": {
-            "description": "DA submission transaction information",
-            "type": "object",
-            "properties": {
-                "blockNumber": {
-                    "description": "The block where the submit event is emitted",
-                    "type": "integer"
-                },
-                "epoch": {
-                    "description": "Epoch index in DataUpload event",
-                    "type": "integer"
-                },
-                "from": {
-                    "description": "File uploader address",
-                    "type": "string"
-                },
-                "method": {
-                    "description": "The name of the submit event",
-                    "type": "string"
-                },
-                "quorumID": {
-                    "description": "QuorumID in DataUpload event",
-                    "type": "integer"
-                },
-                "rootHash": {
-                    "description": "Merkle root of the data to upload",
-                    "type": "string"
-                },
-                "status": {
-                    "description": "Data upload status, 0-not verified,1-verified",
-                    "type": "integer"
-                },
-                "storageFee": {
-                    "description": "The storage fee required to upload the file",
-                    "type": "number"
-                },
-                "timestamp": {
-                    "description": "The block time when submit event emits",
-                    "type": "integer"
-                },
-                "txHash": {
-                    "description": "The transaction where the submit event is emitted",
-                    "type": "string"
-                }
-            }
-        },
-        "api.DATxList": {
-            "description": "DA submission information list",
-            "type": "object",
-            "properties": {
-                "list": {
-                    "description": "DA submission list",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.DATxInfo"
-                    }
-                },
-                "total": {
-                    "description": "The total number of da submission returned",
-                    "type": "integer"
-                }
-            }
-        },
-        "api.DataStat": {
+        "storage.DataStat": {
             "description": "Storage data information",
             "type": "object",
             "properties": {
@@ -1212,7 +1020,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.DataStatList": {
+        "storage.DataStatList": {
             "description": "Storage data list",
             "type": "object",
             "properties": {
@@ -1220,7 +1028,7 @@ const docTemplate = `{
                     "description": "Stat list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.DataStat"
+                        "$ref": "#/definitions/storage.DataStat"
                     }
                 },
                 "total": {
@@ -1229,7 +1037,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.FeeStat": {
+        "storage.FeeStat": {
             "description": "Storage fee information",
             "type": "object",
             "properties": {
@@ -1247,7 +1055,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.FeeStatList": {
+        "storage.FeeStatList": {
             "description": "Storage fee list",
             "type": "object",
             "properties": {
@@ -1255,7 +1063,7 @@ const docTemplate = `{
                     "description": "Stat list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.FeeStat"
+                        "$ref": "#/definitions/storage.FeeStat"
                     }
                 },
                 "total": {
@@ -1264,7 +1072,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.MinerStat": {
+        "storage.MinerStat": {
             "description": "Miner stat data information",
             "type": "object",
             "properties": {
@@ -1286,7 +1094,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.MinerStatList": {
+        "storage.MinerStatList": {
             "description": "Miner stat list",
             "type": "object",
             "properties": {
@@ -1294,7 +1102,7 @@ const docTemplate = `{
                     "description": "Stat list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.MinerStat"
+                        "$ref": "#/definitions/storage.MinerStat"
                     }
                 },
                 "total": {
@@ -1303,7 +1111,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Reward": {
+        "storage.Reward": {
             "description": "Reward information",
             "type": "object",
             "properties": {
@@ -1329,7 +1137,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.RewardList": {
+        "storage.RewardList": {
             "description": "Miner reward list",
             "type": "object",
             "properties": {
@@ -1337,7 +1145,7 @@ const docTemplate = `{
                     "description": "Miner reward list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.Reward"
+                        "$ref": "#/definitions/storage.Reward"
                     }
                 },
                 "total": {
@@ -1346,7 +1154,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.StorageFeeStat": {
+        "storage.StorageFeeStat": {
             "description": "Stat storage fee information",
             "type": "object",
             "properties": {
@@ -1354,7 +1162,7 @@ const docTemplate = `{
                     "description": "Charge token info",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/api.TokenInfo"
+                            "$ref": "#/definitions/storage.TokenInfo"
                         }
                     ]
                 },
@@ -1364,7 +1172,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.StorageTxDetail": {
+        "storage.StorageTxDetail": {
             "description": "Submission transaction information",
             "type": "object",
             "properties": {
@@ -1442,7 +1250,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.StorageTxInfo": {
+        "storage.StorageTxInfo": {
             "description": "Submission transaction information",
             "type": "object",
             "properties": {
@@ -1496,7 +1304,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.StorageTxList": {
+        "storage.StorageTxList": {
             "description": "Submission information list",
             "type": "object",
             "properties": {
@@ -1504,7 +1312,7 @@ const docTemplate = `{
                     "description": "Submission list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.StorageTxInfo"
+                        "$ref": "#/definitions/storage.StorageTxInfo"
                     }
                 },
                 "total": {
@@ -1513,7 +1321,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.Summary": {
+        "storage.Summary": {
             "description": "Storage summary information",
             "type": "object",
             "properties": {
@@ -1529,13 +1337,13 @@ const docTemplate = `{
                     "description": "Storage fee information",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/api.StorageFeeStat"
+                            "$ref": "#/definitions/storage.StorageFeeStat"
                         }
                     ]
                 }
             }
         },
-        "api.TokenInfo": {
+        "storage.TokenInfo": {
             "description": "Charge token information",
             "type": "object",
             "properties": {
@@ -1561,7 +1369,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TxStat": {
+        "storage.TxStat": {
             "description": "Storage transaction information",
             "type": "object",
             "properties": {
@@ -1579,7 +1387,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.TxStatList": {
+        "storage.TxStatList": {
             "description": "Storage transaction list",
             "type": "object",
             "properties": {
@@ -1587,7 +1395,7 @@ const docTemplate = `{
                     "description": "Stat list",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/api.TxStat"
+                        "$ref": "#/definitions/storage.TxStat"
                     }
                 },
                 "total": {
@@ -1595,38 +1403,24 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
-        },
-        "stat.LogSyncInfo": {
-            "description": "Submit log sync information",
-            "type": "object",
-            "properties": {
-                "layer1-logSyncHeight": {
-                    "description": "Synchronization height of submit log on blockchain",
-                    "type": "integer"
-                },
-                "logSyncHeight": {
-                    "description": "Synchronization height of submit log on storage node",
-                    "type": "integer"
-                }
-            }
         }
     }
 }`
 
-// SwaggerInfo holds exported Swagger Info so clients can modify it
-var SwaggerInfo = &swag.Spec{
+// SwaggerInfostorage holds exported Swagger Info so clients can modify it
+var SwaggerInfostorage = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
 	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "0G Storage Scan API",
-	Description:      "Use any http client to fetch data from the 0G Storage Scan.",
-	InfoInstanceName: "swagger",
-	SwaggerTemplate:  docTemplate,
+	Description:      "Use any http client to fetch data from the 0G Storage Scan.\n\n#### Common Error Messages:\nAn API call that encounters an error will return non-zero as its status code. The error message will be returned in the message field and the detailed reason for the error will be returned in the data field.\n```\n{\n\"code\": 1001,\n\"message\":\"No matching records found\",\n\"data\":\"Storage tx, txSeq 1000000\"\n}\n```\n| error code | error message             |\n|:-----------|:--------------------------|\n| 0          | Success                   |\n| 1          | Invalid parameter         |\n| 2          | Internal server error     |\n| 3          | Too many requests         |\n| 1001       | No matching records found |\n| 1002       | Blockchain RPC failure    |\n\n\n",
+	InfoInstanceName: "storage",
+	SwaggerTemplate:  docTemplatestorage,
 	LeftDelim:        "{{",
 	RightDelim:       "}}",
 }
 
 func init() {
-	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
+	swag.Register(SwaggerInfostorage.InstanceName(), SwaggerInfostorage)
 }

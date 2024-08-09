@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	nhApi "github.com/0glabs/0g-storage-scan/api"
+	"github.com/0glabs/0g-storage-scan/api/storage"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +22,7 @@ func startAPIService(*cobra.Command, []string) {
 	dataCtx := MustInitDataContext()
 	defer dataCtx.Close()
 
-	nhApi.MustInit(dataCtx.Eth, dataCtx.DB)
+	storage.MustInit(dataCtx.Eth, dataCtx.DB)
 
-	api.MustServeFromViper(nhApi.RegisterRouter)
+	api.MustServeFromViper(storage.Register)
 }

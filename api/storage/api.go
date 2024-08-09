@@ -1,11 +1,11 @@
-package api
+package storage
 
 import (
+	scanApi "github.com/0glabs/0g-storage-scan/api"
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/docs"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
-	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/gin-gonic/gin"
 	"github.com/openweb3/web3go"
@@ -62,12 +62,14 @@ func MustInit(client *web3go.Client, store *store.MysqlStore) {
 
 // @title			0G Storage Scan API
 // @version		1.0
-// @description	Use any http client to fetch data from the 0G Storage Scan.
+// @description: Use any http client to fetch data from the 0G Storage Scan
+// @description.markdown
+
 func init() {
-	docs.SwaggerInfo.BasePath = BasePath
+	docs.SwaggerInfostorage.BasePath = BasePath
 }
 
-func RegisterRouter(router *gin.Engine) {
+func Register(router *gin.Engine) {
 	apiRoute := router.Group(BasePath)
 
 	statsRoute := apiRoute.Group("/stats")
@@ -90,11 +92,7 @@ func RegisterRouter(router *gin.Engine) {
 	accountsRoute.GET(":address/txs", listAddressTxsHandler)
 	accountsRoute.GET(":address/rewards", listAddressRewardsHandler)
 
-	daTxsRoute := apiRoute.Group("/da/txs")
-	daTxsRoute.GET("", listDATxsHandler)
-	daTxsRoute.GET(":blockNumber/:epoch/:quorumID/:dataRoot", getDATxHandler)
-
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("storage")))
 }
 
 // summaryHandler godoc
@@ -314,52 +312,16 @@ func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
 	address := c.Param("address")
 	if address == "" {
 		logrus.Error("Failed to parse nil address")
-		return nil, errors.Errorf("Biz error, nil address %v", address)
+		return nil, api.ErrValidation(errors.Errorf("Address is '%v'", address))
 	}
 
 	addressInfo, exist, err := db.AddressStore.Get(address)
 	if err != nil {
-		return nil, commonApi.ErrInternal(err)
+		return nil, api.ErrInternal(err)
 	}
 	if !exist {
-		return nil, ErrAddressNotFound
+		return nil, scanApi.ErrNoMatchingRecords(errors.Errorf("Blockchain account, address %v", address))
 	}
 
 	return &AddressInfo{address, addressInfo.ID}, nil
-}
-
-// listTxsHandler godoc
-//
-//	@Summary		DA transaction list
-//	@Description	Query DA transactions
-//	@Tags			DA transaction
-//	@Accept			json
-//	@Produce		json
-//	@Param			skip		query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
-//	@Param			limit		query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
-//	@Param			rootHash	query		string	false	"The merkle root hash of the uploaded file"
-//	@Param			txHash		query		string	false	"The layer1 tx hash of the submission"
-//	@Success		200			{object}	api.BusinessError{Data=DATxList}
-//	@Failure		600			{object}	api.BusinessError
-//	@Router			/da/txs [get]
-func listDATxsHandler(c *gin.Context) {
-	api.Wrap(listDATxs)(c)
-}
-
-// getDATxHandler godoc
-//
-//	@Summary		DA transaction information
-//	@Description	Query DA transaction by blockNumber, epoch, quorumId, dataRoot
-//	@Tags			DA transaction
-//	@Accept			json
-//	@Produce		json
-//	@Param			blockNumber	path		string	true	"Block number at which the file is uploaded"
-//	@Param			epoch		path		string	true	"The consecutive blocks in 0g chain is divided into groups of EpochBlocks and each group is an epoch"
-//	@Param			quorumID	path		string	true	"Quorum id in an epoch"
-//	@Param			dataRoot	path		string	true	"Data root"
-//	@Success		200			{object}	api.BusinessError{Data=DATxInfo}
-//	@Failure		600			{object}	api.BusinessError
-//	@Router			/da/txs/{blockNumber}/{epoch}/{quorumID}/{dataRoot} [get]
-func getDATxHandler(c *gin.Context) {
-	api.Wrap(getDATx)(c)
 }

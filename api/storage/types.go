@@ -1,4 +1,4 @@
-package api
+package storage
 
 import (
 	"strings"
@@ -225,33 +225,4 @@ type AccountInfo struct {
 	StorageFee decimal.Decimal `json:"storageFeeTotal"` // Total storage fee
 
 	RewardCount uint64 `json:"rewardCount"` // Total number of distributed reward recodes
-}
-
-type listDATxParam struct {
-	PageParam
-	RootHash *string `form:"rootHash" binding:"omitempty"`
-	TxHash   *string `form:"txHash" binding:"omitempty"`
-}
-
-// DATxList model info
-// @Description DA submission information list
-type DATxList struct {
-	Total int64      `json:"total"` // The total number of da submission returned
-	List  []DATxInfo `json:"list"`  // DA submission list
-}
-
-// DATxInfo model info
-// @Description DA submission transaction information
-type DATxInfo struct {
-	BlockNumber uint64 `json:"blockNumber"` // The block where the submit event is emitted
-	TxHash      string `json:"txHash"`      // The transaction where the submit event is emitted
-	Timestamp   int64  `json:"timestamp"`   // The block time when submit event emits
-	From        string `json:"from"`        // File uploader address
-	Method      string `json:"method"`      // The name of the submit event
-
-	Epoch      uint64          `json:"epoch"`      // Epoch index in DataUpload event
-	QuorumID   uint64          `json:"quorumID"`   // QuorumID in DataUpload event
-	RootHash   string          `json:"rootHash"`   // Merkle root of the data to upload
-	StorageFee decimal.Decimal `json:"storageFee"` // The storage fee required to upload the file
-	Status     uint8           `json:"status"`     // Data upload status, 0-not verified,1-verified
 }

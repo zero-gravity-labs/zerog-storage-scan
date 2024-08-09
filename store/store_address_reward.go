@@ -12,8 +12,8 @@ import (
 type AddressReward struct {
 	MinerID      uint64          `gorm:"primaryKey;autoIncrement:false"`
 	BlockNumber  uint64          `gorm:"primaryKey;autoIncrement:false;index:idx_bn"`
+	TxHash       string          `gorm:"size:66;primaryKey;autoIncrement:false"`
 	BlockTime    time.Time       `gorm:"not null"`
-	TxHash       string          `gorm:"size:66;not null"`
 	PricingIndex uint64          `gorm:"not null"`
 	Amount       decimal.Decimal `gorm:"type:decimal(65);not null"`
 }
