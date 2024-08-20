@@ -8,6 +8,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0
 	github.com/ethereum/go-ethereum v1.12.2
 	github.com/gin-gonic/gin v1.9.1
+	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/openweb3/go-rpc-provider v0.3.2
 	github.com/openweb3/web3go v0.2.6
 	github.com/pkg/errors v0.9.1
@@ -17,6 +18,7 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.2
+	golang.org/x/time v0.3.0
 	gorm.io/gorm v1.25.4
 )
 

@@ -8,6 +8,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/api/rate"
+	"github.com/Conflux-Chain/go-conflux-util/http/middlewares"
+	"github.com/Conflux-Chain/go-conflux-util/rate/http"
+
 	"github.com/0glabs/0g-storage-client/node"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/health"
@@ -66,6 +70,7 @@ var migrationModels = []interface{}{
 	&store.DAReward{},
 	&store.DAClient{},
 	&store.DAClientStat{},
+	&store.RateLimit{},
 }
 
 func MustInitDataContext() DataContext {
@@ -130,4 +135,19 @@ func GracefulShutdown(wg *sync.WaitGroup, cancel context.CancelFunc) {
 	wg.Wait()
 
 	logrus.Info("Shutdown gracefully")
+}
+
+func httpMiddlewares(dataCtx DataContext) []middlewares.Middleware {
+	mws := make([]middlewares.Middleware, 0)
+	mws = append(mws, middlewares.RealIP)
+	mws = append(mws, middlewares.NewApiKeyMiddleware(middlewares.ApiKeyOption{ParamName: "apikey"}))
+
+	limiterFactory := rate.NewLimiterFactory(rate.NewLimitKeyLoader(dataCtx.DB.ListLimitKeyInfos))
+	go limiterFactory.AutoReload(10*time.Second, dataCtx.DB.LoadRateLimitConfigs)
+
+	mws = append(mws, rate.NewSingleAPIRateMiddleware(limiterFactory.Limit))
+	mws = append(mws, http.NewHttpMiddleware(limiterFactory.Limit, "api_all_qps"))
+	mws = append(mws, http.NewHttpMiddleware(limiterFactory.Limit, "api_all_daily"))
+
+	return mws
 }

@@ -24,5 +24,7 @@ func startDAAPIService(*cobra.Command, []string) {
 
 	da.MustInit(dataCtx.Eth, dataCtx.DB)
 
-	api.MustServeFromViper(da.Register)
+	mws := httpMiddlewares(dataCtx)
+
+	api.MustServeFromViper(da.Register, mws...)
 }
