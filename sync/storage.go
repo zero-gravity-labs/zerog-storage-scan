@@ -14,23 +14,24 @@ import (
 var (
 	ErrNoFileInfoToSync         = errors.New("No file info to sync")
 	BatchGetSubmitsNotFinalized = 10000
-	storageRpcHealth            = health.TimedCounter{}
 )
 
 type StorageSyncer struct {
-	l2Sdk        *node.Client
-	db           *store.MysqlStore
-	alertChannel string
-	healthReport health.TimedCounterConfig
+	l2Sdks            []*node.Client
+	db                *store.MysqlStore
+	alertChannel      string
+	healthReport      health.TimedCounterConfig
+	storageRpcHealths []health.TimedCounter
 }
 
-func MustNewStorageSyncer(l2Sdk *node.Client, db *store.MysqlStore, alertChannel string,
+func MustNewStorageSyncer(l2Sdks []*node.Client, db *store.MysqlStore, alertChannel string,
 	healthReport health.TimedCounterConfig) *StorageSyncer {
 	return &StorageSyncer{
-		l2Sdk:        l2Sdk,
-		db:           db,
-		alertChannel: alertChannel,
-		healthReport: healthReport,
+		l2Sdks:            l2Sdks,
+		db:                db,
+		alertChannel:      alertChannel,
+		healthReport:      healthReport,
+		storageRpcHealths: make([]health.TimedCounter, len(l2Sdks)),
 	}
 }
 
@@ -64,43 +65,47 @@ func (ss *StorageSyncer) syncFileInfo(ctx context.Context) error {
 		}
 
 		for _, s := range submits {
-			info, err := ss.l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
-			if ss.alertChannel != "" {
-				if e := alertErr(ctx, ss.alertChannel, "StorageRPCError", &storageRpcHealth, ss.healthReport, err); e != nil {
-					return e
+			for i, l2Sdk := range ss.l2Sdks {
+				info, err := l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(s.SubmissionIndex)
+				if ss.alertChannel != "" {
+					storageRpcHealth := ss.storageRpcHealths[i]
+					if e := alertErr(ctx, ss.alertChannel, "StorageRPCError", &storageRpcHealth, ss.healthReport, err); e != nil {
+						return e
+					}
 				}
-			}
-			if err != nil {
-				return err
-			}
-			if info == nil {
-				continue
-			}
+				if err != nil || info == nil {
+					continue
+				}
 
-			submit := store.Submit{
-				SubmissionIndex: s.SubmissionIndex,
-				UploadedSegNum:  info.UploadedSegNum,
-			}
-			if !info.Finalized {
-				if info.UploadedSegNum == 0 {
-					submit.Status = uint8(store.NotUploaded)
+				submit := store.Submit{
+					SubmissionIndex: s.SubmissionIndex,
+					UploadedSegNum:  info.UploadedSegNum,
+				}
+				if !info.Finalized {
+					if info.UploadedSegNum == 0 {
+						submit.Status = uint8(store.NotUploaded)
+					} else {
+						submit.Status = uint8(store.Uploading)
+					}
 				} else {
-					submit.Status = uint8(store.Uploading)
+					submit.Status = uint8(store.Uploaded)
+					submit.UploadedSegNum = submit.TotalSegNum // Field `uploadedSegNum` is set 0 by rpc when `finalized` is true
 				}
-			} else {
-				submit.Status = uint8(store.Uploaded)
-				submit.UploadedSegNum = submit.TotalSegNum // Field `uploadedSegNum` is set 0 by rpc when `finalized` is true
-			}
 
-			addressSubmit := store.AddressSubmit{
-				SenderID:        s.SenderID,
-				SubmissionIndex: s.SubmissionIndex,
-				UploadedSegNum:  submit.UploadedSegNum,
-				Status:          submit.Status,
-			}
+				addressSubmit := store.AddressSubmit{
+					SenderID:        s.SenderID,
+					SubmissionIndex: s.SubmissionIndex,
+					UploadedSegNum:  submit.UploadedSegNum,
+					Status:          submit.Status,
+				}
 
-			if err := ss.db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
-				return err
+				if err := ss.db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
+					return err
+				}
+
+				if submit.Status == uint8(store.Uploaded) {
+					break
+				}
 			}
 		}
 		lastSubmissionIndex = submits[len(submits)-1].SubmissionIndex + 1

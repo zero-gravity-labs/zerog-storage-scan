@@ -21,7 +21,7 @@ import (
 // DataContext context to hold sdk clients for blockchain interoperation.
 type DataContext struct {
 	Eth      *web3go.Client
-	L2Sdk    *node.Client
+	L2Sdks   []*node.Client
 	DB       *store.MysqlStore
 	EthCfg   SdkConfig
 	L2SdkCfg L2SdkConfig
@@ -38,7 +38,7 @@ type SdkConfig struct {
 }
 
 type L2SdkConfig struct {
-	URL             string
+	URLs            []string
 	Retry           int
 	RetryInterval   time.Duration `default:"1s"`
 	RequestTimeout  time.Duration `default:"3s"`
@@ -89,11 +89,15 @@ func MustInitDataContext() DataContext {
 	opt2.WithRetry(l2SdkCfg.Retry, l2SdkCfg.RetryInterval).
 		WithTimout(l2SdkCfg.RequestTimeout).
 		WithMaxConnectionPerHost(l2SdkCfg.MaxConnsPerHost)
-	l2Sdk := node.MustNewClient(l2SdkCfg.URL, opt2)
+	var l2Sdks []*node.Client
+	for _, url := range l2SdkCfg.URLs {
+		l2Sdk := node.MustNewClient(url, opt2)
+		l2Sdks = append(l2Sdks, l2Sdk)
+	}
 
 	return DataContext{
 		DB:       store.MustNewStore(db),
-		L2Sdk:    l2Sdk,
+		L2Sdks:   l2Sdks,
 		Eth:      eth,
 		EthCfg:   sdkCfg,
 		L2SdkCfg: l2SdkCfg,
