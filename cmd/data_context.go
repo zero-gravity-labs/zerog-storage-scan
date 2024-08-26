@@ -8,13 +8,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/0glabs/0g-storage-scan/api/rate"
-	"github.com/Conflux-Chain/go-conflux-util/http/middlewares"
-	"github.com/Conflux-Chain/go-conflux-util/rate/http"
-
 	"github.com/0glabs/0g-storage-client/node"
+	"github.com/0glabs/0g-storage-scan/api/metrics"
+	"github.com/0glabs/0g-storage-scan/api/rate"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/health"
+	"github.com/Conflux-Chain/go-conflux-util/http/middlewares"
+	"github.com/Conflux-Chain/go-conflux-util/rate/http"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
 	providers "github.com/openweb3/go-rpc-provider/provider_wrapper"
@@ -140,14 +140,16 @@ func GracefulShutdown(wg *sync.WaitGroup, cancel context.CancelFunc) {
 func httpMiddlewares(dataCtx DataContext) []middlewares.Middleware {
 	mws := make([]middlewares.Middleware, 0)
 	mws = append(mws, middlewares.RealIP)
+	mws = append(mws, metrics.URLType)
 	mws = append(mws, middlewares.NewApiKeyMiddleware(middlewares.ApiKeyOption{ParamName: "apikey"}))
 
 	limiterFactory := rate.NewLimiterFactory(rate.NewLimitKeyLoader(dataCtx.DB.ListLimitKeyInfos))
 	go limiterFactory.AutoReload(10*time.Second, dataCtx.DB.LoadRateLimitConfigs)
-
-	mws = append(mws, rate.NewSingleAPIRateMiddleware(limiterFactory.Limit))
+	mws = append(mws, rate.NewAPIRateMiddleware(limiterFactory.Limit))
 	mws = append(mws, http.NewHttpMiddleware(limiterFactory.Limit, "api_all_qps"))
 	mws = append(mws, http.NewHttpMiddleware(limiterFactory.Limit, "api_all_daily"))
+
+	mws = append(mws, metrics.Metrics())
 
 	return mws
 }

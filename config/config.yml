@@ -150,3 +150,18 @@ log:
 #      apiToken: ${your_api_token}
 #      # The chat ID for the Telegram chat where the alerts are sent.
 #      chatId: ${your_chat_id}
+
+# Metrics configurations
+#metrics:
+#  # Whether to collect metrics
+#  enabled: true
+#  # InfluxDB configurations
+#  influxdb:
+#    host: http://127.0.0.1:8086
+#    db: scan-ssd
+#    username: root
+#    password: root
+#  report:
+#    # Whether to report collected metrics to InfluxDB periodically
+#    enabled: false
+#    interval: 10s

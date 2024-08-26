@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/api/metrics"
 	"github.com/Conflux-Chain/go-conflux-util/http/middlewares"
 	commonRate "github.com/Conflux-Chain/go-conflux-util/rate"
 	commonHttp "github.com/Conflux-Chain/go-conflux-util/rate/http"
@@ -48,22 +49,11 @@ func NewLimiterFactory(limitKeyLoader *LimitKeyLoader) *LimiterFactory {
 func (lf *LimiterFactory) GetGroupAndKey(ctx context.Context, resource string) (group, key string, err error) {
 	apiKey, ok := middlewares.GetApiKeyFromContext(ctx)
 	if !ok {
-		logrus.WithFields(logrus.Fields{
-			"resource": resource,
-			"apiKey":   apiKey,
-			"ok":       ok,
-		}).Info("debug rate limit [GetGroupAndKey] ---1--- ")
 		// use default strategy if not authenticated
 		return lf.genDefaultGroupAndKey(ctx, resource)
 	}
 
 	if limitKey, ok := lf.limitKeyLoader.Load(apiKey); ok && limitKey != nil {
-		logrus.WithFields(logrus.Fields{
-			"resource": resource,
-			"apiKey":   apiKey,
-			"ok":       ok,
-			"limitKey": limitKey,
-		}).Info("debug rate limit [GetGroupAndKey] ---2--- ")
 		// use strategy with corresponding key info
 		return lf.genKeyInfoGroupAndKey(ctx, resource, apiKey, limitKey)
 	}
@@ -93,30 +83,18 @@ func (lf *LimiterFactory) genDefaultGroupAndKey(ctx context.Context, resource st
 	defer lf.mu.Unlock()
 
 	stg, ok := lf.strategies[DefaultStrategy]
-	stgJ, _ := json.Marshal(stg)
-	logrus.WithFields(logrus.Fields{
-		"resource": resource,
-		"stg":      string(stgJ),
-	}).Info("debug rate limit [genDefaultGroupAndKey] ---1--- ")
 	if !ok { // no default strategy
 		logrus.WithField("resource", resource).Info("Default strategy not configured")
 		return
 	}
 
 	if _, ok := stg.LimitOptions[resource]; !ok {
-		logrus.Info("debug rate limit [genDefaultGroupAndKey] ---2--- limit rule not defined")
 		// limit rule not defined
 		return
 	}
 
 	ip, _ := middlewares.GetRealIPFromContext(ctx)
 	key = fmt.Sprintf("ip:%v", ip)
-	logrus.WithFields(logrus.Fields{
-		"resource": resource,
-		"ip":       ip,
-		"key":      key,
-		"stg.Name": stg.Name,
-	}).Info("debug rate limit [genDefaultGroupAndKey] ---3--- ")
 
 	return stg.Name, key, nil
 }
@@ -154,12 +132,6 @@ func (lf *LimiterFactory) genKeyInfoGroupAndKey(ctx context.Context, resource, l
 	default:
 		err = errors.New("invalid limit type")
 	}
-
-	logrus.WithFields(logrus.Fields{
-		"group": group,
-		"key":   key,
-		"err":   err,
-	}).Warn("debug rate limit [genKeyInfoGroupAndKey] ---1---")
 
 	return group, key, err
 }
@@ -215,12 +187,6 @@ func (lf *LimiterFactory) AutoReload(interval time.Duration, reloader func() (*C
 }
 
 func (lf *LimiterFactory) reload(rc *Config, lastCs *ConfigCheckSums) {
-	/*	rcJ, _ := json.Marshal(rc)
-		lastCsJ, _ := json.Marshal(lastCs)
-		logrus.WithFields(logrus.Fields{
-			"newLimitStrategy": string(rcJ),
-			"lastCs":           string(lastCsJ),
-		}).Info("debug reload limit strategy ---1---")*/
 	if rc == nil {
 		return
 	}
@@ -423,11 +389,15 @@ func (r *LimitRule) UnmarshalJSON(data []byte) (err error) {
 
 // ################# single api middleware #################
 
-func NewSingleAPIRateMiddleware(f commonHttp.LimitFunc) middlewares.Middleware {
+func NewAPIRateMiddleware(f commonHttp.LimitFunc) middlewares.Middleware {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			url := r.URL
-			resource := fmt.Sprintf("%v_qps", url)
+			urlType, ok := r.Context().Value(metrics.CtxKeyURLType).(string)
+			if !ok {
+				return
+			}
+
+			resource := fmt.Sprintf("%v_qps", urlType)
 			if err := f(r.Context(), resource); err != nil {
 				http.Error(w, err.Error(), http.StatusTooManyRequests)
 			} else {
