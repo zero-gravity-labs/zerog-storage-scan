@@ -178,6 +178,18 @@ const docTemplatestorage = `{
                         "description": "The layer1 tx hash of the submission",
                         "name": "txHash",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "minTimestamp",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Timestamp in seconds",
+                        "name": "maxTimestamp",
+                        "in": "query"
                     }
                 ],
                 "responses": {

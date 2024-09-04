@@ -20,8 +20,10 @@ func (sp *PageParam) isDesc() bool {
 
 type listStorageTxParam struct {
 	PageParam
-	RootHash *string `form:"rootHash" binding:"omitempty"`
-	TxHash   *string `form:"txHash" binding:"omitempty"`
+	RootHash     *string `form:"rootHash" binding:"omitempty"`
+	TxHash       *string `form:"txHash" binding:"omitempty"`
+	MinTimestamp *int    `form:"minTimestamp" binding:"omitempty,number"`
+	MaxTimestamp *int    `form:"maxTimestamp" binding:"omitempty,number"`
 }
 
 type statParam struct {
@@ -132,12 +134,6 @@ type TokenInfo struct {
 	Symbol   string `json:"symbol"`   // Token symbol
 	Decimals uint8  `json:"decimals"` // Token decimals
 	Native   bool   `json:"native"`   // True is native token, otherwise is not
-}
-
-type listAddressStorageTxParam struct {
-	PageParam
-	RootHash *string `form:"rootHash" binding:"omitempty"`
-	TxHash   *string `form:"txHash" binding:"omitempty"`
 }
 
 // StorageTxList model info

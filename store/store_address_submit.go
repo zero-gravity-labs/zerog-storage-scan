@@ -16,8 +16,8 @@ type AddressSubmit struct {
 	Length          uint64 `gorm:"not null"`
 
 	BlockNumber uint64    `gorm:"not null;index:idx_bn"`
-	BlockTime   time.Time `gorm:"not null"`
-	TxHash      string    `gorm:"size:66;not null"`
+	BlockTime   time.Time `gorm:"not null;index:idx_bt"`
+	TxHash      string    `gorm:"size:66;not null;index:idx_tx_hash"`
 
 	TotalSegNum    uint64          `gorm:"not null;default:0"`
 	UploadedSegNum uint64          `gorm:"not null;default:0"`
@@ -61,7 +61,8 @@ func (ass *AddressSubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *AddressSubmi
 	return nil
 }
 
-func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, txHash *string, idDesc bool, skip, limit int) (
+func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, txHash *string, minTimestamp, maxTimestamp *int,
+	idDesc bool, skip, limit int) (
 	int64, []AddressSubmit, error) {
 	if addressID == nil {
 		return 0, nil, errors.New("nil addressID")
@@ -75,6 +76,12 @@ func (ass *AddressSubmitStore) List(addressID *uint64, rootHash *string, txHash 
 	}
 	if txHash != nil {
 		conds = append(conds, TxHash(*txHash))
+	}
+	if minTimestamp != nil {
+		conds = append(conds, MinTimestampBlockTime(*minTimestamp))
+	}
+	if maxTimestamp != nil {
+		conds = append(conds, MaxTimestampBlockTime(*maxTimestamp))
 	}
 	dbRaw.Scopes(conds...)
 

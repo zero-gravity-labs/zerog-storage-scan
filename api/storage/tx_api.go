@@ -20,7 +20,7 @@ func listStorageTxs(c *gin.Context) (interface{}, error) {
 		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
-	total, submits, err := listSubmits(nil, param.RootHash, param.TxHash, param.isDesc(), param.Skip, param.Limit)
+	total, submits, err := listSubmits(nil, param)
 	if err != nil {
 		return nil, api.ErrInternal(err)
 	}
@@ -109,13 +109,13 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 	}
 	addrIDPtr := &addressInfo.addressId
 
-	var param listAddressStorageTxParam
+	var param listStorageTxParam
 	if err := c.ShouldBind(&param); err != nil {
 		logrus.WithError(err).Error("Failed to parse listAddressStorageTxParam")
 		return nil, api.ErrValidation(errors.Errorf("Query param error"))
 	}
 
-	total, submits, err := listSubmits(addrIDPtr, param.RootHash, param.TxHash, param.isDesc(), param.Skip, param.Limit)
+	total, submits, err := listSubmits(addrIDPtr, param)
 	if err != nil {
 		return nil, err
 	}
@@ -129,17 +129,19 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 	return convertStorageTxs(total, submits)
 }
 
-func listSubmits(addressID *uint64, rootHash *string, txHash *string, idDesc bool, skip, limit int) (int64,
+func listSubmits(addressID *uint64, params listStorageTxParam) (int64,
 	[]store.Submit, error) {
 	if addressID == nil {
-		total, submits, err := db.SubmitStore.List(rootHash, txHash, idDesc, skip, limit)
+		total, submits, err := db.SubmitStore.List(params.RootHash, params.TxHash, params.isDesc(), params.Skip,
+			params.Limit)
 		if err != nil {
 			return 0, nil, api.ErrInternal(err)
 		}
 		return total, submits, nil
 	}
 
-	total, addrSubmits, err := db.AddressSubmitStore.List(addressID, rootHash, txHash, idDesc, skip, limit)
+	total, addrSubmits, err := db.AddressSubmitStore.List(addressID, params.RootHash, params.TxHash,
+		params.MinTimestamp, params.MaxTimestamp, params.isDesc(), params.Skip, params.Limit)
 	if err != nil {
 		return 0, nil, api.ErrInternal(err)
 	}

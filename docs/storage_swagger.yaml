@@ -490,6 +490,14 @@ paths:
         in: query
         name: txHash
         type: string
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
       produces:
       - application/json
       responses:

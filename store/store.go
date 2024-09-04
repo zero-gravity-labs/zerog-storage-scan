@@ -3,6 +3,7 @@ package store
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	set "github.com/deckarep/golang-set"
@@ -263,13 +264,25 @@ func StatType(t string) func(db *gorm.DB) *gorm.DB {
 
 func MinTimestamp(minTimestamp int) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("stat_time >= ?", minTimestamp)
+		return db.Where("stat_time >= ?", time.Unix(int64(minTimestamp), 0))
 	}
 }
 
 func MaxTimestamp(maxTimestamp int) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("stat_time <= ?", maxTimestamp)
+		return db.Where("stat_time <= ?", time.Unix(int64(maxTimestamp), 0))
+	}
+}
+
+func MinTimestampBlockTime(minTimestamp int) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("block_time >= ?", time.Unix(int64(minTimestamp), 0))
+	}
+}
+
+func MaxTimestampBlockTime(maxTimestamp int) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("block_time <= ?", time.Unix(int64(maxTimestamp), 0))
 	}
 }
 

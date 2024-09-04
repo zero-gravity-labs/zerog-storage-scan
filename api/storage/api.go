@@ -60,10 +60,10 @@ func MustInit(client *web3go.Client, store *store.MysqlStore) {
 	viperUtil.MustUnmarshalKey("flow", &flow)
 }
 
-// @title			0G Storage Scan API
-// @version		1.0
-// @description: Use any http client to fetch data from the 0G Storage Scan
-// @description.markdown
+//	@title			0G Storage Scan API
+//	@version		1.0
+//	@description:	Use any http client to fetch data from the 0G Storage Scan
+//	@description.markdown
 
 func init() {
 	docs.SwaggerInfostorage.BasePath = BasePath
@@ -279,13 +279,15 @@ func getAccountInfoHandler(c *gin.Context) {
 //	@Tags			account
 //	@Accept			json
 //	@Produce		json
-//	@Param			address		path		string	false	"The submitter address of the uploaded file"
-//	@Param			skip		query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
-//	@Param			limit		query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
-//	@Param			rootHash	query		string	false	"The merkle root hash of the uploaded file"
-//	@Param			txHash		query		string	false	"The layer1 tx hash of the submission"
-//	@Success		200			{object}	api.BusinessError{Data=StorageTxList}
-//	@Failure		600			{object}	api.BusinessError
+//	@Param			address			path		string	false	"The submitter address of the uploaded file"
+//	@Param			skip			query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit			query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Param			rootHash		query		string	false	"The merkle root hash of the uploaded file"
+//	@Param			txHash			query		string	false	"The layer1 tx hash of the submission"
+//	@Param			minTimestamp	query		int		false	"Timestamp in seconds"
+//	@Param			maxTimestamp	query		int		false	"Timestamp in seconds"
+//	@Success		200				{object}	api.BusinessError{Data=StorageTxList}
+//	@Failure		600				{object}	api.BusinessError
 //	@Router			/accounts/{address}/txs [get]
 func listAddressTxsHandler(c *gin.Context) {
 	api.Wrap(listAddressStorageTxs)(c)
