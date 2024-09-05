@@ -146,6 +146,50 @@ definitions:
         description: The total number of da submission returned
         type: integer
     type: object
+  da.Reward:
+    description: Reward information
+    properties:
+      amount:
+        description: The reward amount
+        type: number
+      blockNumber:
+        description: The block where the reward event is emitted
+        type: integer
+      epoch:
+        description: The consecutive blocks in 0g chain is divided into groups of
+          EpochBlocks and each group is an epoch.
+        type: integer
+      miner:
+        description: Miner address
+        type: string
+      quorumID:
+        description: The i-th quorum in an epoch
+        type: integer
+      rootHash:
+        description: The data root
+        type: string
+      sampleRound:
+        description: DA Sample round
+        type: integer
+      timestamp:
+        description: The block time when reward event emits
+        type: integer
+      txHash:
+        description: The transaction where the reward event is emitted
+        type: string
+    type: object
+  da.RewardList:
+    description: Miner reward list
+    properties:
+      list:
+        description: Miner reward list
+        items:
+          $ref: '#/definitions/da.Reward'
+        type: array
+      total:
+        description: The total number of miner reward returned
+        type: integer
+    type: object
 info:
   contact: {}
   description: |+
@@ -173,6 +217,45 @@ info:
   title: 0G DA Scan API
   version: "1.0"
 paths:
+  /rewards:
+    get:
+      consumes:
+      - application/json
+      description: Query DA rewards
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/da.RewardList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: DA reward list
+      tags:
+      - reward
   /stats/client:
     get:
       consumes:

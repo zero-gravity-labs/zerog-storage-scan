@@ -113,3 +113,29 @@ type DASignerStat struct {
 	SignerActive uint64    `json:"signerActive"` // Number of active da signer in a specific time interval
 	SignerTotal  uint64    `json:"signerTotal"`  // Total number of da signer by a certain time
 }
+
+// RewardList model info
+// @Description Miner reward list
+type RewardList struct {
+	Total int64    `json:"total"` // The total number of miner reward returned
+	List  []Reward `json:"list"`  // Miner reward list
+}
+
+// Reward model info
+// @Description Reward information
+type Reward struct {
+	Miner       string          `json:"miner"`       // Miner address
+	Amount      decimal.Decimal `json:"amount"`      // The reward amount
+	BlockNumber uint64          `json:"blockNumber"` // The block where the reward event is emitted
+	TxHash      string          `json:"txHash"`      // The transaction where the reward event is emitted
+	Timestamp   int64           `json:"timestamp"`   // The block time when reward event emits
+	SampleRound uint64          `json:"sampleRound"` // DA Sample round
+	Epoch       uint64          `json:"epoch"`       // The consecutive blocks in 0g chain is divided into groups of EpochBlocks and each group is an epoch.
+	QuorumID    uint64          `json:"quorumID"`    // The i-th quorum in an epoch
+	RootHash    string          `json:"rootHash"`    // The data root
+}
+
+type AddressInfo struct {
+	address   string
+	addressId uint64
+}

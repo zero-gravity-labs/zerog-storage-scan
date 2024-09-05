@@ -1,6 +1,7 @@
 package da
 
 import (
+	scanApi "github.com/0glabs/0g-storage-scan/api"
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/docs"
 	"github.com/0glabs/0g-storage-scan/store"
@@ -8,6 +9,7 @@ import (
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/gin-gonic/gin"
 	"github.com/openweb3/web3go"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -69,14 +71,17 @@ func init() {
 func Register(router *gin.Engine) {
 	apiRoute := router.Group(BasePath)
 
-	daTxsRoute := apiRoute.Group("/txs")
-	daTxsRoute.GET("", listDATxsHandler)
-	daTxsRoute.GET(":blockNumber/:epoch/:quorumID/:dataRoot", getDATxHandler)
-
 	daStatsRoute := apiRoute.Group("/stats")
 	daStatsRoute.GET("storage", listDADataStatsHandler)
 	daStatsRoute.GET("client", listDAClientStatsHandler)
 	daStatsRoute.GET("signer", listDASignerStatsHandler)
+
+	daTxsRoute := apiRoute.Group("/txs")
+	daTxsRoute.GET("", listDATxsHandler)
+	daTxsRoute.GET(":blockNumber/:epoch/:quorumID/:dataRoot", getDATxHandler)
+
+	rewardsRoute := apiRoute.Group("/rewards")
+	rewardsRoute.GET("", listRewardsHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("da")))
 }
@@ -175,4 +180,38 @@ func listDAClientStatsHandler(c *gin.Context) {
 //	@Router			/stats/signer [get]
 func listDASignerStatsHandler(c *gin.Context) {
 	api.Wrap(listDASignerStat)(c)
+}
+
+// listRewardsHandler godoc
+//
+//	@Summary		DA reward list
+//	@Description	Query DA rewards
+//	@Tags			reward
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip	query		int	false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit	query		int	false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Success		200		{object}	api.BusinessError{Data=RewardList}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/rewards [get]
+func listRewardsHandler(c *gin.Context) {
+	api.Wrap(listDARewards)(c)
+}
+
+func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
+	address := c.Param("address")
+	if address == "" {
+		logrus.Error("Failed to parse nil address")
+		return nil, api.ErrValidation(errors.Errorf("Address is '%v'", address))
+	}
+
+	addressInfo, exist, err := db.AddressStore.Get(address)
+	if err != nil {
+		return nil, api.ErrInternal(err)
+	}
+	if !exist {
+		return nil, scanApi.ErrNoMatchingRecords(errors.Errorf("Blockchain account, address %v", address))
+	}
+
+	return &AddressInfo{address, addressInfo.ID}, nil
 }
