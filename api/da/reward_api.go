@@ -1,6 +1,7 @@
 package da
 
 import (
+	scanApi "github.com/0glabs/0g-storage-scan/api"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
@@ -10,7 +11,7 @@ import (
 func listDARewards(c *gin.Context) (interface{}, error) {
 	var param PageParam
 	if err := c.ShouldBind(&param); err != nil {
-		return nil, api.ErrValidation(errors.Errorf("Page param error"))
+		return nil, api.ErrValidation(errors.New("Invalid page param"))
 	}
 
 	total, rewards, err := listRewards(param.isDesc(), param.Skip, param.Limit)
@@ -24,7 +25,7 @@ func listDARewards(c *gin.Context) (interface{}, error) {
 func listRewards(idDesc bool, skip, limit int) (int64, []store.DAReward, error) {
 	total, rewards, err := db.DARewardStore.List(idDesc, skip, limit)
 	if err != nil {
-		return 0, nil, api.ErrInternal(err)
+		return 0, nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get da reward list"))
 	}
 	return total, rewards, nil
 }
@@ -36,7 +37,7 @@ func convertDARewards(total int64, rewards []store.DAReward) (*RewardList, error
 	}
 	addrMap, err := db.BatchGetAddresses(addrIDs)
 	if err != nil {
-		return nil, api.ErrInternal(err)
+		return nil, scanApi.ErrBatchGetAddress(err)
 	}
 
 	daRewards := make([]Reward, 0)

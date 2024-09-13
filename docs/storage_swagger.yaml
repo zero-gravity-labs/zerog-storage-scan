@@ -360,28 +360,25 @@ definitions:
     type: object
 info:
   contact: {}
-  description: |+
-    Use any http client to fetch data from the 0G Storage Scan.
-
-    #### Common Error Messages:
-    An API call that encounters an error will return non-zero as its status code. The error message will be returned in the message field and the detailed reason for the error will be returned in the data field.
-    ```
-    {
-    "code": 1001,
-    "message":"No matching records found",
-    "data":"Storage tx, txSeq 1000000"
-    }
-    ```
-    | error code | error message             |
-    |:-----------|:--------------------------|
-    | 0          | Success                   |
-    | 1          | Invalid parameter         |
-    | 2          | Internal server error     |
-    | 3          | Too many requests         |
-    | 1001       | No matching records found |
-    | 1002       | Blockchain RPC failure    |
-
-
+  description: "Use any http client to fetch data from the 0G Storage Scan.\n\n##
+    Common Error Messages\n### Response code and message\nAn API call that encounters
+    an error will return non-zero as its response code. The error message will be
+    returned in the message field and the detailed reason for the error will be returned
+    in the data field.\n\n| Error code | Error message                                      |\n|:-----------|:---------------------------------------------------|\n|
+    0          | Success                                            |\n| 1          |
+    Invalid parameter,see Data for detailed error.     |\n| 2          | Internal
+    server error,see Data for detailed error. |\n| 3          | Too many requests,see
+    Data for detailed error.     |\n\ne.g.\n```json\n{\n\"code\": 2,\n\"message\":\"Internal
+    server error\",\n\"data\":\"No matching storage-submit record found, txSeq 1000000\"\n}\n```\n###
+    Http status code\nTo distinguish backend service error and gateway error, we only
+    use `200` and `600` as HTTP response status code:\n- 200: success, or known business
+    error, e.g. entity not found.\n- 600: unexpected system error, e.g. database error,
+    blockchain rpc error, io error.\n\n## Rate Limit\nHere are references for various
+    API tiers and their rate limits.\n\n| API Tier\t   | Price            | \tRate
+    Limit                           |\n|:------------|:-----------------|:-----------------------------------------|\n|
+    Free\t       | $0               | 5 calls/second, up to 100,000 calls/day  |\n|
+    Standard\t   | To be determined | 20 calls/second, up to 500,000 calls/day |\n|
+    Enterprise  | To be determined | Customize on demand                      |\n\n"
   title: 0G Storage Scan API
   version: "1.0"
 paths:

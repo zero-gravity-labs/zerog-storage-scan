@@ -1,7 +1,6 @@
 package da
 
 import (
-	scanApi "github.com/0glabs/0g-storage-scan/api"
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/docs"
 	"github.com/0glabs/0g-storage-scan/store"
@@ -9,7 +8,6 @@ import (
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/gin-gonic/gin"
 	"github.com/openweb3/web3go"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -196,22 +194,4 @@ func listDASignerStatsHandler(c *gin.Context) {
 //	@Router			/rewards [get]
 func listRewardsHandler(c *gin.Context) {
 	api.Wrap(listDARewards)(c)
-}
-
-func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
-	address := c.Param("address")
-	if address == "" {
-		logrus.Error("Failed to parse nil address")
-		return nil, api.ErrValidation(errors.Errorf("Address is '%v'", address))
-	}
-
-	addressInfo, exist, err := db.AddressStore.Get(address)
-	if err != nil {
-		return nil, api.ErrInternal(err)
-	}
-	if !exist {
-		return nil, scanApi.ErrNoMatchingRecords(errors.Errorf("Blockchain account, address %v", address))
-	}
-
-	return &AddressInfo{address, addressInfo.ID}, nil
 }

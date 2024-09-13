@@ -1,18 +1,19 @@
 package api
 
 import (
-	commonApi "github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/pkg/errors"
 )
 
-const (
-	ErrCodeNoMatchingRecords = 1001
-	ErrCodeBlockchain        = 1002
-)
+// Unexpected system error, e.g. database error, blockchain rpc error, io error. Http status is 600
 
-func ErrNoMatchingRecords(err error) *commonApi.BusinessError {
-	return commonApi.NewBusinessError(ErrCodeNoMatchingRecords, "No matching records found", err.Error())
+func ErrBlockchainRPC(err error) error {
+	return errors.WithMessage(err, "Blockchain RPC exception")
 }
 
-func ErrBlockchainRPC(err error) *commonApi.BusinessError {
-	return commonApi.NewBusinessError(ErrCodeBlockchain, "Blockchain RPC failure", err.Error())
+func ErrDatabase(err error) error {
+	return errors.WithMessage(err, "Database exception")
+}
+
+func ErrBatchGetAddress(err error) error {
+	return ErrDatabase(errors.WithMessage(err, "Failed to batch get addresses' info"))
 }

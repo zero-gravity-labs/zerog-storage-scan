@@ -1,6 +1,7 @@
 package da
 
 import (
+	scanApi "github.com/0glabs/0g-storage-scan/api"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -9,13 +10,13 @@ import (
 func listDADataStat(c *gin.Context) (interface{}, error) {
 	var statP statParam
 	if err := c.ShouldBind(&statP); err != nil {
-		return nil, api.ErrValidation(errors.Errorf("Query param error"))
+		return nil, api.ErrValidation(errors.Errorf("Invalid stat query param"))
 	}
 
 	total, records, err := db.DASubmitStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
 		statP.isDesc(), statP.Skip, statP.Limit)
 	if err != nil {
-		return nil, api.ErrInternal(err)
+		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get da submit stat list"))
 	}
 
 	result := make(map[string]interface{})
@@ -41,13 +42,13 @@ func listDADataStat(c *gin.Context) (interface{}, error) {
 func listDAClientStat(c *gin.Context) (interface{}, error) {
 	var statP statParam
 	if err := c.ShouldBind(&statP); err != nil {
-		return nil, api.ErrValidation(errors.Errorf("Query param error"))
+		return nil, api.ErrValidation(errors.Errorf("Invalid stat query param"))
 	}
 
 	total, records, err := db.DAClientStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
 		statP.isDesc(), statP.Skip, statP.Limit)
 	if err != nil {
-		return nil, api.ErrInternal(err)
+		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get da client stat list"))
 	}
 
 	result := make(map[string]interface{})
@@ -70,13 +71,13 @@ func listDAClientStat(c *gin.Context) (interface{}, error) {
 func listDASignerStat(c *gin.Context) (interface{}, error) {
 	var statP statParam
 	if err := c.ShouldBind(&statP); err != nil {
-		return nil, api.ErrValidation(errors.Errorf("Query param error"))
+		return nil, api.ErrValidation(errors.Errorf("Invalid stat query param"))
 	}
 
 	total, records, err := db.DASignerStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
 		statP.isDesc(), statP.Skip, statP.Limit)
 	if err != nil {
-		return nil, api.ErrInternal(err)
+		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get da signer stat list"))
 	}
 
 	result := make(map[string]interface{})

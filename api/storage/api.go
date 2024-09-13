@@ -313,16 +313,15 @@ func listAddressRewardsHandler(c *gin.Context) {
 func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
 	address := c.Param("address")
 	if address == "" {
-		logrus.Error("Failed to parse nil address")
-		return nil, api.ErrValidation(errors.Errorf("Address is '%v'", address))
+		return nil, api.ErrValidation(errors.Errorf("Invalid address '%v'", address))
 	}
 
 	addressInfo, exist, err := db.AddressStore.Get(address)
 	if err != nil {
-		return nil, api.ErrInternal(err)
+		return nil, scanApi.ErrDatabase(errors.WithMessagef(err, "Failed to get address info '%v'", address))
 	}
 	if !exist {
-		return nil, scanApi.ErrNoMatchingRecords(errors.Errorf("Blockchain account, address %v", address))
+		return nil, api.ErrInternal(errors.Errorf("No matching address record found, address %v", address))
 	}
 
 	return &AddressInfo{address, addressInfo.ID}, nil
