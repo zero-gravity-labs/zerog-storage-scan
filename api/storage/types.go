@@ -68,6 +68,13 @@ type MinerStatList struct {
 	List  []MinerStat `json:"list"`  // Stat list
 }
 
+// RewardStatList model info
+// @Description Miner reward stat list
+type RewardStatList struct {
+	Total int64        `json:"total"` // The total number of stat returned
+	List  []RewardStat `json:"list"`  // Stat list
+}
+
 // DataStat model info
 // @Description Storage data information
 type DataStat struct {
@@ -110,6 +117,14 @@ type MinerStat struct {
 	MinerNew    uint64    `json:"minerNew"`    // Number of newly increased miner in a specific time interval
 	MinerActive uint64    `json:"minerActive"` // Number of active miner in a specific time interval
 	MinerTotal  uint64    `json:"minerTotal"`  // Total number of miner by a certain time
+}
+
+// RewardStat model info
+// @Description Miner reward stat data information
+type RewardStat struct {
+	StatTime    time.Time       `json:"statTime"`    // Statistics time
+	RewardNew   decimal.Decimal `json:"rewardNew"`   // Newly increased miner reward in a specific time interval
+	RewardTotal decimal.Decimal `json:"rewardTotal"` // Total miner reward by a certain time
 }
 
 // Summary model info

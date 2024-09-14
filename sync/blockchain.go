@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/Conflux-Chain/go-conflux-util/alert"
 	"github.com/Conflux-Chain/go-conflux-util/health"
 	set "github.com/deckarep/golang-set"
@@ -171,9 +173,21 @@ func batchGetBlockTimes(ctx context.Context, w3c *web3go.Client, blkNums []types
 		}
 
 		err := w3c.Eth.BatchCallContext(ctx, batch)
+		logrus.WithFields(logrus.Fields{
+			"blkNums":   len(blkNums),
+			"blockNums": len(blockNums),
+			"i":         i,
+			"end":       end,
+		}).WithError(err).Info("batchGetBlockTimes ---0---")
 		if err != nil {
 			return nil, err
 		}
+		logrus.WithFields(logrus.Fields{
+			"blkNums":   len(blkNums),
+			"blockNums": len(blockNums),
+			"i":         i,
+			"end":       end,
+		}).WithError(err).Info("batchGetBlockTimes ---1---")
 
 		for _, elem := range batch {
 			block := elem.Result.(*types.Block)

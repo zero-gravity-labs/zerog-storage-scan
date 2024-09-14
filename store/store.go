@@ -23,6 +23,7 @@ type MysqlStore struct {
 	*SubmitStore
 	*AddressSubmitStore
 	*RewardStore
+	*RewardStatStore
 	*AddressRewardStore
 	*SubmitStatStore
 	*AddressStatStore
@@ -47,6 +48,7 @@ func MustNewStore(db *gorm.DB) *MysqlStore {
 		SubmitStore:        newSubmitStore(db),
 		AddressSubmitStore: newAddressSubmitStore(db),
 		RewardStore:        newRewardStore(db),
+		RewardStatStore:    newRewardStatStore(db),
 		AddressRewardStore: newAddressRewardStore(db),
 		SubmitStatStore:    newSubmitStatStore(db),
 		AddressStatStore:   newAddressStatStore(db),

@@ -268,17 +268,15 @@ func (t *SubmitStatStore) Sum(startTime, endTime time.Time, statType string) (*S
 		return nil, errors.New("At least provide one parameter for startTime and endTime")
 	}
 
-	db := t.DB.Model(&SubmitStat{}).Select(`IFNULL(sum(file_count), 0) as file_count, 
+	db := t.DB.Debug().Model(&SubmitStat{}).Select(`IFNULL(sum(file_count), 0) as file_count, 
 		IFNULL(sum(data_size), 0) as data_size, IFNULL(sum(base_fee), 0) as base_fee, 
 		IFNULL(sum(tx_count), 0) as tx_count`)
-	if startTime != nilTime && endTime != nilTime {
-		db = db.Where("stat_type = ? and stat_time >= ? and stat_time < ?", statType, startTime, endTime)
+	db = db.Where("stat_type = ?", statType)
+	if startTime != nilTime {
+		db = db.Where("stat_time >= ?", startTime)
 	}
-	if startTime != nilTime && endTime == nilTime {
-		db = db.Where("stat_type = ? and stat_time >= ?", statType, startTime)
-	}
-	if startTime == nilTime && endTime != nilTime {
-		db = db.Where("stat_type = ? and stat_time < ?", statType, endTime)
+	if endTime != nilTime {
+		db = db.Where("stat_time < ?", endTime)
 	}
 
 	var sum SubmitStatResult

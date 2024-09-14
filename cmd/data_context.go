@@ -59,6 +59,7 @@ var migrationModels = []interface{}{
 	&store.AddressSubmit{},
 	&store.SubmitStat{},
 	&store.Reward{},
+	&store.RewardStat{},
 	&store.AddressReward{},
 	&store.AddressStat{},
 	&store.Miner{},

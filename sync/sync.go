@@ -19,7 +19,7 @@ type SyncConfig struct {
 	BlockWhenFlowCreated     uint64
 	DelayBlocksAgainstLatest uint64 `default:"30"`
 	BatchBlocksOnCatchup     uint64 `default:"0"`
-	BatchBlocksOnBatchCall   uint64 `default:"1000"`
+	BatchBlocksOnBatchCall   uint64 `default:"100"`
 	BatchTxsOnBatchCall      uint64 `default:"1000"`
 }
 

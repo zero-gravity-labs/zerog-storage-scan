@@ -105,7 +105,7 @@ func listAddressStat(c *gin.Context) (interface{}, error) {
 	for _, r := range records {
 		list = append(list, AddressStat{
 			StatTime:      r.StatTime,
-			AddressNew:    r.AddrCount,
+			AddressNew:    r.AddrNew,
 			AddressActive: r.AddrActive,
 			AddressTotal:  r.AddrTotal,
 		})
@@ -134,9 +134,37 @@ func listMinerStat(c *gin.Context) (interface{}, error) {
 	for _, r := range records {
 		list = append(list, MinerStat{
 			StatTime:    r.StatTime,
-			MinerNew:    r.MinerCount,
+			MinerNew:    r.MinerNew,
 			MinerActive: r.MinerActive,
 			MinerTotal:  r.MinerTotal,
+		})
+	}
+	result["list"] = list
+
+	return result, nil
+}
+
+func listRewardStat(c *gin.Context) (interface{}, error) {
+	var statP statParam
+	if err := c.ShouldBind(&statP); err != nil {
+		return nil, api.ErrValidation(errors.Errorf("Invalid stat query param"))
+	}
+
+	total, records, err := db.RewardStatStore.List(&statP.IntervalType, statP.MinTimestamp, statP.MaxTimestamp,
+		statP.isDesc(), statP.Skip, statP.Limit)
+	if err != nil {
+		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get reward stat"))
+	}
+
+	result := make(map[string]interface{})
+	result["total"] = total
+
+	list := make([]RewardStat, 0)
+	for _, r := range records {
+		list = append(list, RewardStat{
+			StatTime:    r.StatTime,
+			RewardNew:   r.RewardNew,
+			RewardTotal: r.RewardTotal,
 		})
 	}
 	result["list"] = list

@@ -56,15 +56,15 @@ func (sds *StatDASubmit) nextTimeRange() (*TimeRange, error) {
 }
 
 func (sds *StatDASubmit) calculateStat(tr TimeRange) error {
-	stat, err := sds.statBasicRange(tr)
+	stat, err := sds.statByTimeRange(tr.start, tr.end, sds.statType)
 	if err != nil {
 		return err
 	}
-	hStat, err := sds.statRange(tr.end, sds.statType, store.Hour, stat)
+	hStat, err := sds.statByTimeRange(time.Time{}, tr.end, store.Hour)
 	if err != nil {
 		return err
 	}
-	dStat, err := sds.statRange(tr.end, sds.statType, store.Day, stat)
+	dStat, err := sds.statByTimeRange(time.Time{}, tr.end, store.Day)
 	if err != nil {
 		return err
 	}
@@ -84,58 +84,55 @@ func (sds *StatDASubmit) calculateStat(tr TimeRange) error {
 	})
 }
 
-func (sds *StatDASubmit) statBasicRange(tr TimeRange) (*store.DASubmitStat, error) {
-	delta, err := sds.DB.DASubmitStore.Count(tr.start, tr.end)
-	if err != nil {
-		return nil, err
+func (sds *StatDASubmit) statByTimeRange(start, end time.Time, statType string) (*store.DASubmitStat, error) {
+	// cal range start if not exist
+	nilTime := time.Time{}
+	if start == nilTime {
+		rangeStart, err := sds.calStatRangeStart(end, statType)
+		if err != nil {
+			return nil, err
+		}
+		start = rangeStart
 	}
-	total, err := sds.DB.DASubmitStatStore.Sum(time.Time{}, tr.start, sds.statType)
+
+	// delta count
+	delta, err := sds.DB.DASubmitStore.Count(start, end)
 	if err != nil {
 		return nil, err
 	}
 
+	// total count of the previous range
+	preTimeRange, err := sds.calStatRange(start, -store.Intervals[statType])
+	if err != nil {
+		return nil, err
+	}
+
+	var preStat store.DASubmitStat
+	exist, err := sds.DB.DASubmitStatStore.Exists(&preStat, "stat_type = ? and stat_time = ?",
+		statType, preTimeRange.start)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exist {
+		total, err := sds.DB.DASubmitStore.Count(time.Time{}, start)
+		if err != nil {
+			return nil, err
+		}
+		preStat.BlobTotal = total.Blobs
+		preStat.DataSizeTotal = total.Blobs * 32
+		preStat.StorageFeeTotal = total.StorageFee
+	}
+
 	return &store.DASubmitStat{
-		StatTime: tr.start,
-		StatType: sds.statType,
+		StatTime: start,
+		StatType: statType,
 
 		BlobNew:         delta.Blobs,
-		BlobTotal:       total.Blobs + delta.Blobs,
+		BlobTotal:       preStat.BlobTotal + delta.Blobs,
 		DataSizeNew:     delta.Blobs * 32,
-		DataSizeTotal:   (total.Blobs + delta.Blobs) * 32,
+		DataSizeTotal:   (preStat.BlobTotal + delta.Blobs) * 32,
 		StorageFeeNew:   delta.StorageFee,
-		StorageFeeTotal: total.StorageFee.Add(delta.StorageFee),
-	}, nil
-}
-
-func (sds *StatDASubmit) statRange(rangEnd time.Time, srcStatType, descStatType string, latestStat *store.DASubmitStat) (*store.DASubmitStat, error) {
-	rangeStart, err := sds.calStatRangeStart(rangEnd, descStatType)
-	if err != nil {
-		return nil, err
-	}
-
-	srcStat, err := sds.DB.DASubmitStatStore.Sum(rangeStart, rangEnd, srcStatType)
-	if err != nil {
-		return nil, err
-	}
-	destStat, err := sds.DB.DASubmitStatStore.Sum(time.Time{}, rangeStart, descStatType)
-	if err != nil {
-		return nil, err
-	}
-
-	if latestStat != nil {
-		srcStat.Blobs += latestStat.BlobNew
-		srcStat.StorageFee = srcStat.StorageFee.Add(latestStat.StorageFeeNew)
-	}
-
-	return &store.DASubmitStat{
-		StatTime: rangeStart,
-		StatType: descStatType,
-
-		BlobNew:         srcStat.Blobs,
-		BlobTotal:       destStat.Blobs + srcStat.Blobs,
-		DataSizeNew:     srcStat.Blobs * 32,
-		DataSizeTotal:   (destStat.Blobs + srcStat.Blobs) * 32,
-		StorageFeeNew:   srcStat.StorageFee,
-		StorageFeeTotal: destStat.StorageFee.Add(srcStat.StorageFee),
+		StorageFeeTotal: preStat.StorageFeeTotal.Add(delta.StorageFee),
 	}, nil
 }

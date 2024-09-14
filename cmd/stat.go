@@ -35,14 +35,18 @@ func startStatService(*cobra.Command, []string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
-	stSubmit := stat.MustNewStatSubmit(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
-	go stSubmit.DoStat(ctx, &wg)
 	stSyncStatus := stat.MustNewSyncStatusStat(dataCtx.DB, dataCtx.L2Sdks[0])
 	go stSyncStatus.DoStat(ctx, &wg)
+
+	stSubmit := stat.MustNewStatSubmit(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
+	go stSubmit.DoStat(ctx, &wg)
 	stAddress := stat.MustNewStatAddress(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
 	go stAddress.DoStat(ctx, &wg)
 	stMiner := stat.MustNewStatMiner(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
 	go stMiner.DoStat(ctx, &wg)
+	stReward := stat.MustNewStatReward(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
+	go stReward.DoStat(ctx, &wg)
+
 	stDASubmit := stat.MustNewStatDASubmit(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
 	go stDASubmit.DoStat(ctx, &wg)
 	stDAClient := stat.MustNewStatDAClient(&cfg, dataCtx.DB, dataCtx.Eth, startTime)

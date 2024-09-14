@@ -79,6 +79,7 @@ func Register(router *gin.Engine) {
 	statsRoute.GET("fee", listFeeStatsHandler)
 	statsRoute.GET("address", listAddressStatsHandler)
 	statsRoute.GET("miner", listMinerStatsHandler)
+	statsRoute.GET("reward", listRewardStatsHandler)
 
 	txsRoute := apiRoute.Group("/txs")
 	txsRoute.GET("", listTxsHandler)
@@ -206,6 +207,26 @@ func listAddressStatsHandler(c *gin.Context) {
 //	@Router			/stats/miner [get]
 func listMinerStatsHandler(c *gin.Context) {
 	api.Wrap(listMinerStat)(c)
+}
+
+// listRewardStatsHandler godoc
+//
+//	@Summary		Miner statistics
+//	@Description	Query miner reward statistics, including incremental, active and full data, and support querying at hourly or daily time intervals
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip			query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit			query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(2000)	default(10)
+//	@Param			minTimestamp	query		int		false	"Timestamp in seconds"
+//	@Param			maxTimestamp	query		int		false	"Timestamp in seconds"
+//	@Param			intervalType	query		string	false	"Statistics interval"	Enums(hour, day)	default(day)
+//	@Param			sort			query		string	false	"Sort by timestamp"		Enums(asc, desc)	default(desc)
+//	@Success		200				{object}	api.BusinessError{Data=RewardStatList}
+//	@Failure		600				{object}	api.BusinessError
+//	@Router			/stats/reward [get]
+func listRewardStatsHandler(c *gin.Context) {
+	api.Wrap(listRewardStat)(c)
 }
 
 // listTxsHandler godoc

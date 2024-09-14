@@ -130,7 +130,7 @@ func (sm *StatMiner) statByTimeRange(start, end time.Time, statType string) (*st
 	return &store.MinerStat{
 		StatTime:    start,
 		StatType:    statType,
-		MinerCount:  delta,
+		MinerNew:    delta,
 		MinerActive: countActive,
 		MinerTotal:  total + delta,
 	}, nil

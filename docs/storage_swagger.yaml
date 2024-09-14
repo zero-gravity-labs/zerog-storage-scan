@@ -181,6 +181,31 @@ definitions:
         description: The total number of miner reward returned
         type: integer
     type: object
+  storage.RewardStat:
+    description: Miner reward stat data information
+    properties:
+      rewardNew:
+        description: Newly increased miner reward in a specific time interval
+        type: number
+      rewardTotal:
+        description: Total miner reward by a certain time
+        type: number
+      statTime:
+        description: Statistics time
+        type: string
+    type: object
+  storage.RewardStatList:
+    description: Miner reward stat list
+    properties:
+      list:
+        description: Stat list
+        items:
+          $ref: '#/definitions/storage.RewardStat'
+        type: array
+      total:
+        description: The total number of stat returned
+        type: integer
+    type: object
   storage.StorageFeeStat:
     description: Stat storage fee information
     properties:
@@ -801,6 +826,70 @@ paths:
             - properties:
                 Data:
                   $ref: '#/definitions/storage.MinerStatList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Miner statistics
+      tags:
+      - statistic
+  /stats/reward:
+    get:
+      consumes:
+      - application/json
+      description: Query miner reward statistics, including incremental, active and
+        full data, and support querying at hourly or daily time intervals
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 2000
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: minTimestamp
+        type: integer
+      - description: Timestamp in seconds
+        in: query
+        name: maxTimestamp
+        type: integer
+      - default: day
+        description: Statistics interval
+        enum:
+        - hour
+        - day
+        in: query
+        name: intervalType
+        type: string
+      - default: desc
+        description: Sort by timestamp
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.RewardStatList'
               type: object
         "600":
           description: ""

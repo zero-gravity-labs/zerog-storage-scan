@@ -96,7 +96,7 @@ type AddressStat struct {
 	StatType string    `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
 	StatTime time.Time `gorm:"not null;uniqueIndex:idx_statType_statTime,priority:2" json:"statTime"`
 
-	AddrCount  uint64 `gorm:"not null;default:0" json:"addrCount"`  // Number of address in a specific time interval
+	AddrNew    uint64 `gorm:"not null;default:0" json:"addrNew"`    // Number of newly increased address in a specific time interval
 	AddrActive uint64 `gorm:"not null;default:0" json:"addrActive"` // Number of active address in a specific time interval
 	AddrTotal  uint64 `gorm:"not null;default:0" json:"addrTotal"`  // Total number of address by a certain time
 }
@@ -229,7 +229,7 @@ type MinerStat struct {
 	StatType string    `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
 	StatTime time.Time `gorm:"not null;uniqueIndex:idx_statType_statTime,priority:2" json:"statTime"`
 
-	MinerCount  uint64 `gorm:"not null;default:0" json:"minerCount"`  // Number of miner in a specific time interval
+	MinerNew    uint64 `gorm:"not null;default:0" json:"minerNew"`    // Number of newly increased miner in a specific time interval
 	MinerActive uint64 `gorm:"not null;default:0" json:"minerActive"` // Number of active miner in a specific time interval
 	MinerTotal  uint64 `gorm:"not null;default:0" json:"minerTotal"`  // Total number of miner by a certain time
 }

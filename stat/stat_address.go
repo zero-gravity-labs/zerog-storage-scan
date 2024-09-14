@@ -137,7 +137,7 @@ func (sa *StatAddress) statByTimeRange(start, end time.Time, statType string) (*
 	return &store.AddressStat{
 		StatTime:   start,
 		StatType:   statType,
-		AddrCount:  delta,
+		AddrNew:    delta,
 		AddrActive: submitStatResult.SenderCount,
 		AddrTotal:  total + delta,
 	}, nil

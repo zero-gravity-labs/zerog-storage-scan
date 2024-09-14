@@ -25,6 +25,7 @@ type StatConfig struct {
 	MinStatIntervalDailySubmit   string `default:"10m"`
 	MinStatIntervalDailyAddress  string `default:"10m"`
 	MinStatIntervalDailyMiner    string `default:"1h"`
+	MinStatIntervalDailyReward   string `default:"10m"`
 	MinStatIntervalDailyDASubmit string `default:"10m"`
 	MinStatIntervalDailyDAClient string `default:"10m"`
 	MinStatIntervalDailyDASigner string `default:"10m"`
@@ -134,7 +135,7 @@ func (as *AbsStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 				!errors.Is(err, ErrBlockNotSync) &&
 				!errors.Is(err, ErrBlockNotFinalized) {
 				logrus.WithError(err).WithField("timeRange", timeRange).
-					Warn("acquire next time range for stat txs")
+					Warn("acquire next time range for stat")
 			}
 			time.Sleep(time.Second)
 			continue

@@ -56,15 +56,15 @@ func (ts *StatSubmit) nextTimeRange() (*TimeRange, error) {
 }
 
 func (ts *StatSubmit) calculateStat(tr TimeRange) error {
-	stat, err := ts.statBasicRange(tr)
+	stat, err := ts.statByTimeRange(tr.start, tr.end, ts.statType)
 	if err != nil {
 		return err
 	}
-	hStat, err := ts.statRange(tr.end, ts.statType, store.Hour, stat)
+	hStat, err := ts.statByTimeRange(time.Time{}, tr.end, store.Hour)
 	if err != nil {
 		return err
 	}
-	dStat, err := ts.statRange(tr.end, ts.statType, store.Day, stat)
+	dStat, err := ts.statByTimeRange(time.Time{}, tr.end, store.Day)
 	if err != nil {
 		return err
 	}
@@ -84,62 +84,57 @@ func (ts *StatSubmit) calculateStat(tr TimeRange) error {
 	})
 }
 
-func (ts *StatSubmit) statBasicRange(tr TimeRange) (*store.SubmitStat, error) {
-	delta, err := ts.DB.SubmitStore.Count(tr.start, tr.end)
-	if err != nil {
-		return nil, err
+func (ts *StatSubmit) statByTimeRange(start, end time.Time, statType string) (*store.SubmitStat, error) {
+	// cal range start if not exist
+	nilTime := time.Time{}
+	if start == nilTime {
+		rangeStart, err := ts.calStatRangeStart(end, statType)
+		if err != nil {
+			return nil, err
+		}
+		start = rangeStart
 	}
-	total, err := ts.DB.SubmitStatStore.Sum(time.Time{}, tr.start, ts.statType)
+
+	// delta count
+	delta, err := ts.DB.SubmitStore.Count(start, end)
 	if err != nil {
 		return nil, err
 	}
 
+	// total count of the previous range
+	preTimeRange, err := ts.calStatRange(start, -store.Intervals[statType])
+	if err != nil {
+		return nil, err
+	}
+
+	var preStat store.SubmitStat
+	exist, err := ts.DB.SubmitStatStore.Exists(&preStat, "stat_type = ? and stat_time = ?",
+		statType, preTimeRange.start)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exist {
+		total, err := ts.DB.SubmitStore.Count(time.Time{}, start)
+		if err != nil {
+			return nil, err
+		}
+		preStat.FileTotal = total.FileCount
+		preStat.DataTotal = total.DataSize
+		preStat.BaseFeeTotal = total.BaseFee
+		preStat.TxTotal = total.TxCount
+	}
+
 	return &store.SubmitStat{
-		StatTime:     tr.start,
-		StatType:     ts.statType,
+		StatTime:     start,
+		StatType:     statType,
 		FileCount:    delta.FileCount,
-		FileTotal:    total.FileCount + delta.FileCount,
+		FileTotal:    preStat.FileTotal + delta.FileCount,
 		DataSize:     delta.DataSize,
-		DataTotal:    total.DataSize + delta.DataSize,
+		DataTotal:    preStat.DataTotal + delta.DataSize,
 		BaseFee:      delta.BaseFee,
-		BaseFeeTotal: total.BaseFee.Add(delta.BaseFee),
+		BaseFeeTotal: preStat.BaseFeeTotal.Add(delta.BaseFee),
 		TxCount:      delta.TxCount,
-		TxTotal:      total.TxCount + delta.TxCount,
-	}, nil
-}
-
-func (ts *StatSubmit) statRange(rangEnd time.Time, srcStatType, descStatType string, latestStat *store.SubmitStat) (*store.SubmitStat, error) {
-	rangeStart, err := ts.calStatRangeStart(rangEnd, descStatType)
-	if err != nil {
-		return nil, err
-	}
-
-	srcStat, err := ts.DB.SubmitStatStore.Sum(rangeStart, rangEnd, srcStatType)
-	if err != nil {
-		return nil, err
-	}
-	destStat, err := ts.DB.SubmitStatStore.Sum(time.Time{}, rangeStart, descStatType)
-	if err != nil {
-		return nil, err
-	}
-
-	if latestStat != nil {
-		srcStat.FileCount += latestStat.FileCount
-		srcStat.DataSize += latestStat.DataSize
-		srcStat.BaseFee = srcStat.BaseFee.Add(latestStat.BaseFee)
-		srcStat.TxCount += latestStat.TxCount
-	}
-
-	return &store.SubmitStat{
-		StatTime:     rangeStart,
-		StatType:     descStatType,
-		FileCount:    srcStat.FileCount,
-		FileTotal:    destStat.FileCount + srcStat.FileCount,
-		DataSize:     srcStat.DataSize,
-		DataTotal:    destStat.DataSize + srcStat.DataSize,
-		BaseFee:      srcStat.BaseFee,
-		BaseFeeTotal: destStat.BaseFee.Add(srcStat.BaseFee),
-		TxCount:      srcStat.TxCount,
-		TxTotal:      destStat.TxCount + srcStat.TxCount,
+		TxTotal:      preStat.TxTotal + delta.TxCount,
 	}, nil
 }
