@@ -1,15 +1,19 @@
 #!/bin/bash
 
 REPO_BRANCH=
+DA_API_ENABLE=0
 
-while getopts "b:" opt; do
+while getopts "b:d" opt; do
   case $opt in
     b)
         REPO_BRANCH=$OPTARG
         echo "REPO_BRANCH :REPO_BRANCH" ;;
+    d)
+        DA_API_ENABLE=1
+        echo "DA_API_ENABLE :DA_API_ENABLE" ;;
     *)
         echo "$0: invalid option -$OPTARG" >&2
-		    echo "Usage: $0 [-b repo_branch]" >&2
+		    echo "Usage: $0 [-b repo_branch] [-d <enable da api>]" >&2
 		    exit
 		    ;;
   esac
@@ -25,17 +29,25 @@ echo "Program dir: $CURRENT_PATH"
 echo "===>Start to pull repo..."
 CURRENT_BRANCH="$( git branch | grep '\*' | sed 's/\* //' )"
 echo "[Current branch] $CURRENT_BRANCH"
+git reset --hard origin/$CURRENT_BRANCH
 if [ -n "$REPO_BRANCH" ]; then
   echo "[Start to switch branch] $REPO_BRANCH"
+  git fetch origin $REPO_BRANCH
   git checkout $REPO_BRANCH || exit 1
 fi
-git pull || exit 1
-echo "<===Repo is pulled successfully."
+echo "<===Repo pulled successfully."
 
 echo "===>Start to build image..."
 docker-compose build --no-cache || exit 1
-echo "<===Images are built successfully. "
+echo "<===Images built successfully. "
 
 echo "===>Start to launch services..."
-docker-compose up -d
-echo "<===Services are launched successfully."
+docker-compose up --force-recreate -d sync
+docker-compose up --force-recreate -d stat
+echo "DA_API_ENABLE: $DA_API_ENABLE"
+if [ "$DA_API_ENABLE" -ne 1 ]; then
+  docker-compose up --force-recreate -d api
+else
+  docker-compose up --force-recreate -d da_api
+fi
+echo "<===Services launched successfully."

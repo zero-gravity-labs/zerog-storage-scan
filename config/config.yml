@@ -20,7 +20,7 @@ eth:
 # storage SDK client configurations
 storage:
   # Storage node rpc url
-  url: :5678
+  urls: [http://192.168.10.26:5678, http://192.168.10.27:5678, http://192.168.10.28:5678]
   # Retry times if failure, if 0 never
   # retry: 0
   # Interval duration before each retry
@@ -39,7 +39,7 @@ storage:
 # Blockchain sync configurations
 sync:
   # The block number from which to sync flow submit
-  blockWhenFlowCreated: 134253185
+  blockWhenFlowCreated: 1000
   # To avoid pivot switch frequently, skip some blocks ahead of the latest block
   # delayBlocksAgainstLatest: 30
   # The number of blocks to query at a time during catchup, 0 means no limit
@@ -52,7 +52,7 @@ sync:
 # Flow contract info configurations
 flow:
   # Flow contract address
-  address: 0xcb7afff6f048ec1fb033aa7b495ed0dd932c8656
+  # address: 0xbD2C3F0E65eDF5582141C35969d66e34629cC768
   # Flow submit event signature
   submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
 
@@ -61,7 +61,7 @@ flow:
 # When charging in native token, configure `symbol` and `decimals`
 charge:
   # Charge in ERC20 token address
-  erc20TokenAddress: 0x7d682e65efc5c13bf4e394b8f376c48e6bae0355
+  # erc20TokenAddress: 0x7d682e65efc5c13bf4e394b8f376c48e6bae0355
   # ERC20 transfer event signature
   erc20TransferEventSignature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
   # Token symbol
@@ -72,16 +72,16 @@ charge:
 # Reward contract info configurations
 reward:
   # Reward contract address
-  address: 0x7a6bb8a34cc7a418350d3cf2409c580ba9ef2dbf
+  # address: 0x51998C4d486F406a788B766d93510980ae1f9360
   # Distribute reward event signature
   rewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
 
 # DAEntrance contract info configurations
 daEntrance:
   # DAEntrance contract address
-  address: 0xDFC8B84e3C98e8b550c7FEF00BCB2d8742d80a69
+  # address: 0x5ea5BDF94909EF030C0F36d0F3BEd04Ed87489B1
   # Data upload event signature
-  dataUploadSignature: 0xf0bf37f8713754493879920443065424c575888634675f146c115709bbb59acb
+  dataUploadSignature: 0x57b8b1a6583dc6ce934dfba3d66f2a8e1591b6e171bb2e0921cc64640277087b
   # Erasure commitment verified event signature
   erasureCommitmentVerifiedSignature: 0x0f1b20d87bebd11dddaaab51f01cf2726880cb3f8073b636dbafa2aa8cacd256
   # DA reward event signature
@@ -90,7 +90,7 @@ daEntrance:
 # DASigners contract info configurations
 daSigners:
   # DASigners contract address
-  address: 0x0000000000000000000000000000000000001000
+  address: "0x0000000000000000000000000000000000001000"
   # New signer event signature
   newSignerSignature: 0x679917c2006df1daaa987a56bf1d66e99764d5ad317892d9e83a6eb4e3f051e7
   # Socket updated event signature
@@ -107,9 +107,10 @@ store:
     # maxOpenConns: 10
     # maxIdleConns: 10
 
+# Data statistics configurations
 stat:
   # The block number from which to stat
-  blockOnStatBegin: 134253185
+  blockOnStatBegin: 1000
   # The minimum interval for tx stat
   # minStatIntervalDailyTx: 10m
   # The minimum interval for submit stat
@@ -134,7 +135,7 @@ log:
   level: info
   forceColor: false
 
-# Alert Configurations
+## Alert Configurations
 #alert:
 #  # Custom tags are used to distinguish between different networks and environments.
 #  # For example, they can be used to differentiate between mainnet/testnet, prod/test/dev, etc.
@@ -151,14 +152,14 @@ log:
 #      # The chat ID for the Telegram chat where the alerts are sent.
 #      chatId: ${your_chat_id}
 
-# Metrics configurations
+## Metrics configurations
 #metrics:
 #  # Whether to collect metrics
-#  enabled: true
+#  enabled: false
 #  # InfluxDB configurations
 #  influxdb:
 #    host: http://127.0.0.1:8086
-#    db: scan-ssd
+#    db: storage-scan
 #    username: root
 #    password: root
 #  report:
