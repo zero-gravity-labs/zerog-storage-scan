@@ -1,11 +1,13 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 
 	"github.com/0glabs/0g-storage-client/core"
 	scanApi "github.com/0glabs/0g-storage-scan/api"
+	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
@@ -20,6 +22,11 @@ func listStorageTxs(c *gin.Context) (interface{}, error) {
 	}
 
 	total, submits, err := listSubmits(nil, param)
+	if err != nil {
+		return nil, err
+	}
+
+	submits, err = updateFileInfo(submits)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +55,12 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	if err != nil {
 		return nil, scanApi.ErrBatchGetAddress(err)
 	}
+
+	submits, err := updateFileInfo([]store.Submit{submit})
+	if err != nil {
+		return nil, err
+	}
+	submit = submits[0]
 
 	result := StorageTxDetail{
 		TxSeq:       strconv.FormatUint(submit.SubmissionIndex, 10),
@@ -113,8 +126,13 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 	if len(submits) == 0 {
 		return &StorageTxList{
 			Total: total,
-			List:  make([]StorageTxInfo, 0),
+			List:  make([]*StorageTxInfo, 0),
 		}, nil
+	}
+
+	submits, err = updateFileInfo(submits)
+	if err != nil {
+		return nil, err
 	}
 
 	return convertStorageTxs(total, submits)
@@ -134,7 +152,7 @@ func listSubmits(addressID *uint64, params listStorageTxParam) (int64,
 	total, addrSubmits, err := db.AddressSubmitStore.List(addressID, params.RootHash, params.TxHash,
 		params.MinTimestamp, params.MaxTimestamp, params.isDesc(), params.Skip, params.Limit)
 	if err != nil {
-		return 0, nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get address's submit list"))
+		return 0, nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get account's submit list"))
 	}
 
 	submits := make([]store.Submit, 0)
@@ -167,14 +185,15 @@ func convertStorageTxs(total int64, submits []store.Submit) (*StorageTxList, err
 		return nil, scanApi.ErrBatchGetAddress(err)
 	}
 
-	storageTxs := make([]StorageTxInfo, 0)
+	storageTxs := make([]*StorageTxInfo, 0)
 	for _, submit := range submits {
-		storageTx := StorageTxInfo{
+		storageTx := &StorageTxInfo{
 			TxSeq:            submit.SubmissionIndex,
 			BlockNumber:      submit.BlockNumber,
 			TxHash:           submit.TxHash,
 			RootHash:         submit.RootHash,
 			From:             addrMap[submit.SenderID].Address,
+			FromId:           submit.SenderID,
 			Method:           "submit",
 			Status:           submit.Status,
 			Segments:         submit.TotalSegNum,
@@ -186,8 +205,40 @@ func convertStorageTxs(total int64, submits []store.Submit) (*StorageTxList, err
 		storageTxs = append(storageTxs, storageTx)
 	}
 
+	/*if err := updateFileInfo(storageTxs); err != nil {
+		return nil, err
+	}*/
+
 	return &StorageTxList{
 		Total: total,
 		List:  storageTxs,
 	}, nil
+}
+
+func updateFileInfo(submits []store.Submit) ([]store.Submit, error) {
+	unfinalizedSubmits := make([]store.Submit, 0)
+	for _, submit := range submits {
+		if submit.Status < uint8(store.Uploaded) {
+			unfinalizedSubmits = append(unfinalizedSubmits, submit)
+		}
+	}
+
+	if len(unfinalizedSubmits) == 0 {
+		return submits, nil
+	}
+
+	result, err := rpc.RefreshFileInfos(context.Background(), unfinalizedSubmits, l2Sdks, db)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, submit := range submits {
+		fileInfo := result[submit.SubmissionIndex]
+		if fileInfo != nil && fileInfo.Err == nil {
+			submit.Status = fileInfo.Data.Status
+			submit.UploadedSegNum = fileInfo.Data.UploadedSegNum
+		}
+	}
+
+	return submits, nil
 }

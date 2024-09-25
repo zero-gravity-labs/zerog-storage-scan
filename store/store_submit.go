@@ -181,10 +181,20 @@ func (ss *SubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip,
 	return total, *list, nil
 }
 
-func (ss *SubmitStore) BatchGetNotFinalized(submissionIndex uint64, batch int) ([]Submit, error) {
+func (ss *SubmitStore) GetUnfinalizedOverall(submissionIndex uint64, batch int) ([]Submit, error) {
 	submits := new([]Submit)
 	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where submission_index >= ? and status < ? order by submission_index asc limit ?",
 		submissionIndex, Uploaded, batch).Scan(submits).Error; err != nil {
+		return nil, err
+	}
+
+	return *submits, nil
+}
+
+func (ss *SubmitStore) GetUnfinalizedLatest(batch int) ([]Submit, error) {
+	submits := new([]Submit)
+	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where status < ? order by submission_index desc limit ?",
+		Uploaded, batch).Scan(submits).Error; err != nil {
 		return nil, err
 	}
 
@@ -268,7 +278,7 @@ func (t *SubmitStatStore) Sum(startTime, endTime time.Time, statType string) (*S
 		return nil, errors.New("At least provide one parameter for startTime and endTime")
 	}
 
-	db := t.DB.Debug().Model(&SubmitStat{}).Select(`IFNULL(sum(file_count), 0) as file_count, 
+	db := t.DB.Model(&SubmitStat{}).Select(`IFNULL(sum(file_count), 0) as file_count, 
 		IFNULL(sum(data_size), 0) as data_size, IFNULL(sum(base_fee), 0) as base_fee, 
 		IFNULL(sum(tx_count), 0) as tx_count`)
 	db = db.Where("stat_type = ?", statType)

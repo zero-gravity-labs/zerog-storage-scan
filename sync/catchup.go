@@ -6,6 +6,7 @@ import (
 	"time"
 
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
+	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/health"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
@@ -146,7 +147,7 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 			for _, log := range logs {
 				blockNums = append(blockNums, types.BlockNumber(log.BlockNumber))
 			}
-			bn2TimeMap, err = batchGetBlockTimes(ctx, s.sdk, blockNums, s.conf.BatchBlocksOnBatchCall)
+			bn2TimeMap, err = rpc.BatchGetBlockTimes(ctx, s.sdk, blockNums, s.conf.BatchBlocksOnBatchCall)
 		}
 		if err != nil {
 			return err
@@ -200,7 +201,7 @@ func (s *CatchupSyncer) batchGetLogsBestEffort(w3c *web3go.Client, bnFrom, bnTo 
 	start, end := bnFrom, bnTo
 
 	for {
-		logs, err := batchGetLogs(w3c, start, end, addresses, topics)
+		logs, err := rpc.BatchGetLogs(w3c, start, end, addresses, topics)
 		if err == nil {
 			return logs, start, end, nil
 		}
@@ -246,7 +247,7 @@ func (s *CatchupSyncer) updateBlockRange(ctx context.Context) error {
 
 	finalizedBlock, err := s.sdk.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
 	if s.alertChannel != "" {
-		if e := alertErr(ctx, s.alertChannel, "NodeRPCError", &nodeRpcHealth, s.healthReport, err); e != nil {
+		if e := rpc.AlertErr(ctx, s.alertChannel, "NodeRPCError", &rpc.NodeRpcHealth, s.healthReport, err); e != nil {
 			return e
 		}
 	}

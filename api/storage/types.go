@@ -154,15 +154,16 @@ type TokenInfo struct {
 // StorageTxList model info
 // @Description Submission information list
 type StorageTxList struct {
-	Total int64           `json:"total"` // The total number of submission returned
-	List  []StorageTxInfo `json:"list"`  // Submission list
+	Total int64            `json:"total"` // The total number of submission returned
+	List  []*StorageTxInfo `json:"list"`  // Submission list
 }
 
 // StorageTxInfo model info
 // @Description Submission transaction information
 type StorageTxInfo struct {
-	TxSeq  uint64 `json:"txSeq"`  // Submission index in submit event
-	From   string `json:"from"`   // File uploader address
+	TxSeq  uint64 `json:"txSeq"` // Submission index in submit event
+	From   string `json:"from"`  // File uploader address
+	FromId uint64 `json:"-"`
 	Method string `json:"method"` // The name of the submit event is always `submit`
 
 	RootHash   string          `json:"rootHash"`   // Merkle root of the file to upload

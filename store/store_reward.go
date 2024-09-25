@@ -59,7 +59,7 @@ func (rs *RewardStore) Sum(startTime, endTime time.Time) (*decimal.Decimal, erro
 		return nil, errors.New("At least provide one parameter for startTime and endTime")
 	}
 
-	db := rs.DB.Debug().Model(&Reward{}).Select(`IFNULL(sum(Amount), 0) as amount`)
+	db := rs.DB.Model(&Reward{}).Select(`IFNULL(sum(Amount), 0) as amount`)
 	if startTime != nilTime {
 		db = db.Where("block_time >= ?", startTime)
 	}

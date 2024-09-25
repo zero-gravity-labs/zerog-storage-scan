@@ -57,8 +57,12 @@ github.com/Azure/go-autorest/logger v0.1.0/go.mod h1:oExouG+K6PryycPJfVSxi/koC6L
 github.com/Azure/go-autorest/tracing v0.5.0/go.mod h1:r/s2XiOKccPW3HrqB+W0TQzfbtp2fGCgRFtBroKn4Dk=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/Conflux-Chain/go-conflux-util v0.2.1 h1:iWYfcQ9ngenLpRi8sYb2x4mko2x2AOf214RuzOj2VLM=
+github.com/Conflux-Chain/go-conflux-util v0.2.1/go.mod h1:6JdsElKVTA3kxbflE2rhYO1hp+rPd9O7THCIN1z/v6c=
 github.com/Conflux-Chain/go-conflux-util v0.2.2-0.20240718082304-6c749d77bd5a h1:3ZiUTUU/rNkjKh3uHzfL6qcm0uLZg+1hGzUcapg0dl0=
 github.com/Conflux-Chain/go-conflux-util v0.2.2-0.20240718082304-6c749d77bd5a/go.mod h1:ThmsVGfj0muqxC3i7Rvyg1GVb+B39mQFuEoHnqF1MBA=
+github.com/Conflux-Chain/go-conflux-util v0.2.2-0.20240906102034-37b696c13558 h1:6Mn5piSxnwLDcOV4jMZysKauaNmi4qqJlkDn1F5fz+0=
+github.com/Conflux-Chain/go-conflux-util v0.2.2-0.20240906102034-37b696c13558/go.mod h1:ThmsVGfj0muqxC3i7Rvyg1GVb+B39mQFuEoHnqF1MBA=
 github.com/Conflux-Chain/web3pay-service v0.0.0-20240718085234-2c8c8f7586bf h1:E4GIdTK6pIIQtNOIwA4SSVm5NjCRGWwby5jzV+vHUPU=
 github.com/Conflux-Chain/web3pay-service v0.0.0-20240718085234-2c8c8f7586bf/go.mod h1:5WO9DCYr7/o0jRCbkkmKVIND5yEtxH3i6AdOoJskmGY=
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=

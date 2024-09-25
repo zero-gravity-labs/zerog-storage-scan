@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/0glabs/0g-storage-client/node"
 	scanApi "github.com/0glabs/0g-storage-scan/api"
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/docs"
@@ -18,13 +19,16 @@ import (
 const BasePath = "/api"
 
 var (
-	sdk         *web3go.Client
+	sdk *web3go.Client
+
+	l2Sdks      []*node.Client
 	db          *store.MysqlStore
 	chargeToken *TokenInfo
 )
 
-func MustInit(client *web3go.Client, store *store.MysqlStore) {
+func MustInit(client *web3go.Client, storageClients []*node.Client, store *store.MysqlStore) {
 	sdk = client
+	l2Sdks = storageClients
 	db = store
 
 	var charge struct {

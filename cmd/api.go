@@ -22,7 +22,7 @@ func startAPIService(*cobra.Command, []string) {
 	dataCtx := MustInitDataContext()
 	defer dataCtx.Close()
 
-	storage.MustInit(dataCtx.Eth, dataCtx.DB)
+	storage.MustInit(dataCtx.Eth, dataCtx.L2Sdks, dataCtx.DB)
 
 	mws := httpMiddlewares(dataCtx)
 	api.MustServeFromViper(storage.Register, mws...)

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
@@ -160,7 +161,8 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 	s.currentBlock = s.catchupSyncer.finalizedBlock + 1
 	logrus.WithField("block", s.catchupSyncer.finalizedBlock).Info("Catchup syncer done")
 
-	go s.storageSyncer.Sync(ctx)
+	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncOverall)
+	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncLatest)
 
 	ticker := time.NewTicker(s.syncIntervalCatchUp)
 	defer ticker.Stop()
@@ -208,7 +210,7 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 	// get the latest block
 	latestBlock, err := s.sdk.Eth.BlockNumber()
 	if s.catchupSyncer.alertChannel != "" {
-		if e := alertErr(ctx, s.catchupSyncer.alertChannel, "NodeRPCError", &nodeRpcHealth, s.catchupSyncer.healthReport,
+		if e := rpc.AlertErr(ctx, s.catchupSyncer.alertChannel, "NodeRPCError", &rpc.NodeRpcHealth, s.catchupSyncer.healthReport,
 			err); e != nil {
 			return false, e
 		}
@@ -225,18 +227,18 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 
 	// check parity api available
 	if !checkParityAPIAlready {
-		if _, err = getEthDataByReceipts(s.sdk, curBlock); err != nil && strings.Contains(err.Error(), "parity_getBlockReceipts") {
+		if _, err = rpc.GetEthDataByReceipts(s.sdk, curBlock); err != nil && strings.Contains(err.Error(), "parity_getBlockReceipts") {
 			syncDataByLogs = true
 		}
 		checkParityAPIAlready = true
 	}
 
 	// get eth data
-	var data *EthData
+	var data *rpc.EthData
 	if syncDataByLogs {
-		data, err = getEthDataByLogs(s.sdk, curBlock, s.addresses, s.topics)
+		data, err = rpc.GetEthDataByLogs(s.sdk, curBlock, s.addresses, s.topics)
 	} else {
-		data, err = getEthDataByReceipts(s.sdk, curBlock)
+		data, err = rpc.GetEthDataByReceipts(s.sdk, curBlock)
 	}
 	if err != nil {
 		return false, err
@@ -351,14 +353,14 @@ func (s *Syncer) revertReorgData(revertBlock uint64) error {
 	return nil
 }
 
-func (s *Syncer) parseEthData(data *EthData) (*store.DecodedLogs, error) {
+func (s *Syncer) parseEthData(data *rpc.EthData) (*store.DecodedLogs, error) {
 	var logs []types.Log
 	if syncDataByLogs {
 		logs = data.Logs
 	} else {
 		for _, t := range data.Block.Transactions.Transactions() {
 			rcpt := data.Receipts[t.Hash]
-			if rcpt == nil || !isTxExecutedInBlock(t, *rcpt) {
+			if rcpt == nil || !rpc.IsTxExecutedInBlock(t, *rcpt) {
 				continue
 			}
 			for _, log := range rcpt.Logs {

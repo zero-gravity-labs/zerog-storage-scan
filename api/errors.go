@@ -10,6 +10,10 @@ func ErrBlockchainRPC(err error) error {
 	return errors.WithMessage(err, "Blockchain RPC exception")
 }
 
+func ErrStorageNodeRPC(err error) error {
+	return errors.WithMessage(err, "Storage node RPC exception")
+}
+
 func ErrDatabase(err error) error {
 	return errors.WithMessage(err, "Database exception")
 }

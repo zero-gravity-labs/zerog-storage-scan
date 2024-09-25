@@ -6,8 +6,6 @@ toolchain go1.22.1
 
 require (
 	github.com/0glabs/0g-storage-client v0.1.15
-	github.com/Conflux-Chain/go-conflux-util v0.2.2-0.20240718082304-6c749d77bd5a
-	github.com/Conflux-Chain/web3pay-service v0.0.0-20240718085234-2c8c8f7586bf
 	github.com/deckarep/golang-set v1.8.0
 	github.com/ethereum/go-ethereum v1.14.5
 	github.com/gin-gonic/gin v1.9.1
@@ -26,6 +24,7 @@ require (
 )
 
 require (
+	github.com/Conflux-Chain/go-conflux-util v0.2.2-0.20240906102034-37b696c13558 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

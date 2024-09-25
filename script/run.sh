@@ -29,6 +29,7 @@ echo "Program dir: $CURRENT_PATH"
 echo "===>Start to pull repo..."
 CURRENT_BRANCH="$( git branch | grep '\*' | sed 's/\* //' )"
 echo "[Current branch] $CURRENT_BRANCH"
+git fetch
 git reset --hard origin/$CURRENT_BRANCH
 if [ -n "$REPO_BRANCH" ]; then
   echo "[Start to switch branch] $REPO_BRANCH"

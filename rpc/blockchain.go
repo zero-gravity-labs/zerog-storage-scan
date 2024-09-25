@@ -1,4 +1,4 @@
-package sync
+package rpc
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 var (
 	ErrNotFound     = errors.New("not found")
 	ErrChainReorged = errors.New("chain re-orged")
-	nodeRpcHealth   = health.TimedCounter{}
+	NodeRpcHealth   = health.TimedCounter{}
 )
 
 type EthData struct {
@@ -27,11 +27,11 @@ type EthData struct {
 	Logs     []types.Log
 }
 
-func isTxExecutedInBlock(tx types.TransactionDetail, receipt types.Receipt) bool {
+func IsTxExecutedInBlock(tx types.TransactionDetail, receipt types.Receipt) bool {
 	return tx.BlockHash != nil && receipt.Status != nil && *receipt.Status < 2
 }
 
-func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, error) {
+func GetEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, error) {
 	// get block
 	block, err := w3c.Eth.BlockByNumber(types.BlockNumber(blockNumber), true)
 	if err != nil {
@@ -79,7 +79,7 @@ func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, err
 	return &EthData{Number: blockNumber, Block: block, Receipts: txReceipts}, nil
 }
 
-func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common.Address, topics [][]common.Hash) (*EthData, error) {
+func GetEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common.Address, topics [][]common.Hash) (*EthData, error) {
 	// get block
 	block, err := w3c.Eth.BlockByNumber(types.BlockNumber(blockNumber), true)
 	if err != nil {
@@ -91,7 +91,7 @@ func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common
 
 	// batch get logs
 	//logArray, err := batchGetFlowSubmits(w3c, blockNumber, blockNumber, flowAddr, flowSubmitSig)
-	logArray, err := batchGetLogs(w3c, blockNumber, blockNumber, addresses, topics)
+	logArray, err := BatchGetLogs(w3c, blockNumber, blockNumber, addresses, topics)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to get flow submits in batch at block %v", blockNumber)
 	}
@@ -126,7 +126,7 @@ func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common
 	return &EthData{Number: blockNumber, Block: block, Logs: logs}, nil
 }
 
-func batchGetLogs(w3c *web3go.Client, blockFrom, blockTo uint64, addresses []common.Address,
+func BatchGetLogs(w3c *web3go.Client, blockFrom, blockTo uint64, addresses []common.Address,
 	topics [][]common.Hash) ([]types.Log, error) {
 	bnFrom := types.NewBlockNumber(int64(blockFrom))
 	bnTo := types.NewBlockNumber(int64(blockTo))
@@ -139,7 +139,7 @@ func batchGetLogs(w3c *web3go.Client, blockFrom, blockTo uint64, addresses []com
 	return w3c.Eth.Logs(logFilter)
 }
 
-func batchGetBlockTimes(ctx context.Context, w3c *web3go.Client, blkNums []types.BlockNumber,
+func BatchGetBlockTimes(ctx context.Context, w3c *web3go.Client, blkNums []types.BlockNumber,
 	batchSize uint64) (map[uint64]uint64, error) {
 	if len(blkNums) == 0 {
 		return nil, errors.New("no block numbers")
@@ -189,7 +189,7 @@ type AlertContent struct {
 	Elapsed time.Duration
 }
 
-func alertErr(ctx context.Context, channel, title string, health *health.TimedCounter,
+func AlertErr(ctx context.Context, channel, title string, health *health.TimedCounter,
 	report health.TimedCounterConfig, err error) error {
 
 	ch, ok := alert.DefaultManager().Channel(channel)
