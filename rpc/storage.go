@@ -5,10 +5,17 @@ import (
 	"time"
 
 	"github.com/0glabs/0g-storage-client/node"
-	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/parallel"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
+
+type Status uint8
+
+const (
+	NotUploaded Status = iota
+	Uploading
+	Uploaded
 )
 
 var (
@@ -64,9 +71,9 @@ func (executor *FileInfoExecutor) getFileInfo(l2Sdks []*node.Client, rpcParam Fi
 		if err == nil && info != nil {
 			var status uint8
 			if info.Finalized {
-				status = uint8(store.Uploaded)
+				status = uint8(Uploaded)
 			} else if info.UploadedSegNum > 0 {
-				status = uint8(store.Uploading)
+				status = uint8(Uploading)
 			}
 
 			if status > fileInfo.Status {
@@ -75,7 +82,7 @@ func (executor *FileInfoExecutor) getFileInfo(l2Sdks []*node.Client, rpcParam Fi
 				updated = true
 			}
 
-			if status == uint8(store.Uploaded) {
+			if status == uint8(Uploaded) {
 				break
 			}
 		}
@@ -110,41 +117,4 @@ func BatchGetFileInfos(ctx context.Context, l2sdks []*node.Client, rpcParams []F
 	}).Debug("Batch get file info")
 
 	return executor.rpcResults, nil
-}
-
-func RefreshFileInfos(ctx context.Context, submits []store.Submit, l2Sdks []*node.Client, db *store.MysqlStore) (map[uint64]*FileInfoResult, error) {
-	params := make([]FileInfoParam, 0)
-	submitMap := make(map[uint64]store.Submit)
-	for _, submit := range submits {
-		params = append(params, FileInfoParam{submit.SubmissionIndex, submit.Status})
-		submitMap[submit.SubmissionIndex] = submit
-	}
-
-	result, err := BatchGetFileInfos(ctx, l2Sdks, params)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, fileInfo := range result {
-		if fileInfo.Err == nil {
-			d := fileInfo.Data
-			s := submitMap[d.SubmissionIndex]
-			submit := store.Submit{
-				SubmissionIndex: d.SubmissionIndex,
-				UploadedSegNum:  d.UploadedSegNum,
-				Status:          d.Status,
-			}
-			addressSubmit := store.AddressSubmit{
-				SenderID:        s.SenderID,
-				SubmissionIndex: d.SubmissionIndex,
-				UploadedSegNum:  d.UploadedSegNum,
-				Status:          d.Status,
-			}
-			if err := db.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return result, nil
 }

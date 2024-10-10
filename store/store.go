@@ -1,10 +1,13 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/0glabs/0g-storage-client/node"
+	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	set "github.com/deckarep/golang-set"
 	"github.com/pkg/errors"
@@ -240,6 +243,44 @@ func (ms *MysqlStore) UpdateSubmitByPrimaryKey(s *Submit, as *AddressSubmit) err
 		}
 		return nil
 	})
+}
+
+func (ms *MysqlStore) UpdateFileInfos(ctx context.Context, submits []Submit, l2Sdks []*node.Client) (
+	map[uint64]*rpc.FileInfoResult, error) {
+	params := make([]rpc.FileInfoParam, 0)
+	submitMap := make(map[uint64]Submit)
+	for _, submit := range submits {
+		params = append(params, rpc.FileInfoParam{SubmissionIndex: submit.SubmissionIndex, Status: submit.Status})
+		submitMap[submit.SubmissionIndex] = submit
+	}
+
+	result, err := rpc.BatchGetFileInfos(ctx, l2Sdks, params)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, fileInfo := range result {
+		if fileInfo.Err == nil {
+			d := fileInfo.Data
+			s := submitMap[d.SubmissionIndex]
+			submit := Submit{
+				SubmissionIndex: d.SubmissionIndex,
+				UploadedSegNum:  d.UploadedSegNum,
+				Status:          d.Status,
+			}
+			addressSubmit := AddressSubmit{
+				SenderID:        s.SenderID,
+				SubmissionIndex: d.SubmissionIndex,
+				UploadedSegNum:  d.UploadedSegNum,
+				Status:          d.Status,
+			}
+			if err := ms.UpdateSubmitByPrimaryKey(&submit, &addressSubmit); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func SenderID(si uint64) func(db *gorm.DB) *gorm.DB {

@@ -23,17 +23,23 @@ type StorageSyncer struct {
 	db                *store.MysqlStore
 	alertChannel      string
 	healthReport      health.TimedCounterConfig
-	storageRpcHealths []health.TimedCounter
+	storageRpcHealths []*health.TimedCounter
 }
 
 func MustNewStorageSyncer(l2Sdks []*node.Client, db *store.MysqlStore, alertChannel string,
 	healthReport health.TimedCounterConfig) *StorageSyncer {
+
+	storageRpcHealths := make([]*health.TimedCounter, len(l2Sdks))
+	for i := 0; i < len(l2Sdks); i++ {
+		storageRpcHealths[i] = &health.TimedCounter{}
+	}
+
 	return &StorageSyncer{
 		l2Sdks:            l2Sdks,
 		db:                db,
 		alertChannel:      alertChannel,
 		healthReport:      healthReport,
-		storageRpcHealths: make([]health.TimedCounter, len(l2Sdks)),
+		storageRpcHealths: storageRpcHealths,
 	}
 }
 
@@ -67,7 +73,7 @@ func (ss *StorageSyncer) SyncOverall(ctx context.Context) error {
 			return ErrNoFileInfoToSync
 		}
 
-		if _, err := rpc.RefreshFileInfos(ctx, submits, ss.l2Sdks, ss.db); err != nil {
+		if _, err := ss.db.UpdateFileInfos(ctx, submits, ss.l2Sdks); err != nil {
 			return err
 		}
 
@@ -84,8 +90,23 @@ func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
 		return ErrNoFileInfoToSync
 	}
 
-	if _, err := rpc.RefreshFileInfos(ctx, submits, ss.l2Sdks, ss.db); err != nil {
+	if _, err := ss.db.UpdateFileInfos(ctx, submits, ss.l2Sdks); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (ss *StorageSyncer) CheckStatus(ctx context.Context) error {
+	for index, l2Sdk := range ss.l2Sdks {
+		_, err := l2Sdk.ZeroGStorage().GetStatus()
+
+		if ss.alertChannel != "" {
+			if e := rpc.AlertErr(ctx, "StorageNodeRPCError", ss.alertChannel, err, ss.healthReport,
+				ss.storageRpcHealths[index], l2Sdk.URL()); e != nil {
+				return e
+			}
+		}
 	}
 
 	return nil

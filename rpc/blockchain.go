@@ -17,7 +17,6 @@ import (
 var (
 	ErrNotFound     = errors.New("not found")
 	ErrChainReorged = errors.New("chain re-orged")
-	NodeRpcHealth   = health.TimedCounter{}
 )
 
 type EthData struct {
@@ -185,22 +184,28 @@ func BatchGetBlockTimes(ctx context.Context, w3c *web3go.Client, blkNums []types
 }
 
 type AlertContent struct {
+	URL     string
 	Err     string
 	Elapsed time.Duration
 }
 
-func AlertErr(ctx context.Context, channel, title string, health *health.TimedCounter,
-	report health.TimedCounterConfig, err error) error {
+func AlertErr(ctx context.Context, title, channel string, err error,
+	report health.TimedCounterConfig, health *health.TimedCounter, urls ...string) error {
 
 	ch, ok := alert.DefaultManager().Channel(channel)
 	if !ok {
 		return errors.Errorf("Alert channel %s not found", channel)
 	}
 
+	var url string
+	if len(urls) > 0 {
+		url = urls[0]
+	}
+
 	if err == nil {
 		if recovered, elapsed := health.OnSuccess(report); recovered {
 			return ch.Send(ctx, &alert.Notification{
-				Title: title, Content: AlertContent{"Recovered", elapsed},
+				Title: title, Content: AlertContent{url, "Recovered", elapsed},
 				Severity: alert.SeverityLow,
 			})
 		}
@@ -209,7 +214,7 @@ func AlertErr(ctx context.Context, channel, title string, health *health.TimedCo
 
 	if unhealthy, unrecovered, elapsed := health.OnFailure(report); unhealthy || unrecovered {
 		return ch.Send(ctx, &alert.Notification{
-			Title: title, Content: AlertContent{err.Error(), elapsed},
+			Title: title, Content: AlertContent{url, err.Error(), elapsed},
 			Severity: alert.SeverityHigh,
 		})
 	}

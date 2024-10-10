@@ -163,6 +163,7 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncOverall)
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncLatest)
+	go s.storageSyncer.Sync(ctx, s.storageSyncer.CheckStatus)
 
 	ticker := time.NewTicker(s.syncIntervalCatchUp)
 	defer ticker.Stop()
@@ -210,8 +211,8 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 	// get the latest block
 	latestBlock, err := s.sdk.Eth.BlockNumber()
 	if s.catchupSyncer.alertChannel != "" {
-		if e := rpc.AlertErr(ctx, s.catchupSyncer.alertChannel, "NodeRPCError", &rpc.NodeRpcHealth, s.catchupSyncer.healthReport,
-			err); e != nil {
+		if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.catchupSyncer.alertChannel, err,
+			s.catchupSyncer.healthReport, &s.catchupSyncer.nodeRpcHealth); e != nil {
 			return false, e
 		}
 	}

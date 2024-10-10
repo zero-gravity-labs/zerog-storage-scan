@@ -8,20 +8,13 @@ import (
 
 	"github.com/0glabs/0g-storage-client/contract"
 	"github.com/0glabs/0g-storage-client/core"
+	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
-)
-
-type Status uint8
-
-const (
-	NotUploaded Status = iota
-	Uploading
-	Uploaded
 )
 
 type Submit struct {
@@ -184,7 +177,7 @@ func (ss *SubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip,
 func (ss *SubmitStore) GetUnfinalizedOverall(submissionIndex uint64, batch int) ([]Submit, error) {
 	submits := new([]Submit)
 	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where submission_index >= ? and status < ? order by submission_index asc limit ?",
-		submissionIndex, Uploaded, batch).Scan(submits).Error; err != nil {
+		submissionIndex, rpc.Uploaded, batch).Scan(submits).Error; err != nil {
 		return nil, err
 	}
 
@@ -194,7 +187,7 @@ func (ss *SubmitStore) GetUnfinalizedOverall(submissionIndex uint64, batch int) 
 func (ss *SubmitStore) GetUnfinalizedLatest(batch int) ([]Submit, error) {
 	submits := new([]Submit)
 	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where status < ? order by submission_index desc limit ?",
-		Uploaded, batch).Scan(submits).Error; err != nil {
+		rpc.Uploaded, batch).Scan(submits).Error; err != nil {
 		return nil, err
 	}
 

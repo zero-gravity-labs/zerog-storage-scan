@@ -37,10 +37,11 @@ type CatchupSyncer struct {
 	newSignerSig      string
 	socketUpdatedSig  string
 
-	addresses    []common.Address
-	topics       [][]common.Hash
-	alertChannel string
-	healthReport health.TimedCounterConfig
+	addresses     []common.Address
+	topics        [][]common.Hash
+	alertChannel  string
+	healthReport  health.TimedCounterConfig
+	nodeRpcHealth health.TimedCounter
 }
 
 func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncConfig, alertChannel string,
@@ -106,8 +107,9 @@ func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncCon
 			common.HexToHash(daSigners.SocketUpdatedSignature),
 		}},
 
-		alertChannel: alertChannel,
-		healthReport: healthReport,
+		alertChannel:  alertChannel,
+		healthReport:  healthReport,
+		nodeRpcHealth: health.TimedCounter{},
 	}
 }
 
@@ -247,13 +249,15 @@ func (s *CatchupSyncer) updateBlockRange(ctx context.Context) error {
 
 	finalizedBlock, err := s.sdk.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
 	if s.alertChannel != "" {
-		if e := rpc.AlertErr(ctx, s.alertChannel, "NodeRPCError", &rpc.NodeRpcHealth, s.healthReport, err); e != nil {
+		if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.alertChannel, err, s.healthReport,
+			&s.nodeRpcHealth); e != nil {
 			return e
 		}
 	}
 	if err != nil {
 		return errors.WithMessage(err, "failed to get finalized block")
 	}
+
 	s.finalizedBlock = finalizedBlock.Number.Uint64()
 
 	return nil

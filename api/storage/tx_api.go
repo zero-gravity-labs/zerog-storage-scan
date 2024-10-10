@@ -26,7 +26,7 @@ func listStorageTxs(c *gin.Context) (interface{}, error) {
 		return nil, err
 	}
 
-	submits, err = updateFileInfo(submits)
+	submits, err = refreshFileInfos(submits)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 		return nil, scanApi.ErrBatchGetAddress(err)
 	}
 
-	submits, err := updateFileInfo([]store.Submit{submit})
+	submits, err := refreshFileInfos([]store.Submit{submit})
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 		}, nil
 	}
 
-	submits, err = updateFileInfo(submits)
+	submits, err = refreshFileInfos(submits)
 	if err != nil {
 		return nil, err
 	}
@@ -205,20 +205,16 @@ func convertStorageTxs(total int64, submits []store.Submit) (*StorageTxList, err
 		storageTxs = append(storageTxs, storageTx)
 	}
 
-	/*if err := updateFileInfo(storageTxs); err != nil {
-		return nil, err
-	}*/
-
 	return &StorageTxList{
 		Total: total,
 		List:  storageTxs,
 	}, nil
 }
 
-func updateFileInfo(submits []store.Submit) ([]store.Submit, error) {
+func refreshFileInfos(submits []store.Submit) ([]store.Submit, error) {
 	unfinalizedSubmits := make([]store.Submit, 0)
 	for _, submit := range submits {
-		if submit.Status < uint8(store.Uploaded) {
+		if submit.Status < uint8(rpc.Uploaded) {
 			unfinalizedSubmits = append(unfinalizedSubmits, submit)
 		}
 	}
@@ -227,7 +223,7 @@ func updateFileInfo(submits []store.Submit) ([]store.Submit, error) {
 		return submits, nil
 	}
 
-	result, err := rpc.RefreshFileInfos(context.Background(), unfinalizedSubmits, l2Sdks, db)
+	result, err := db.UpdateFileInfos(context.Background(), unfinalizedSubmits, l2Sdks)
 	if err != nil {
 		return nil, err
 	}
