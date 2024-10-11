@@ -85,18 +85,19 @@ func UpdateDuration(url string, status, code int, start time.Time) {
 	}
 
 	// Overall rate statistics
-	metrics.GetOrRegisterTimeWindowPercentageDefault("scan/api/rate/success").Mark(isSuccess)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("scan/api/rate/internalErr").Mark(isInternalError)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("scan/api/rate/nonInternalErr").Mark(!isSuccess && !isInternalError)
+	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/success").Mark(isSuccess)
+	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/internalErr").Mark(isInternalError)
+	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/nonInternalErr").Mark(!isSuccess && !isInternalError)
 
 	// API rate statistics
-	metrics.GetOrRegisterTimeWindowPercentageDefault("scan/api/rate/success/%v", url).Mark(isSuccess)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("scan/api/rate/internalErr/%v", url).Mark(isInternalError)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("scan/api/rate/nonInternalErr/%v", url).Mark(!isSuccess && !isInternalError)
+	path := url[5:]
+	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/success/%v", path).Mark(isSuccess)
+	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/internalErr/%v", path).Mark(isInternalError)
+	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/nonInternalErr/%v", path).Mark(!isSuccess && !isInternalError)
 
 	// Update QPS & Latency
-	metrics.GetOrRegisterTimer("scan/api/duration/all").UpdateSince(start)
-	metrics.GetOrRegisterTimer("scan/api/duration/%v", url).UpdateSince(start)
+	metrics.GetOrRegisterTimer("openapi/duration/all").UpdateSince(start)
+	metrics.GetOrRegisterTimer("openapi/duration/%v", path).UpdateSince(start)
 }
 
 var CtxKeyURLType = middlewares.CtxKey("X-URL-TYPE")
