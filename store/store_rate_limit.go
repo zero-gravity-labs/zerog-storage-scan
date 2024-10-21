@@ -3,7 +3,7 @@ package store
 import (
 	"time"
 
-	"github.com/0glabs/0g-storage-scan/api/rate"
+	nhRate "github.com/0glabs/0g-storage-scan/api/middlewares/rate"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"gorm.io/gorm"
 )
@@ -84,15 +84,15 @@ func (r *RateLimitStore) List(limitKeys []string, strategyIDs []uint32, limit in
 	return res, err
 }
 
-func (r *RateLimitStore) ListLimitKeyInfos(filter *rate.KeyFilter) (res []*rate.KeyInfo, err error) {
+func (r *RateLimitStore) ListLimitKeyInfos(filter *nhRate.KeyFilter) (res []*nhRate.KeyInfo, err error) {
 	rateLimits, err := r.List(filter.LimitKeys, filter.StrategyIDs, filter.Limit)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, limit := range rateLimits {
-		res = append(res, &rate.KeyInfo{
-			Type:       rate.LimitType(limit.LimitType),
+		res = append(res, &nhRate.KeyInfo{
+			Type:       nhRate.LimitType(limit.LimitType),
 			LimitKey:   limit.LimitKey,
 			StrategyID: limit.StrategyID,
 		})

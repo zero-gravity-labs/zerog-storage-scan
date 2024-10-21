@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/metrics"
 	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
@@ -21,7 +22,6 @@ type SyncConfig struct {
 	DelayBlocksAgainstLatest uint64 `default:"30"`
 	BatchBlocksOnCatchup     uint64 `default:"0"`
 	BatchBlocksOnBatchCall   uint64 `default:"100"`
-	BatchTxsOnBatchCall      uint64 `default:"1000"`
 }
 
 type Syncer struct {
@@ -187,7 +187,9 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 func (s *Syncer) doTicker(ctx context.Context, ticker *time.Ticker) error {
 	logrus.Debug("Syncer ticking")
 
+	start := time.Now()
 	complete, err := s.syncOnce(ctx)
+	metrics.Registry.Sync.SyncOnceQps(err).UpdateSince(start)
 
 	switch {
 	case err != nil:
@@ -263,6 +265,7 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	metrics.Registry.Sync.SyncOnceSize().Update(int64(decodedLogs.Len()))
 	if err = s.db.Push(block, decodedLogs); err != nil {
 		return false, err
 	}

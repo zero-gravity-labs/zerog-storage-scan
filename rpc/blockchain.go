@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/metrics"
 	"github.com/Conflux-Chain/go-conflux-util/alert"
 	"github.com/Conflux-Chain/go-conflux-util/health"
 	set "github.com/deckarep/golang-set"
@@ -31,6 +32,17 @@ func IsTxExecutedInBlock(tx types.TransactionDetail, receipt types.Receipt) bool
 }
 
 func GetEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, error) {
+	start := time.Now()
+	data, err := getEthDataByReceipts(w3c, blockNumber)
+
+	metrics.Registry.Sync.QueryEthData("getBlockReceipts").UpdateSince(start)
+	metrics.Registry.Sync.QueryEthDataAvailability("getBlockReceipts").
+		Mark(err == nil || errors.Is(err, ErrChainReorged))
+
+	return data, err
+}
+
+func getEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, error) {
 	// get block
 	block, err := w3c.Eth.BlockByNumber(types.BlockNumber(blockNumber), true)
 	if err != nil {
@@ -79,6 +91,16 @@ func GetEthDataByReceipts(w3c *web3go.Client, blockNumber uint64) (*EthData, err
 }
 
 func GetEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common.Address, topics [][]common.Hash) (*EthData, error) {
+	start := time.Now()
+	data, err := getEthDataByLogs(w3c, blockNumber, addresses, topics)
+
+	metrics.Registry.Sync.QueryEthData("getLogs").UpdateSince(start)
+	metrics.Registry.Sync.QueryEthDataAvailability("getLogs").Mark(err == nil || errors.Is(err, ErrChainReorged))
+
+	return data, err
+}
+
+func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common.Address, topics [][]common.Hash) (*EthData, error) {
 	// get block
 	block, err := w3c.Eth.BlockByNumber(types.BlockNumber(blockNumber), true)
 	if err != nil {

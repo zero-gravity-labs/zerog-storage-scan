@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/0glabs/0g-storage-client/node"
-	"github.com/0glabs/0g-storage-scan/api/metrics"
-	"github.com/0glabs/0g-storage-scan/api/rate"
+	"github.com/0glabs/0g-storage-scan/api/middlewares/metrics"
+	nhRate "github.com/0glabs/0g-storage-scan/api/middlewares/rate"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/Conflux-Chain/go-conflux-util/http/middlewares"
@@ -144,9 +144,9 @@ func httpMiddlewares(dataCtx DataContext) []middlewares.Middleware {
 	mws = append(mws, metrics.URLType)
 	mws = append(mws, middlewares.NewApiKeyMiddleware(middlewares.ApiKeyOption{ParamName: "apikey"}))
 
-	limiterFactory := rate.NewLimiterFactory(rate.NewLimitKeyLoader(dataCtx.DB.ListLimitKeyInfos))
+	limiterFactory := nhRate.NewLimiterFactory(nhRate.NewLimitKeyLoader(dataCtx.DB.ListLimitKeyInfos))
 	go limiterFactory.AutoReload(10*time.Second, dataCtx.DB.LoadRateLimitConfigs)
-	mws = append(mws, rate.NewAPIRateMiddleware(limiterFactory.Limit))
+	mws = append(mws, nhRate.NewAPIRateMiddleware(limiterFactory.Limit))
 	mws = append(mws, http.NewHttpMiddleware(limiterFactory.Limit, "api_all_qps"))
 	mws = append(mws, http.NewHttpMiddleware(limiterFactory.Limit, "api_all_daily"))
 

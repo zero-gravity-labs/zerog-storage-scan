@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/0glabs/0g-storage-client/node"
+	"github.com/0glabs/0g-storage-scan/metrics"
 	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	set "github.com/deckarep/golang-set"
@@ -78,7 +79,15 @@ type DecodedLogs struct {
 	DARewards                  []DAReward
 }
 
+func (dl *DecodedLogs) Len() int {
+	return len(dl.Submits) + len(dl.Rewards) + len(dl.DASigners) + len(dl.DASignersWithSocketUpdated) +
+		len(dl.DASubmits) + len(dl.DASubmitsWithVerified) + len(dl.DARewards)
+}
+
 func (ms *MysqlStore) Push(block *Block, decodedLogs *DecodedLogs) error {
+	start := time.Now()
+	defer metrics.Registry.Store.Push().UpdateSince(start)
+
 	addressSubmits := make([]AddressSubmit, 0)
 	if len(decodedLogs.Submits) > 0 {
 		for _, submit := range decodedLogs.Submits {
@@ -199,6 +208,9 @@ func (ms *MysqlStore) Pop(block uint64) error {
 	if !ok || block > maxBlock {
 		return nil
 	}
+
+	start := time.Now()
+	defer metrics.Registry.Store.Pop().UpdateSince(start)
 
 	return ms.Store.DB.Transaction(func(dbTx *gorm.DB) error {
 		if err := ms.BlockStore.Pop(dbTx, block); err != nil {

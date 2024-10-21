@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	nhMetrics "github.com/0glabs/0g-storage-scan/metrics"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/Conflux-Chain/go-conflux-util/http/middlewares"
-	"github.com/Conflux-Chain/go-conflux-util/metrics"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -79,25 +79,8 @@ func Metrics() middlewares.Middleware {
 }
 
 func UpdateDuration(url string, status, code int, start time.Time) {
-	var isSuccess, isInternalError bool
-	if isSuccess = status == http.StatusOK && code == api.ErrCodeSuccess; !isSuccess {
-		isInternalError = status == api.ErrCodeInternal
-	}
-
-	// Overall rate statistics
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/success").Mark(isSuccess)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/internalErr").Mark(isInternalError)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/nonInternalErr").Mark(!isSuccess && !isInternalError)
-
-	// API rate statistics
 	path := url[5:]
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/success/%v", path).Mark(isSuccess)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/internalErr/%v", path).Mark(isInternalError)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/nonInternalErr/%v", path).Mark(!isSuccess && !isInternalError)
-
-	// Update QPS & Latency
-	metrics.GetOrRegisterTimer("openapi/duration/all").UpdateSince(start)
-	metrics.GetOrRegisterTimer("openapi/duration/%v", path).UpdateSince(start)
+	nhMetrics.Registry.API.UpdateDuration(path, status, code, start)
 }
 
 var CtxKeyURLType = middlewares.CtxKey("X-URL-TYPE")

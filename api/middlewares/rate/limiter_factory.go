@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/0glabs/0g-storage-scan/api/metrics"
+	"github.com/0glabs/0g-storage-scan/api/middlewares/metrics"
 	"github.com/Conflux-Chain/go-conflux-util/http/middlewares"
 	commonRate "github.com/Conflux-Chain/go-conflux-util/rate"
 	commonHttp "github.com/Conflux-Chain/go-conflux-util/rate/http"

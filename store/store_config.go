@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/0glabs/0g-storage-scan/api/rate"
+	"github.com/0glabs/0g-storage-scan/api/middlewares/rate"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
