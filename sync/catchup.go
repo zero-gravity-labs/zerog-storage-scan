@@ -170,6 +170,7 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 		if err != nil {
 			return err
 		}
+		logrus.WithField("block", block.BlockNumber).Info("Catchup")
 
 		if end >= rangeEnd || s.interrupted(ctx) {
 			break

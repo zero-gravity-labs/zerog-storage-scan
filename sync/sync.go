@@ -19,9 +19,9 @@ import (
 
 type SyncConfig struct {
 	BlockWhenFlowCreated     uint64
-	DelayBlocksAgainstLatest uint64 `default:"30"`
+	DelayBlocksAgainstLatest uint64 `default:"6"`
 	BatchBlocksOnCatchup     uint64 `default:"0"`
-	BatchBlocksOnBatchCall   uint64 `default:"100"`
+	BatchBlocksOnBatchCall   uint64 `default:"16"`
 }
 
 type Syncer struct {
