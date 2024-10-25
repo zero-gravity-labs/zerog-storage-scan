@@ -238,3 +238,60 @@ type AccountInfo struct {
 
 	RewardCount uint64 `json:"rewardCount"` // Total number of distributed reward recodes
 }
+
+type topnParam struct {
+	SpanType string `form:"spanType" binding:"omitempty,oneof=24h 3d 7d"`
+}
+
+// DataTopn model info
+// @Description Storage data size topn information
+type DataTopn struct {
+	Address  string `json:"address"`  // Address on blockchain
+	DataSize uint64 `json:"dataSize"` // Size of storage data
+
+}
+
+// FeeTopn model info
+// @Description Storage fee topn information
+type FeeTopn struct {
+	Address    string          `json:"address"`    // Address on blockchain
+	StorageFee decimal.Decimal `json:"storageFee"` // The total base fee for storage
+}
+
+// TxsTopn model info
+// @Description Storage transaction topn information
+type TxsTopn struct {
+	Address string `json:"address"` // Address on blockchain
+	Txs     uint64 `json:"txs"`     // Number of layer1 transaction
+}
+
+// FilesTopn model info
+// @Description Storage files topn information
+type FilesTopn struct {
+	Address string `json:"address"` // Address on blockchain
+	Files   uint64 `json:"files"`   // Number of files
+}
+
+// DataTopnList model info
+// @Description Topn list of data size
+type DataTopnList struct {
+	List []DataTopn `json:"list"` // Topn list
+}
+
+// FeeTopnList model info
+// @Description Topn list of storage fee
+type FeeTopnList struct {
+	List []FeeTopn `json:"list"` // Topn list
+}
+
+// TxsTopnList model info
+// @Description Topn list of layer1 transactions
+type TxsTopnList struct {
+	List []TxsTopn `json:"list"` // Topn list
+}
+
+// FilesTopnList model info
+// @Description Topn list of files
+type FilesTopnList struct {
+	List []FilesTopn `json:"list"` // Topn list
+}

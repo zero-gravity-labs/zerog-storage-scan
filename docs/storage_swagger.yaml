@@ -97,6 +97,25 @@ definitions:
         description: The total number of stat returned
         type: integer
     type: object
+  storage.DataTopn:
+    description: Storage data size topn information
+    properties:
+      address:
+        description: Address on blockchain
+        type: string
+      dataSize:
+        description: Size of storage data
+        type: integer
+    type: object
+  storage.DataTopnList:
+    description: Topn list of data size
+    properties:
+      list:
+        description: Topn list
+        items:
+          $ref: '#/definitions/storage.DataTopn'
+        type: array
+    type: object
   storage.FeeStat:
     description: Storage fee information
     properties:
@@ -121,6 +140,44 @@ definitions:
       total:
         description: The total number of stat returned
         type: integer
+    type: object
+  storage.FeeTopn:
+    description: Storage fee topn information
+    properties:
+      address:
+        description: Address on blockchain
+        type: string
+      storageFee:
+        description: The total base fee for storage
+        type: number
+    type: object
+  storage.FeeTopnList:
+    description: Topn list of storage fee
+    properties:
+      list:
+        description: Topn list
+        items:
+          $ref: '#/definitions/storage.FeeTopn'
+        type: array
+    type: object
+  storage.FilesTopn:
+    description: Storage files topn information
+    properties:
+      address:
+        description: Address on blockchain
+        type: string
+      files:
+        description: Number of files
+        type: integer
+    type: object
+  storage.FilesTopnList:
+    description: Topn list of files
+    properties:
+      list:
+        description: Topn list
+        items:
+          $ref: '#/definitions/storage.FilesTopn'
+        type: array
     type: object
   storage.MinerStat:
     description: Miner stat data information
@@ -382,6 +439,25 @@ definitions:
       total:
         description: The total number of stat returned
         type: integer
+    type: object
+  storage.TxsTopn:
+    description: Storage transaction topn information
+    properties:
+      address:
+        description: Address on blockchain
+        type: string
+      txs:
+        description: Number of layer1 transaction
+        type: integer
+    type: object
+  storage.TxsTopnList:
+    description: Topn list of layer1 transactions
+    properties:
+      list:
+        description: Topn list
+        items:
+          $ref: '#/definitions/storage.TxsTopn'
+        type: array
     type: object
 info:
   contact: {}
@@ -982,6 +1058,145 @@ paths:
           schema:
             $ref: '#/definitions/api.BusinessError'
       summary: Statistics summary
+      tags:
+      - statistic
+  /stats/top/data:
+    get:
+      consumes:
+      - application/json
+      description: Query topn statistics of data size, including address and data
+        size
+      parameters:
+      - default: 24h
+        description: Statistics time span
+        enum:
+        - 24h
+        - 3d
+        - 7d
+        in: query
+        name: spanType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.DataTopnList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Topn statistics of data size
+      tags:
+      - statistic
+  /stats/top/fee:
+    get:
+      consumes:
+      - application/json
+      description: Query topn statistics of storage fee, including address and storage
+        fee
+      parameters:
+      - default: 24h
+        description: Statistics time span
+        enum:
+        - 24h
+        - 3d
+        - 7d
+        in: query
+        name: spanType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.FeeTopnList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Topn statistics of storage fee
+      tags:
+      - statistic
+  /stats/top/files:
+    get:
+      consumes:
+      - application/json
+      description: Query topn statistics of files, including address and files
+      parameters:
+      - default: 24h
+        description: Statistics time span
+        enum:
+        - 24h
+        - 3d
+        - 7d
+        in: query
+        name: spanType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.FilesTopnList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Topn statistics of files
+      tags:
+      - statistic
+  /stats/top/txs:
+    get:
+      consumes:
+      - application/json
+      description: Query topn statistics of layer1 transactions, including address
+        and transactions
+      parameters:
+      - default: 24h
+        description: Statistics time span
+        enum:
+        - 24h
+        - 3d
+        - 7d
+        in: query
+        name: spanType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.TxsTopnList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Topn statistics of layer1 transactions
       tags:
       - statistic
   /txs:

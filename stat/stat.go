@@ -20,15 +20,14 @@ var (
 )
 
 type StatConfig struct {
-	BlockOnStatBegin             uint64
-	MinStatIntervalDailyTx       string `default:"10m"`
-	MinStatIntervalDailySubmit   string `default:"10m"`
-	MinStatIntervalDailyAddress  string `default:"10m"`
-	MinStatIntervalDailyMiner    string `default:"1h"`
-	MinStatIntervalDailyReward   string `default:"10m"`
-	MinStatIntervalDailyDASubmit string `default:"10m"`
-	MinStatIntervalDailyDAClient string `default:"10m"`
-	MinStatIntervalDailyDASigner string `default:"10m"`
+	BlockOnStatBegin        uint64
+	MinStatIntervalSubmit   string `default:"10m"`
+	MinStatIntervalAddress  string `default:"10m"`
+	MinStatIntervalMiner    string `default:"1h"`
+	MinStatIntervalReward   string `default:"10m"`
+	MinStatIntervalDASubmit string `default:"10m"`
+	MinStatIntervalDAClient string `default:"10m"`
+	MinStatIntervalDASigner string `default:"10m"`
 }
 
 type TimeRange struct {

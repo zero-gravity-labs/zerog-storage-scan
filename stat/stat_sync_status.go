@@ -75,7 +75,7 @@ func (s *LogSyncInfoStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 			continue
 		}
 
-		if err := s.db.ConfigStore.Upsert(store.KeyLogSyncInfo, string(statusBytes)); err != nil {
+		if err := s.db.ConfigStore.Upsert(store.SyncStatusLog, string(statusBytes)); err != nil {
 			logrus.WithError(err).Error("Update log sync info error.")
 			time.Sleep(10 * time.Second)
 			continue

@@ -85,6 +85,12 @@ func Register(router *gin.Engine) {
 	statsRoute.GET("miner", listMinerStatsHandler)
 	statsRoute.GET("reward", listRewardStatsHandler)
 
+	topRoute := statsRoute.Group("/top")
+	topRoute.GET("data", topnDataHandler)
+	topRoute.GET("fee", topnFeeHandler)
+	topRoute.GET("txs", topnTxsHandler)
+	topRoute.GET("files", topnFilesHandler)
+
 	txsRoute := apiRoute.Group("/txs")
 	txsRoute.GET("", listTxsHandler)
 	txsRoute.GET(":txSeq", getTxHandler)
@@ -333,6 +339,66 @@ func listAddressTxsHandler(c *gin.Context) {
 //	@Router			/accounts/{address}/rewards [get]
 func listAddressRewardsHandler(c *gin.Context) {
 	api.Wrap(listAddressStorageRewards)(c)
+}
+
+// topnDataHandler godoc
+//
+//	@Summary		Topn statistics of data size
+//	@Description	Query topn statistics of data size, including address and data size
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			spanType	query		string	false	"Statistics time span"	Enums(24h, 3d, 7d)	default(24h)
+//	@Success		200			{object}	api.BusinessError{Data=DataTopnList}
+//	@Failure		600			{object}	api.BusinessError
+//	@Router			/stats/top/data [get]
+func topnDataHandler(c *gin.Context) {
+	api.Wrap(topnDataSize)(c)
+}
+
+// topnFeeHandler godoc
+//
+//	@Summary		Topn statistics of storage fee
+//	@Description	Query topn statistics of storage fee, including address and storage fee
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			spanType	query		string	false	"Statistics time span"	Enums(24h, 3d, 7d)	default(24h)
+//	@Success		200			{object}	api.BusinessError{Data=FeeTopnList}
+//	@Failure		600			{object}	api.BusinessError
+//	@Router			/stats/top/fee [get]
+func topnFeeHandler(c *gin.Context) {
+	api.Wrap(topnStorageFee)(c)
+}
+
+// topnTxsHandler godoc
+//
+//	@Summary		Topn statistics of layer1 transactions
+//	@Description	Query topn statistics of layer1 transactions, including address and transactions
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			spanType	query		string	false	"Statistics time span"	Enums(24h, 3d, 7d)	default(24h)
+//	@Success		200			{object}	api.BusinessError{Data=TxsTopnList}
+//	@Failure		600			{object}	api.BusinessError
+//	@Router			/stats/top/txs [get]
+func topnTxsHandler(c *gin.Context) {
+	api.Wrap(topnTxs)(c)
+}
+
+// topnFilesHandler godoc
+//
+//	@Summary		Topn statistics of files
+//	@Description	Query topn statistics of files, including address and files
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			spanType	query		string	false	"Statistics time span"	Enums(24h, 3d, 7d)	default(24h)
+//	@Success		200			{object}	api.BusinessError{Data=FilesTopnList}
+//	@Failure		600			{object}	api.BusinessError
+//	@Router			/stats/top/files [get]
+func topnFilesHandler(c *gin.Context) {
+	api.Wrap(topnFiles)(c)
 }
 
 func getAddressInfo(c *gin.Context) (*AddressInfo, error) {

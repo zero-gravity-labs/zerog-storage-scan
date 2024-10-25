@@ -14,9 +14,10 @@ import (
 )
 
 const (
-	KeyLogSyncInfo                   = "LogSyncInfo"
 	RateLimitStrategyConfKeyPrefix   = "ratelimit.strategy."
 	rateLimitStrategySqlMatchPattern = RateLimitStrategyConfKeyPrefix + "%"
+	SyncStatusLog                    = "sync.status.log"
+	StatTopnSubmitPosition           = "stat.topn.submit.position"
 )
 
 type Config struct {

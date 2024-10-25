@@ -65,7 +65,7 @@ func (ss *StorageSyncer) SyncOverall(ctx context.Context) error {
 	lastSubmissionIndex := uint64(0)
 
 	for {
-		submits, err := ss.db.SubmitStore.GetUnfinalizedOverall(lastSubmissionIndex, BatchGetSubmitsNotFinalized)
+		submits, err := ss.db.SubmitStore.QueryUnfinalizedByAsc(&lastSubmissionIndex, BatchGetSubmitsNotFinalized)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func (ss *StorageSyncer) SyncOverall(ctx context.Context) error {
 }
 
 func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
-	submits, err := ss.db.SubmitStore.GetUnfinalizedLatest(BatchGetSubmitsNotFinalizedLatest)
+	submits, err := ss.db.SubmitStore.QueryUnfinalizedLatestByDesc(BatchGetSubmitsNotFinalizedLatest)
 	if err != nil {
 		return err
 	}

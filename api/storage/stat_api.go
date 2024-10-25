@@ -11,27 +11,27 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Type int
+type statType int
 
 const (
-	StorageStatType Type = iota
-	TxStatType
-	FeeStatType
+	storageStat statType = iota
+	txStat
+	feeStat
 )
 
 func listDataStat(c *gin.Context) (interface{}, error) {
-	return getSubmitStatByType(c, StorageStatType)
+	return getSubmitStatByType(c, storageStat)
 }
 
 func listTxStat(c *gin.Context) (interface{}, error) {
-	return getSubmitStatByType(c, TxStatType)
+	return getSubmitStatByType(c, txStat)
 }
 
 func listFeeStat(c *gin.Context) (interface{}, error) {
-	return getSubmitStatByType(c, FeeStatType)
+	return getSubmitStatByType(c, feeStat)
 }
 
-func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
+func getSubmitStatByType(c *gin.Context, t statType) (interface{}, error) {
 	var statP statParam
 	if err := c.ShouldBind(&statP); err != nil {
 		return nil, api.ErrValidation(errors.Errorf("Invalid stat query param"))
@@ -47,7 +47,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 	result["total"] = total
 
 	switch t {
-	case StorageStatType:
+	case storageStat:
 		list := make([]DataStat, 0)
 		for _, r := range records {
 			list = append(list, DataStat{
@@ -59,7 +59,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 			})
 		}
 		result["list"] = list
-	case TxStatType:
+	case txStat:
 		list := make([]TxStat, 0)
 		for _, r := range records {
 			list = append(list, TxStat{
@@ -69,7 +69,7 @@ func getSubmitStatByType(c *gin.Context, t Type) (interface{}, error) {
 			})
 		}
 		result["list"] = list
-	case FeeStatType:
+	case feeStat:
 		list := make([]FeeStat, 0)
 		for _, r := range records {
 			list = append(list, FeeStat{
@@ -173,7 +173,7 @@ func listRewardStat(c *gin.Context) (interface{}, error) {
 }
 
 func summary(_ *gin.Context) (interface{}, error) {
-	value, exist, err := db.ConfigStore.Get(store.KeyLogSyncInfo)
+	value, exist, err := db.ConfigStore.Get(store.SyncStatusLog)
 	if err != nil {
 		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get log sync info"))
 	}

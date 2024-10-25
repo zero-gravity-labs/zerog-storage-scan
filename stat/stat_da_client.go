@@ -25,7 +25,7 @@ func MustNewStatDAClient(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Clie
 
 	statDAClient := &StatDAClient{
 		BaseStat: baseStat,
-		statType: baseStat.Config.MinStatIntervalDailyDAClient,
+		statType: baseStat.Config.MinStatIntervalDAClient,
 	}
 
 	return &AbsStat{

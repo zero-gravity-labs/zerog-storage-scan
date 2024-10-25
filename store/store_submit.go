@@ -174,20 +174,48 @@ func (ss *SubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip,
 	return total, *list, nil
 }
 
-func (ss *SubmitStore) GetUnfinalizedOverall(submissionIndex uint64, batch int) ([]Submit, error) {
-	submits := new([]Submit)
-	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where submission_index >= ? and status < ? order by submission_index asc limit ?",
-		submissionIndex, rpc.Uploaded, batch).Scan(submits).Error; err != nil {
-		return nil, err
-	}
-
-	return *submits, nil
+func (ss *SubmitStore) QueryUnfinalizedByAsc(minSubmissionIndex *uint64, batch int) (
+	[]Submit, error) {
+	return ss.query(minSubmissionIndex, nil, []rpc.Status{rpc.NotUploaded, rpc.Uploading}, false, batch)
 }
 
-func (ss *SubmitStore) GetUnfinalizedLatest(batch int) ([]Submit, error) {
+func (ss *SubmitStore) QueryUnfinalizedLatestByDesc(batch int) (
+	[]Submit, error) {
+	return ss.query(nil, nil, []rpc.Status{rpc.NotUploaded, rpc.Uploading}, true, batch)
+}
+
+func (ss *SubmitStore) QueryOverallByAsc(minSubmissionIndex *uint64, batch int) (
+	[]Submit, error) {
+	return ss.query(minSubmissionIndex, nil, nil, false, batch)
+}
+
+func (ss *SubmitStore) query(minSubmissionIndex, maxSubmissionIndex *uint64, status []rpc.Status, isDesc bool, batch int) (
+	[]Submit, error) {
+	db := ss.DB.Model(&Submit{}).Select("submission_index, sender_id, total_seg_num")
+
+	if minSubmissionIndex != nil && maxSubmissionIndex != nil {
+		db = db.Where("submission_index between ? and ?", minSubmissionIndex, maxSubmissionIndex)
+	}
+	if minSubmissionIndex != nil && maxSubmissionIndex == nil {
+		db = db.Where("submission_index >= ?", minSubmissionIndex)
+	}
+	if minSubmissionIndex == nil && maxSubmissionIndex != nil {
+		db = db.Where("submission_index <= ?", maxSubmissionIndex)
+	}
+	if len(status) > 0 {
+		db = db.Where("status in ?", status)
+	}
+
+	if isDesc {
+		db = db.Order("submission_index desc")
+	} else {
+		db = db.Order("submission_index asc")
+	}
+
+	db = db.Limit(batch)
+
 	submits := new([]Submit)
-	if err := ss.DB.Raw("select submission_index, sender_id, total_seg_num from submits where status < ? order by submission_index desc limit ?",
-		rpc.Uploaded, batch).Scan(submits).Error; err != nil {
+	if err := db.Scan(submits).Error; err != nil {
 		return nil, err
 	}
 
@@ -206,6 +234,46 @@ func (ss *SubmitStore) MaxSubmissionIndex() (uint64, error) {
 	}
 
 	return uint64(maxId.Int64), nil
+}
+
+func (ss *SubmitStore) MaxSubmissionIndexFinalized(finalizedBN uint64) (uint64, bool, error) {
+	var submit Submit
+
+	result := ss.DB.Where("block_number <= ?", finalizedBN).Order("block_number desc").Limit(1).Find(&submit)
+	if result.Error != nil {
+		return 0, false, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return 0, false, nil
+	}
+
+	return submit.SubmissionIndex, true, nil
+}
+
+type GroupedSubmit struct {
+	SenderID   uint64
+	DataSize   uint64
+	StorageFee decimal.Decimal
+	Files      uint64
+	Txs        uint64
+	UpdatedAt  time.Time
+}
+
+func (ss *SubmitStore) GroupBySender(minSubmissionIndex, maxSubmissionIndex uint64) (
+	[]GroupedSubmit, error) {
+	groupedSubmits := new([]GroupedSubmit)
+	err := ss.DB.Model(&Submit{}).
+		Select(`sender_id, IFNULL(sum(length), 0) data_size, IFNULL(sum(fee), 0) storage_fee, count(*) files, 
+		count(distinct tx_hash) txs, max(block_time) updated_at`).
+		Where("submission_index between ? and ?", minSubmissionIndex, maxSubmissionIndex).
+		Group("sender_id").
+		Scan(groupedSubmits).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return *groupedSubmits, nil
 }
 
 const (

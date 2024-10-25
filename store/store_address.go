@@ -1,17 +1,24 @@
 package store
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
 type Address struct {
-	ID        uint64
-	Address   string    `gorm:"size:64;unique"`
-	BlockTime time.Time `gorm:"not null"`
+	ID         uint64
+	Address    string          `gorm:"size:64;unique"`
+	BlockTime  time.Time       `gorm:"not null"`
+	DataSize   uint64          `gorm:"not null;default:0"`                  // Size of storage data in a specific time interval
+	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0"` // The base fee for storage
+	Txs        uint64          `gorm:"not null;default:0"`                  // Number of layer1 transaction in a specific time interval
+	Files      uint64          `gorm:"not null;default:0"`                  // Number of files/layer2 transaction in a specific time interval
+	UpdatedAt  time.Time       `gorm:"not null"`
 }
 
 func (Address) TableName() string {
@@ -41,6 +48,7 @@ func (as *AddressStore) Add(address string, blockTime time.Time) (uint64, error)
 	addr = Address{
 		Address:   address,
 		BlockTime: blockTime,
+		UpdatedAt: blockTime,
 	}
 
 	if err := as.DB.Create(&addr).Error; err != nil {
@@ -48,6 +56,12 @@ func (as *AddressStore) Add(address string, blockTime time.Time) (uint64, error)
 	}
 
 	return addr.ID, nil
+}
+
+func (as *AddressStore) Get(address string) (Address, bool, error) {
+	var addr Address
+	exist, err := as.Store.Exists(&addr, "address = ?", address)
+	return addr, exist, err
 }
 
 // BatchGetAddresses TODO LRU cache
@@ -64,12 +78,6 @@ func (as *AddressStore) BatchGetAddresses(addrIDs []uint64) (map[uint64]Address,
 	}
 
 	return m, nil
-}
-
-func (as *AddressStore) Get(address string) (Address, bool, error) {
-	var addr Address
-	exist, err := as.Store.Exists(&addr, "address = ?", address)
-	return addr, exist, err
 }
 
 func (as *AddressStore) Count(startTime, endTime time.Time) (uint64, error) {
@@ -89,6 +97,41 @@ func (as *AddressStore) Count(startTime, endTime time.Time) (uint64, error) {
 	}
 
 	return uint64(count), nil
+}
+
+func (as *AddressStore) IncreaseStatByPrimaryKey(dbTx *gorm.DB, a *Address) error {
+	db := as.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	u := map[string]interface{}{
+		"data_size":   gorm.Expr("data_size + ?", a.DataSize),
+		"storage_fee": gorm.Expr("storage_fee + ?", a.StorageFee),
+		"txs":         gorm.Expr("txs + ?", a.Txs),
+		"files":       gorm.Expr("files + ?", a.Files),
+		"updated_at":  a.UpdatedAt,
+	}
+	if err := db.Model(&a).Where("id=?", a.ID).Updates(u).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (as *AddressStore) Topn(field string, duration time.Duration, limit int) ([]Address, error) {
+	db := as.DB.Model(&Address{})
+
+	if duration != 0 {
+		db = db.Where("updated_at >= ?", time.Now().Add(-duration))
+	}
+
+	list := new([]Address)
+	if err := db.Order(fmt.Sprintf("%s DESC", field)).Limit(limit).Find(list).Error; err != nil {
+		return nil, err
+	}
+
+	return *list, nil
 }
 
 type AddressStat struct {

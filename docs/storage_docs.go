@@ -882,6 +882,226 @@ const docTemplatestorage = `{
                 }
             }
         },
+        "/stats/top/data": {
+            "get": {
+                "description": "Query topn statistics of data size, including address and data size",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Topn statistics of data size",
+                "parameters": [
+                    {
+                        "enum": [
+                            "24h",
+                            "3d",
+                            "7d"
+                        ],
+                        "type": "string",
+                        "default": "24h",
+                        "description": "Statistics time span",
+                        "name": "spanType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.DataTopnList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/top/fee": {
+            "get": {
+                "description": "Query topn statistics of storage fee, including address and storage fee",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Topn statistics of storage fee",
+                "parameters": [
+                    {
+                        "enum": [
+                            "24h",
+                            "3d",
+                            "7d"
+                        ],
+                        "type": "string",
+                        "default": "24h",
+                        "description": "Statistics time span",
+                        "name": "spanType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.FeeTopnList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/top/files": {
+            "get": {
+                "description": "Query topn statistics of files, including address and files",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Topn statistics of files",
+                "parameters": [
+                    {
+                        "enum": [
+                            "24h",
+                            "3d",
+                            "7d"
+                        ],
+                        "type": "string",
+                        "default": "24h",
+                        "description": "Statistics time span",
+                        "name": "spanType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.FilesTopnList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/stats/top/txs": {
+            "get": {
+                "description": "Query topn statistics of layer1 transactions, including address and transactions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Topn statistics of layer1 transactions",
+                "parameters": [
+                    {
+                        "enum": [
+                            "24h",
+                            "3d",
+                            "7d"
+                        ],
+                        "type": "string",
+                        "default": "24h",
+                        "description": "Statistics time span",
+                        "name": "spanType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.TxsTopnList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/txs": {
             "get": {
                 "description": "Query storage transactions",
@@ -1143,6 +1363,33 @@ const docTemplatestorage = `{
                 }
             }
         },
+        "storage.DataTopn": {
+            "description": "Storage data size topn information",
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Address on blockchain",
+                    "type": "string"
+                },
+                "dataSize": {
+                    "description": "Size of storage data",
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.DataTopnList": {
+            "description": "Topn list of data size",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Topn list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.DataTopn"
+                    }
+                }
+            }
+        },
         "storage.FeeStat": {
             "description": "Storage fee information",
             "type": "object",
@@ -1175,6 +1422,60 @@ const docTemplatestorage = `{
                 "total": {
                     "description": "The total number of stat returned",
                     "type": "integer"
+                }
+            }
+        },
+        "storage.FeeTopn": {
+            "description": "Storage fee topn information",
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Address on blockchain",
+                    "type": "string"
+                },
+                "storageFee": {
+                    "description": "The total base fee for storage",
+                    "type": "number"
+                }
+            }
+        },
+        "storage.FeeTopnList": {
+            "description": "Topn list of storage fee",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Topn list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.FeeTopn"
+                    }
+                }
+            }
+        },
+        "storage.FilesTopn": {
+            "description": "Storage files topn information",
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Address on blockchain",
+                    "type": "string"
+                },
+                "files": {
+                    "description": "Number of files",
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.FilesTopnList": {
+            "description": "Topn list of files",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Topn list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.FilesTopn"
+                    }
                 }
             }
         },
@@ -1542,6 +1843,33 @@ const docTemplatestorage = `{
                 "total": {
                     "description": "The total number of stat returned",
                     "type": "integer"
+                }
+            }
+        },
+        "storage.TxsTopn": {
+            "description": "Storage transaction topn information",
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Address on blockchain",
+                    "type": "string"
+                },
+                "txs": {
+                    "description": "Number of layer1 transaction",
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.TxsTopnList": {
+            "description": "Topn list of layer1 transactions",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Topn list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.TxsTopn"
+                    }
                 }
             }
         }

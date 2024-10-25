@@ -72,7 +72,7 @@ func Metrics() middlewares.Middleware {
 					"http status":  wrappedW.code,
 					"resp code":    resp.Code,
 					"resp message": resp.Message,
-				}).Debug("report API metrics")
+				}).Debug("Report API metrics")
 			}
 		})
 	}

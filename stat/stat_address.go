@@ -25,7 +25,7 @@ func MustNewStatAddress(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Clien
 
 	statAddress := &StatAddress{
 		BaseStat: baseStat,
-		statType: baseStat.Config.MinStatIntervalDailyAddress,
+		statType: baseStat.Config.MinStatIntervalAddress,
 	}
 
 	return &AbsStat{

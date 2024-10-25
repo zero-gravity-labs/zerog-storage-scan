@@ -25,7 +25,7 @@ func MustNewStatDASigner(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Clie
 
 	statDASigner := &StatDASigner{
 		BaseStat: baseStat,
-		statType: baseStat.Config.MinStatIntervalDailyDASigner,
+		statType: baseStat.Config.MinStatIntervalDASigner,
 	}
 
 	return &AbsStat{

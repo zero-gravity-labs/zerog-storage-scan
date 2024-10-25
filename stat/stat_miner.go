@@ -25,7 +25,7 @@ func MustNewStatMiner(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client,
 
 	statMiner := &StatMiner{
 		BaseStat: baseStat,
-		statType: baseStat.Config.MinStatIntervalDailyMiner,
+		statType: baseStat.Config.MinStatIntervalMiner,
 	}
 
 	return &AbsStat{

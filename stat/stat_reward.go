@@ -24,7 +24,7 @@ func MustNewStatReward(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client
 
 	statReward := &StatReward{
 		BaseStat: baseStat,
-		statType: baseStat.Config.MinStatIntervalDailyReward,
+		statType: baseStat.Config.MinStatIntervalReward,
 	}
 
 	return &AbsStat{

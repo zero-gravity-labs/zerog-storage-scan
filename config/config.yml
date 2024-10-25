@@ -111,16 +111,21 @@ store:
 stat:
   # The block number from which to stat
   blockOnStatBegin: 1000
-  # The minimum interval for tx stat
-  # minStatIntervalDailyTx: 10m
   # The minimum interval for submit stat
-  # minStatIntervalDailySubmit: 10m
+  # minStatIntervalSubmit: 10m
   # The minimum interval for address stat
-  # minStatIntervalDailyAddress: 10m
+  # minStatIntervalAddress: 10m
   # The minimum interval for miner stat
-  # minStatIntervalDailyMiner: 1h
-  # The interval for data uplink rate stat
-  # statIntervalDataUplinkRate: 1s
+  # minStatIntervalMiner: 1h
+  # The minimum interval for reward stat
+  # minStatIntervalReward: 10m
+  # The minimum interval for DA submit stat
+  # minStatIntervalDASubmit: 10m
+  # The minimum interval for DA client stat
+  # minStatIntervalDAClient: 10m
+  # The minimum interval for DA signer stat
+  # minStatIntervalDASigner: 10m
+
 
 # Api configurations
 api:

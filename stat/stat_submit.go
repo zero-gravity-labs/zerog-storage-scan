@@ -24,7 +24,7 @@ func MustNewStatSubmit(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client
 
 	statSubmit := &StatSubmit{
 		BaseStat: baseStat,
-		statType: baseStat.Config.MinStatIntervalDailySubmit,
+		statType: baseStat.Config.MinStatIntervalSubmit,
 	}
 
 	return &AbsStat{
