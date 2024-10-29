@@ -90,6 +90,7 @@ func Register(router *gin.Engine) {
 	topRoute.GET("fee", topnFeeHandler)
 	topRoute.GET("txs", topnTxsHandler)
 	topRoute.GET("files", topnFilesHandler)
+	topRoute.GET("reward", topnRewardHandler)
 
 	txsRoute := apiRoute.Group("/txs")
 	txsRoute.GET("", listTxsHandler)
@@ -399,6 +400,21 @@ func topnTxsHandler(c *gin.Context) {
 //	@Router			/stats/top/files [get]
 func topnFilesHandler(c *gin.Context) {
 	api.Wrap(topnFiles)(c)
+}
+
+// topnRewardHandler godoc
+//
+//	@Summary		Topn statistics of reward
+//	@Description	Query topn statistics of reward, including address and reward amount
+//	@Tags			statistic
+//	@Accept			json
+//	@Produce		json
+//	@Param			spanType	query		string	false	"Statistics time span"	Enums(24h, 3d, 7d)	default(24h)
+//	@Success		200			{object}	api.BusinessError{Data=RewardTopnList}
+//	@Failure		600			{object}	api.BusinessError
+//	@Router			/stats/top/reward [get]
+func topnRewardHandler(c *gin.Context) {
+	api.Wrap(topnReward)(c)
 }
 
 func getAddressInfo(c *gin.Context) (*AddressInfo, error) {

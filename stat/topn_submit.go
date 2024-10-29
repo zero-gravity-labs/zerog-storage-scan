@@ -6,22 +6,15 @@ import (
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	batchGetSubmits = 10000
+	batchInSubmitIds = 10000
 )
 
 type TopnSubmit struct {
 	*BaseStat
-	currentPos uint64
-}
-
-type StatRange struct {
-	minPos uint64
-	maxPos uint64
 }
 
 func MustNewTopnSubmit(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client) *AbsTopn[StatRange] {
@@ -42,9 +35,9 @@ func MustNewTopnSubmit(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client
 }
 
 func (ts *TopnSubmit) mustLoadLastPos() {
-	loaded, err := ts.loadLastPos()
+	loaded, err := ts.loadLastPos(store.StatTopnSubmitId)
 	if err != nil {
-		logrus.WithError(err).Fatal("Failed to load last stat pos from db")
+		logrus.WithError(err).Fatal("Failed to load stat pos from db")
 	}
 
 	// Submission index is set zero if not loaded.
@@ -53,26 +46,9 @@ func (ts *TopnSubmit) mustLoadLastPos() {
 	}
 }
 
-func (ts *TopnSubmit) loadLastPos() (loaded bool, err error) {
-	value, ok, err := ts.DB.ConfigStore.Get(store.StatTopnSubmitPosition)
-	if err != nil {
-		return false, errors.WithMessage(err, "Failed to get stat pos")
-	}
-
-	if ok {
-		pos, err := strconv.ParseUint(value, 10, 64)
-		if err != nil {
-			return false, errors.WithMessagef(err, "Invalid stat pos %s", value)
-		}
-		ts.currentPos = pos + 1
-	}
-
-	return ok, nil
-}
-
 func (ts *TopnSubmit) nextStatRange() (*StatRange, error) {
 	minPos := ts.currentPos
-	maxPos := ts.currentPos + uint64(batchGetSubmits) - 1
+	maxPos := ts.currentPos + uint64(batchInSubmitIds) - 1
 
 	block, err := ts.Sdk.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
 	if err != nil {
@@ -118,8 +94,7 @@ func (ts *TopnSubmit) calculateStat(r StatRange) error {
 		}
 	}
 
-	if err := ts.DB.ConfigStore.Upsert(store.StatTopnSubmitPosition,
-		strconv.FormatUint(r.maxPos, 10)); err != nil {
+	if err := ts.DB.ConfigStore.Upsert(store.StatTopnSubmitId, strconv.FormatUint(r.maxPos, 10)); err != nil {
 		return err
 	}
 

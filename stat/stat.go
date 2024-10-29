@@ -2,6 +2,7 @@ package stat
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
@@ -36,11 +37,17 @@ type TimeRange struct {
 	intervalType string
 }
 
+type StatRange struct {
+	minPos uint64
+	maxPos uint64
+}
+
 type BaseStat struct {
-	Config    *StatConfig
-	DB        *store.MysqlStore
-	Sdk       *web3go.Client
-	StartTime time.Time
+	Config     *StatConfig
+	DB         *store.MysqlStore
+	Sdk        *web3go.Client
+	StartTime  time.Time
+	currentPos uint64
 }
 
 func (bs *BaseStat) calStatRange(rangeStart time.Time, interval time.Duration) (*TimeRange, error) {
@@ -104,6 +111,23 @@ func (bs *BaseStat) calStatRangeStart(t time.Time, statType string) (time.Time, 
 
 func (bs *BaseStat) firstBlockAfterRangeEnd(rangeEnd time.Time) (uint64, bool, error) {
 	return bs.DB.FirstBlockAfterTime(rangeEnd)
+}
+
+func (bs *BaseStat) loadLastPos(cfgKey string) (loaded bool, err error) {
+	value, ok, err := bs.DB.ConfigStore.Get(cfgKey)
+	if err != nil {
+		return false, errors.WithMessagef(err, "Failed to get stat pos %s", cfgKey)
+	}
+
+	if ok {
+		pos, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			return false, errors.WithMessagef(err, "Invalid stat pos %s %s", cfgKey, value)
+		}
+		bs.currentPos = pos + 1
+	}
+
+	return ok, nil
 }
 
 type Stat interface {

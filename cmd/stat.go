@@ -49,6 +49,8 @@ func startStatService(*cobra.Command, []string) {
 
 	topnSubmit := stat.MustNewTopnSubmit(&cfg, dataCtx.DB, dataCtx.Eth)
 	go topnSubmit.DoStat(ctx, &wg)
+	topnReward := stat.MustNewTopnReward(&cfg, dataCtx.DB, dataCtx.Eth)
+	go topnReward.DoStat(ctx, &wg)
 
 	stDASubmit := stat.MustNewStatDASubmit(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
 	go stDASubmit.DoStat(ctx, &wg)

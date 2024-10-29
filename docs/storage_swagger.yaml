@@ -263,6 +263,25 @@ definitions:
         description: The total number of stat returned
         type: integer
     type: object
+  storage.RewardTopn:
+    description: Reward topn information
+    properties:
+      address:
+        description: Address on blockchain
+        type: string
+      amount:
+        description: Reward amount
+        type: number
+    type: object
+  storage.RewardTopnList:
+    description: Topn list of files
+    properties:
+      list:
+        description: Topn list
+        items:
+          $ref: '#/definitions/storage.RewardTopn'
+        type: array
+    type: object
   storage.StorageFeeStat:
     description: Stat storage fee information
     properties:
@@ -1162,6 +1181,40 @@ paths:
           schema:
             $ref: '#/definitions/api.BusinessError'
       summary: Topn statistics of files
+      tags:
+      - statistic
+  /stats/top/reward:
+    get:
+      consumes:
+      - application/json
+      description: Query topn statistics of reward, including address and reward amount
+      parameters:
+      - default: 24h
+        description: Statistics time span
+        enum:
+        - 24h
+        - 3d
+        - 7d
+        in: query
+        name: spanType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.RewardTopnList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Topn statistics of reward
       tags:
       - statistic
   /stats/top/txs:

@@ -126,6 +126,27 @@ func (rs *RewardStore) CountActive(startTime, endTime time.Time) (uint64, error)
 	return uint64(countActive), nil
 }
 
+type GroupedReward struct {
+	MinerID   uint64
+	Amount    decimal.Decimal
+	UpdatedAt time.Time
+}
+
+func (rs *RewardStore) GroupByMiner(minBn, maxBn uint64) ([]GroupedReward, error) {
+	groupedRewards := new([]GroupedReward)
+	err := rs.DB.Model(&Reward{}).
+		Select(`miner_id, IFNULL(sum(Amount), 0) amount, max(block_time) updated_at`).
+		Where("block_number between ? and ?", minBn, maxBn).
+		Group("miner_id").
+		Scan(groupedRewards).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return *groupedRewards, nil
+}
+
 type RewardStat struct {
 	ID          uint64          `json:"-"`
 	StatType    string          `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`

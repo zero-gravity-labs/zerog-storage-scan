@@ -17,7 +17,8 @@ const (
 	RateLimitStrategyConfKeyPrefix   = "ratelimit.strategy."
 	rateLimitStrategySqlMatchPattern = RateLimitStrategyConfKeyPrefix + "%"
 	SyncStatusLog                    = "sync.status.log"
-	StatTopnSubmitPosition           = "stat.topn.submit.position"
+	StatTopnSubmitId                 = "stat.topn.submit.id"
+	StatTopnRewardBn                 = "stat.topn.reward.bn"
 )
 
 type Config struct {

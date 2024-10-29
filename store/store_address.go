@@ -14,11 +14,11 @@ type Address struct {
 	ID         uint64
 	Address    string          `gorm:"size:64;unique"`
 	BlockTime  time.Time       `gorm:"not null"`
-	DataSize   uint64          `gorm:"not null;default:0"`                  // Size of storage data in a specific time interval
-	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0"` // The base fee for storage
-	Txs        uint64          `gorm:"not null;default:0"`                  // Number of layer1 transaction in a specific time interval
-	Files      uint64          `gorm:"not null;default:0"`                  // Number of files/layer2 transaction in a specific time interval
-	UpdatedAt  time.Time       `gorm:"not null"`
+	DataSize   uint64          `gorm:"not null;default:0;index:idx_data"`                 // Size of storage data in a specific time interval
+	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0;index:idx_fee"` // The base fee for storage
+	Txs        uint64          `gorm:"not null;default:0;index:idx_txs"`                  // Number of layer1 transaction in a specific time interval
+	Files      uint64          `gorm:"not null;default:0;index:idx_files"`                // Number of files/layer2 transaction in a specific time interval
+	UpdatedAt  time.Time       `gorm:"not null;index:idx_updatedAt"`
 }
 
 func (Address) TableName() string {
@@ -209,7 +209,9 @@ func (t *AddressStatStore) List(intervalType *string, minTimestamp, maxTimestamp
 
 type Miner struct {
 	ID              uint64
-	FirstMiningTime time.Time `gorm:"not null"`
+	FirstMiningTime time.Time       `gorm:"not null"`
+	Amount          decimal.Decimal `gorm:"type:decimal(65);not null;index:idx_amount"`
+	UpdatedAt       time.Time       `gorm:"not null;index:idx_updatedAt"`
 }
 
 func (Miner) TableName() string {
@@ -226,7 +228,7 @@ func newMinerStore(db *gorm.DB) *MinerStore {
 	}
 }
 
-func (ms *MinerStore) Add(id uint64, firstMiningTime time.Time) (uint64, error) {
+func (ms *MinerStore) Add(id uint64, firstMiningTime time.Time, amount decimal.Decimal) (uint64, error) {
 	var miner Miner
 	existed, err := ms.Store.Exists(&miner, "id = ?", id)
 	if err != nil {
@@ -239,6 +241,8 @@ func (ms *MinerStore) Add(id uint64, firstMiningTime time.Time) (uint64, error) 
 	miner = Miner{
 		ID:              id,
 		FirstMiningTime: firstMiningTime,
+		Amount:          amount,
+		UpdatedAt:       firstMiningTime,
 	}
 
 	if err := ms.DB.Create(&miner).Error; err != nil {
@@ -265,6 +269,38 @@ func (ms *MinerStore) Count(startTime, endTime time.Time) (uint64, error) {
 	}
 
 	return uint64(count), nil
+}
+
+func (ms *MinerStore) IncreaseAmountByPrimaryKey(dbTx *gorm.DB, m *Miner) error {
+	db := ms.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	u := map[string]interface{}{
+		"amount":     gorm.Expr("amount + ?", m.Amount),
+		"updated_at": m.UpdatedAt,
+	}
+	if err := db.Model(&m).Where("id=?", m.ID).Updates(u).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ms *MinerStore) Topn(duration time.Duration, limit int) ([]Miner, error) {
+	db := ms.DB.Model(&Miner{})
+
+	if duration != 0 {
+		db = db.Where("updated_at >= ?", time.Now().Add(-duration))
+	}
+
+	list := new([]Miner)
+	if err := db.Order("amount DESC").Limit(limit).Find(list).Error; err != nil {
+		return nil, err
+	}
+
+	return *list, nil
 }
 
 type MinerStat struct {

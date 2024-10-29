@@ -1047,6 +1047,61 @@ const docTemplatestorage = `{
                 }
             }
         },
+        "/stats/top/reward": {
+            "get": {
+                "description": "Query topn statistics of reward, including address and reward amount",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistic"
+                ],
+                "summary": "Topn statistics of reward",
+                "parameters": [
+                    {
+                        "enum": [
+                            "24h",
+                            "3d",
+                            "7d"
+                        ],
+                        "type": "string",
+                        "default": "24h",
+                        "description": "Statistics time span",
+                        "name": "spanType",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.RewardTopnList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/stats/top/txs": {
             "get": {
                 "description": "Query topn statistics of layer1 transactions, including address and transactions",
@@ -1593,6 +1648,33 @@ const docTemplatestorage = `{
                 "total": {
                     "description": "The total number of stat returned",
                     "type": "integer"
+                }
+            }
+        },
+        "storage.RewardTopn": {
+            "description": "Reward topn information",
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Address on blockchain",
+                    "type": "string"
+                },
+                "amount": {
+                    "description": "Reward amount",
+                    "type": "number"
+                }
+            }
+        },
+        "storage.RewardTopnList": {
+            "description": "Topn list of files",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Topn list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.RewardTopn"
+                    }
                 }
             }
         },

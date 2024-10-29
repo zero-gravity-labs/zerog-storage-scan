@@ -98,3 +98,38 @@ func topnByType(c *gin.Context, t string) (interface{}, error) {
 
 	return result, nil
 }
+
+func topnReward(c *gin.Context) (interface{}, error) {
+	var topnP topnParam
+	if err := c.ShouldBind(&topnP); err != nil {
+		return nil, api.ErrValidation(errors.Errorf("Invalid topn query param"))
+	}
+
+	statSpan := spanTypes[topnP.SpanType]
+	miners, err := db.MinerStore.Topn(statSpan, maxRecords)
+	if err != nil {
+		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get reward topn list"))
+	}
+	if len(miners) == 0 {
+		return map[string]interface{}{"list": []RewardTopn{}}, nil
+	}
+
+	addrIDs := make([]uint64, 0)
+	for _, miner := range miners {
+		addrIDs = append(addrIDs, miner.ID)
+	}
+	addrMap, err := db.BatchGetAddresses(addrIDs)
+	if err != nil {
+		return nil, scanApi.ErrBatchGetAddress(err)
+	}
+
+	list := make([]RewardTopn, 0)
+	for _, m := range miners {
+		list = append(list, RewardTopn{
+			Address: addrMap[m.ID].Address,
+			Amount:  m.Amount,
+		})
+	}
+
+	return map[string]interface{}{"list": list}, nil
+}

@@ -272,6 +272,13 @@ type FilesTopn struct {
 	Files   uint64 `json:"files"`   // Number of files
 }
 
+// RewardTopn model info
+// @Description Reward topn information
+type RewardTopn struct {
+	Address string          `json:"address"` // Address on blockchain
+	Amount  decimal.Decimal `json:"amount"`  // Reward amount
+}
+
 // DataTopnList model info
 // @Description Topn list of data size
 type DataTopnList struct {
@@ -294,4 +301,10 @@ type TxsTopnList struct {
 // @Description Topn list of files
 type FilesTopnList struct {
 	List []FilesTopn `json:"list"` // Topn list
+}
+
+// RewardTopnList model info
+// @Description Topn list of files
+type RewardTopnList struct {
+	List []RewardTopn `json:"list"` // Topn list
 }
