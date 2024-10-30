@@ -79,11 +79,19 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	if err := json.Unmarshal(submit.Extra, &extra); err != nil {
 		return nil, api.ErrInternal(errors.New("Failed to unmarshal submit extra"))
 	}
+
 	result.StartPosition = extra.StartPos.Uint64()
 	trunksWithoutPadding := (submit.Length-1)/core.DefaultChunkSize + 1
 	result.EndPosition = extra.StartPos.Uint64() + trunksWithoutPadding
 	result.Segments = submit.TotalSegNum
 	result.UploadedSegments = submit.UploadedSegNum
+
+	if extra.GasPrice > 0 {
+		result.GasFee = extra.GasPrice * extra.GasUsed
+		result.GasUsed = extra.GasUsed
+		result.GasLimit = extra.GasLimit
+		return result, nil
+	}
 
 	hash := common.HexToHash(submit.TxHash)
 	tx, err := sdk.Eth.TransactionByHash(hash)
@@ -103,7 +111,6 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	result.GasFee = tx.GasPrice.Uint64() * rcpt.GasUsed
 	result.GasUsed = rcpt.GasUsed
 	result.GasLimit = tx.Gas
-
 	return result, nil
 }
 

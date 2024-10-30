@@ -117,7 +117,7 @@ func (s *CatchupSyncer) Sync(ctx context.Context) {
 	logrus.Info("Catchup syncer starting to sync data")
 	for {
 		needProcess := s.tryBlockRange(ctx)
-		if !needProcess || s.interrupted(ctx) {
+		if !needProcess || interrupted(ctx) {
 			return
 		}
 
@@ -172,7 +172,7 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 		}
 		logrus.WithField("block", block.BlockNumber).Info("Catchup")
 
-		if end >= rangeEnd || s.interrupted(ctx) {
+		if end >= rangeEnd || interrupted(ctx) {
 			break
 		}
 
@@ -497,7 +497,7 @@ func (s *CatchupSyncer) decodeDAReward(blkTime time.Time, log types.Log) (*store
 	return daReward, nil
 }
 
-func (s *CatchupSyncer) interrupted(ctx context.Context) bool {
+func interrupted(ctx context.Context) bool {
 	select {
 	case <-ctx.Done():
 		return true

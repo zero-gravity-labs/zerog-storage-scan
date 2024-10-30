@@ -40,6 +40,9 @@ type SubmitExtra struct {
 	Identity   common.Hash         `json:"identity"`
 	StartPos   *big.Int            `json:"startPos"`
 	Submission contract.Submission `json:"submission"`
+	GasPrice   uint64              `json:"gasPrice"`
+	GasLimit   uint64              `json:"gasLimit"`
+	GasUsed    uint64              `json:"gasUsed"`
 }
 
 func NewSubmit(blockTime time.Time, log types.Log, filter *contract.FlowFilterer) (*Submit, error) {
@@ -191,7 +194,7 @@ func (ss *SubmitStore) QueryOverallByAsc(minSubmissionIndex *uint64, batch int) 
 
 func (ss *SubmitStore) query(minSubmissionIndex, maxSubmissionIndex *uint64, status []rpc.Status, isDesc bool, batch int) (
 	[]Submit, error) {
-	db := ss.DB.Model(&Submit{}).Select("submission_index, sender_id, total_seg_num")
+	db := ss.DB.Model(&Submit{}).Select("submission_index, sender_id, total_seg_num, tx_hash, extra")
 
 	if minSubmissionIndex != nil && maxSubmissionIndex != nil {
 		db = db.Where("submission_index between ? and ?", minSubmissionIndex, maxSubmissionIndex)

@@ -32,7 +32,8 @@ func startSyncService(*cobra.Command, []string) {
 
 	cs := nhSync.MustNewCatchupSyncer(dataCtx.Eth, dataCtx.DB, conf, dataCtx.EthCfg.AlertChannel, dataCtx.EthCfg.HealthReport)
 	ss := nhSync.MustNewStorageSyncer(dataCtx.L2Sdks, dataCtx.DB, dataCtx.L2SdkCfg.AlertChannel, dataCtx.L2SdkCfg.HealthReport)
-	syncer := nhSync.MustNewSyncer(dataCtx.Eth, dataCtx.DB, conf, cs, ss)
+	ps := nhSync.MustNewPatchSyncer(dataCtx.Eth, dataCtx.DB)
+	syncer := nhSync.MustNewSyncer(dataCtx.Eth, dataCtx.DB, conf, cs, ss, ps)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup

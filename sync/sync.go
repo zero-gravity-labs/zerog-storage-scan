@@ -34,6 +34,7 @@ type Syncer struct {
 	syncIntervalCatchUp time.Duration
 	catchupSyncer       *CatchupSyncer
 	storageSyncer       *StorageSyncer
+	patchSyncer         *PatchSyncer
 
 	flowAddr      string
 	flowSubmitSig string
@@ -52,7 +53,8 @@ type Syncer struct {
 }
 
 // MustNewSyncer creates an instance of Syncer to sync blockchain data.
-func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *CatchupSyncer, ss *StorageSyncer) *Syncer {
+func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *CatchupSyncer, ss *StorageSyncer,
+	ps *PatchSyncer) *Syncer {
 	var flow struct {
 		Address              string
 		SubmitEventSignature string
@@ -87,6 +89,7 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		syncIntervalCatchUp: time.Millisecond,
 		catchupSyncer:       cs,
 		storageSyncer:       ss,
+		patchSyncer:         ps,
 
 		flowAddr:      flow.Address,
 		flowSubmitSig: flow.SubmitEventSignature,
@@ -165,6 +168,7 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncOverall)
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncLatest)
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.CheckStatus)
+	go s.patchSyncer.Sync(ctx)
 
 	ticker := time.NewTicker(s.syncIntervalCatchUp)
 	defer ticker.Stop()

@@ -14,7 +14,7 @@ import (
 
 var (
 	ErrNoFileInfoToSync               = errors.New("No file info to sync")
-	BatchGetSubmitsNotFinalized       = 10000
+	BatchGetSubmitsNotFinalized       = 100
 	BatchGetSubmitsNotFinalizedLatest = 100
 )
 
@@ -46,10 +46,8 @@ func MustNewStorageSyncer(l2Sdks []*node.Client, db *store.MysqlStore, alertChan
 func (ss *StorageSyncer) Sync(ctx context.Context, syncFunc func(ctx2 context.Context) error) {
 	logrus.Info("Storage syncer starting to sync data.")
 	for {
-		select {
-		case <-ctx.Done():
+		if interrupted(ctx) {
 			return
-		default:
 		}
 
 		if err := syncFunc(ctx); err != nil {
@@ -73,6 +71,10 @@ func (ss *StorageSyncer) SyncOverall(ctx context.Context) error {
 			return ErrNoFileInfoToSync
 		}
 
+		if interrupted(ctx) {
+			return nil
+		}
+
 		if _, err := ss.db.UpdateFileInfos(ctx, submits, ss.l2Sdks); err != nil {
 			return err
 		}
@@ -88,6 +90,10 @@ func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
 	}
 	if len(submits) == 0 {
 		return ErrNoFileInfoToSync
+	}
+
+	if interrupted(ctx) {
+		return nil
 	}
 
 	if _, err := ss.db.UpdateFileInfos(ctx, submits, ss.l2Sdks); err != nil {
