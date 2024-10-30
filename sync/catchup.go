@@ -24,10 +24,11 @@ type CatchupSyncer struct {
 	currentBlock   uint64
 	finalizedBlock uint64
 
-	flowAddr      string
-	flowSubmitSig string
-	rewardAddr    string
-	rewardSig     string
+	flowAddr        string
+	flowSubmitSig   string
+	flowNewEpochSig string
+	rewardAddr      string
+	rewardSig       string
 
 	daEntranceAddr    string
 	dataUploadSig     string
@@ -47,8 +48,9 @@ type CatchupSyncer struct {
 func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncConfig, alertChannel string,
 	healthReport health.TimedCounterConfig) *CatchupSyncer {
 	var flow struct {
-		Address              string
-		SubmitEventSignature string
+		Address                string
+		SubmitEventSignature   string
+		NewEpochEventSignature string
 	}
 	viperUtil.MustUnmarshalKey("flow", &flow)
 
@@ -78,10 +80,11 @@ func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncCon
 		sdk:  sdk,
 		db:   db,
 
-		flowAddr:      flow.Address,
-		flowSubmitSig: flow.SubmitEventSignature,
-		rewardAddr:    reward.Address,
-		rewardSig:     reward.RewardEventSignature,
+		flowAddr:        flow.Address,
+		flowSubmitSig:   flow.SubmitEventSignature,
+		flowNewEpochSig: flow.NewEpochEventSignature,
+		rewardAddr:      reward.Address,
+		rewardSig:       reward.RewardEventSignature,
 
 		daEntranceAddr:    daEntrance.Address,
 		dataUploadSig:     daEntrance.DataUploadSignature,
@@ -99,6 +102,7 @@ func MustNewCatchupSyncer(sdk *web3go.Client, db *store.MysqlStore, conf SyncCon
 		},
 		topics: [][]common.Hash{{
 			common.HexToHash(flow.SubmitEventSignature),
+			common.HexToHash(flow.NewEpochEventSignature),
 			common.HexToHash(reward.RewardEventSignature),
 			common.HexToHash(daEntrance.DataUploadSignature),
 			common.HexToHash(daEntrance.ErasureCommitmentVerifiedSignature),
@@ -284,6 +288,14 @@ func (s *CatchupSyncer) convertLogs(logs []types.Log, bn2TimeMap map[uint64]uint
 			if submit != nil {
 				decodedLogs.Submits = append(decodedLogs.Submits, *submit)
 			}
+		case s.flowNewEpochSig:
+			flowEpoch, err := s.decodeFlowEpoch(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if flowEpoch != nil {
+				decodedLogs.FlowEpochs = append(decodedLogs.FlowEpochs, *flowEpoch)
+			}
 		case s.rewardSig:
 			reward, err := s.decodeReward(blockTime, log)
 			if err != nil {
@@ -360,6 +372,28 @@ func (s *CatchupSyncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.S
 	submit.SenderID = senderID
 
 	return submit, nil
+}
+
+func (s *CatchupSyncer) decodeFlowEpoch(blkTime time.Time, log types.Log) (*store.FlowEpoch, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.flowAddr) || sig != s.flowNewEpochSig {
+		return nil, nil
+	}
+
+	flowEpoch, err := store.NewFlowEpoch(blkTime, log, nhContract.DummyFlowFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	senderID, err := s.db.AddressStore.Add(flowEpoch.Sender, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	flowEpoch.SenderID = senderID
+
+	return flowEpoch, nil
 }
 
 func (s *CatchupSyncer) decodeReward(blkTime time.Time, log types.Log) (*store.Reward, error) {

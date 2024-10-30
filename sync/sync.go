@@ -36,14 +36,16 @@ type Syncer struct {
 	storageSyncer       *StorageSyncer
 	patchSyncer         *PatchSyncer
 
-	flowAddr      string
-	flowSubmitSig string
-	rewardAddr    string
-	rewardSig     string
+	flowAddr        string
+	flowSubmitSig   string
+	flowNewEpochSig string
+	rewardAddr      string
+	rewardSig       string
 
 	daEntranceAddr    string
 	dataUploadSig     string
 	commitVerifiedSig string
+	daRewardSig       string
 	daSignersAddr     string
 	newSignerSig      string
 	socketUpdatedSig  string
@@ -56,8 +58,9 @@ type Syncer struct {
 func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *CatchupSyncer, ss *StorageSyncer,
 	ps *PatchSyncer) *Syncer {
 	var flow struct {
-		Address              string
-		SubmitEventSignature string
+		Address                string
+		SubmitEventSignature   string
+		NewEpochEventSignature string
 	}
 	viperUtil.MustUnmarshalKey("flow", &flow)
 
@@ -71,6 +74,7 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		Address                            string
 		DataUploadSignature                string
 		ErasureCommitmentVerifiedSignature string
+		DARewardSignature                  string
 	}
 	viperUtil.MustUnmarshalKey("daEntrance", &daEntrance)
 
@@ -91,14 +95,16 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		storageSyncer:       ss,
 		patchSyncer:         ps,
 
-		flowAddr:      flow.Address,
-		flowSubmitSig: flow.SubmitEventSignature,
-		rewardAddr:    reward.Address,
-		rewardSig:     reward.RewardEventSignature,
+		flowAddr:        flow.Address,
+		flowSubmitSig:   flow.SubmitEventSignature,
+		flowNewEpochSig: flow.NewEpochEventSignature,
+		rewardAddr:      reward.Address,
+		rewardSig:       reward.RewardEventSignature,
 
 		daEntranceAddr:    daEntrance.Address,
 		dataUploadSig:     daEntrance.DataUploadSignature,
 		commitVerifiedSig: daEntrance.ErasureCommitmentVerifiedSignature,
+		daRewardSig:       daEntrance.DARewardSignature,
 		daSignersAddr:     daSigners.Address,
 		newSignerSig:      daSigners.NewSignerSignature,
 		socketUpdatedSig:  daSigners.SocketUpdatedSignature,
@@ -111,9 +117,11 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 		},
 		topics: [][]common.Hash{{
 			common.HexToHash(flow.SubmitEventSignature),
+			common.HexToHash(flow.NewEpochEventSignature),
 			common.HexToHash(reward.RewardEventSignature),
 			common.HexToHash(daEntrance.DataUploadSignature),
 			common.HexToHash(daEntrance.ErasureCommitmentVerifiedSignature),
+			common.HexToHash(daEntrance.DARewardSignature),
 			common.HexToHash(daSigners.NewSignerSignature),
 			common.HexToHash(daSigners.SocketUpdatedSignature),
 		}},

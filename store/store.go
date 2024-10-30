@@ -33,6 +33,7 @@ type MysqlStore struct {
 	*AddressStatStore
 	*MinerStore
 	*MinerStatStore
+	*FlowEpochStore
 	*DASignerStore
 	*DASignerStatStore
 	*DASubmitStore
@@ -58,6 +59,7 @@ func MustNewStore(db *gorm.DB) *MysqlStore {
 		AddressStatStore:   newAddressStatStore(db),
 		MinerStore:         newMinerStore(db),
 		MinerStatStore:     newMinerStatStore(db),
+		FlowEpochStore:     newFlowEpochStore(db),
 		DASignerStore:      newDASignerStore(db),
 		DASignerStatStore:  newDASignerStatStore(db),
 		DASubmitStore:      newDASubmitStore(db),
@@ -71,6 +73,7 @@ func MustNewStore(db *gorm.DB) *MysqlStore {
 
 type DecodedLogs struct {
 	Submits                    []Submit
+	FlowEpochs                 []FlowEpoch
 	Rewards                    []Reward
 	DASigners                  []DASigner
 	DASignersWithSocketUpdated []DASigner
@@ -134,6 +137,12 @@ func (ms *MysqlStore) Push(block *Block, decodedLogs *DecodedLogs) error {
 			}
 			if err := ms.AddressSubmitStore.Add(dbTx, addressSubmits); err != nil {
 				return errors.WithMessage(err, "failed to save address flow submits")
+			}
+		}
+
+		if len(decodedLogs.FlowEpochs) > 0 {
+			if err := ms.FlowEpochStore.Add(dbTx, decodedLogs.FlowEpochs); err != nil {
+				return errors.WithMessage(err, "failed to save flow epochs")
 			}
 		}
 
@@ -221,6 +230,9 @@ func (ms *MysqlStore) Pop(block uint64) error {
 		}
 		if err := ms.AddressSubmitStore.Pop(dbTx, block); err != nil {
 			return errors.WithMessage(err, "failed to remove address submits")
+		}
+		if err := ms.FlowEpochStore.Pop(dbTx, block); err != nil {
+			return errors.WithMessage(err, "failed to remove flow epochs")
 		}
 		if err := ms.RewardStore.Pop(dbTx, block); err != nil {
 			return errors.WithMessage(err, "failed to remove rewards")

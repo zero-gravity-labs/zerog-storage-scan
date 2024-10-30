@@ -55,6 +55,8 @@ flow:
   # address: 0xbD2C3F0E65eDF5582141C35969d66e34629cC768
   # Flow submit event signature
   submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
+  # New epoch event signature
+  newEpochEventSignature:
 
 # Charge info configurations
 # When charging in ERC20 token, configure `erc20TokenAddress` and `erc20TransferEventSignature`

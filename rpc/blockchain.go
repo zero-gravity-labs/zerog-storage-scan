@@ -112,7 +112,6 @@ func getEthDataByLogs(w3c *web3go.Client, blockNumber uint64, addresses []common
 	}
 
 	// batch get logs
-	//logArray, err := batchGetFlowSubmits(w3c, blockNumber, blockNumber, flowAddr, flowSubmitSig)
 	logArray, err := BatchGetLogs(w3c, blockNumber, blockNumber, addresses, topics)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "failed to get flow submits in batch at block %v", blockNumber)
