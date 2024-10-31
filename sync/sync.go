@@ -165,8 +165,7 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 
 	err := s.checkReorgData()
 	if err != nil {
-		logrus.WithError(err).Error("Failed to check reorg data")
-		return
+		logrus.WithError(err).Panic("Failed to check reorg data")
 	}
 
 	s.catchupSyncer.Sync(ctx)
@@ -348,7 +347,7 @@ func (s *Syncer) checkReorgData() error {
 func (s *Syncer) existReorgData(blockNum uint64) (bool, error) {
 	hash, ok, err := s.db.BlockHash(blockNum)
 	if err != nil {
-		return false, errors.WithMessagef(err, "failed to get block at %v from db", blockNum)
+		return false, errors.WithMessagef(err, "Failed to get block at %v from db", blockNum)
 	}
 	if !ok {
 		return false, nil
@@ -356,7 +355,7 @@ func (s *Syncer) existReorgData(blockNum uint64) (bool, error) {
 
 	block, err := s.sdk.Eth.BlockByNumber(types.BlockNumber(blockNum), false)
 	if err != nil {
-		return false, errors.WithMessagef(err, "failed to get block at %v from blockchain", blockNum)
+		return false, errors.WithMessagef(err, "Failed to get block at %v from blockchain", blockNum)
 	}
 
 	return hash != block.Hash.String(), nil
@@ -366,7 +365,7 @@ func (s *Syncer) revertReorgData(revertBlock uint64) error {
 	// pop from db
 	logrus.WithField("block", revertBlock).Info("Revert eth data")
 	if err := s.db.Pop(revertBlock); err != nil {
-		return errors.WithMessage(err, "failed to pop eth data from db")
+		return errors.WithMessage(err, "Failed to pop eth data from db")
 	}
 
 	// update currentBlock
