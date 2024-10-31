@@ -3,9 +3,12 @@ package stat
 import (
 	"strconv"
 
+	"gorm.io/gorm"
+
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -72,19 +75,27 @@ func (ts *TopnReward) calculateStat(r StatRange) error {
 		return err
 	}
 
+	miners := make([]store.Miner, 0)
 	for _, reward := range groupedRewards {
-		m := store.Miner{
+		miners = append(miners, store.Miner{
 			ID:        reward.MinerID,
 			Amount:    reward.Amount,
 			UpdatedAt: reward.UpdatedAt,
-		}
-		err := ts.DB.MinerStore.IncreaseAmountByPrimaryKey(nil, &m)
-		if err != nil {
-			return err
-		}
+		})
 	}
 
-	if err := ts.DB.ConfigStore.Upsert(store.StatTopnRewardBn, strconv.FormatUint(r.maxPos, 10)); err != nil {
+	if err := ts.DB.DB.Transaction(func(dbTx *gorm.DB) error {
+		if len(miners) > 0 {
+			if err := ts.DB.MinerStore.BatchIncreaseStat(dbTx, miners); err != nil {
+				return errors.WithMessage(err, "Failed to batch update miners for topn")
+			}
+		}
+		if err := ts.DB.ConfigStore.Upsert(dbTx, store.StatTopnRewardBn,
+			strconv.FormatUint(r.maxPos, 10)); err != nil {
+			return errors.WithMessage(err, "Failed to batch update bn for topn")
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
 

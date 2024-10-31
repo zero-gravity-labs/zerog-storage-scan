@@ -131,7 +131,7 @@ func (ps *PatchSyncer) syncOnce(ctx context.Context) error {
 		}
 
 		lastSubmitId := submits[len(submits)-1].SubmissionIndex
-		if err := ps.db.ConfigStore.Upsert(store.SyncPatchSubmitId,
+		if err := ps.db.ConfigStore.Upsert(nil, store.SyncPatchSubmitId,
 			strconv.FormatUint(lastSubmitId, 10)); err != nil {
 			return err
 		}

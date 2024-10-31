@@ -46,8 +46,13 @@ func newConfigStore(db *gorm.DB) *ConfigStore {
 	}
 }
 
-func (cs *ConfigStore) Upsert(name, value string) error {
-	return cs.DB.Clauses(clause.OnConflict{
+func (cs *ConfigStore) Upsert(dbTx *gorm.DB, name, value string) error {
+	db := cs.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	return db.Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&Config{
 		Name:  name,

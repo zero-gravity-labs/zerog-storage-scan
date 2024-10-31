@@ -27,6 +27,7 @@ func (Address) TableName() string {
 
 type AddressStore struct {
 	*mysql.Store
+	runBatchIncrStat bool
 }
 
 func newAddressStore(db *gorm.DB) *AddressStore {
@@ -113,6 +114,43 @@ func (as *AddressStore) IncreaseStatByPrimaryKey(dbTx *gorm.DB, a *Address) erro
 		"updated_at":  a.UpdatedAt,
 	}
 	if err := db.Model(&a).Where("id=?", a.ID).Updates(u).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (as *AddressStore) BatchIncreaseStat(dbTx *gorm.DB, addresses []Address) error {
+	db := as.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(addresses)
+	for i, a := range addresses {
+		placeholders += "(?,?,?,?,?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{a.ID, a.DataSize, a.StorageFee, a.Txs, a.Files, a.UpdatedAt, time.Now()}...)
+	}
+
+	sql := fmt.Sprintf(`
+		insert into 
+    		addresses(id, data_size, storage_fee, txs, files, updated_at, block_time)
+		values
+			%s
+		on duplicate key update
+			data_size = data_size + values(data_size),
+			storage_fee = storage_fee + values(storage_fee),
+			txs = txs + values(txs),
+			files = files + values(files),
+			updated_at=values(updated_at)
+	`, placeholders)
+
+	if err := db.Debug().Exec(sql, params...).Error; err != nil {
 		return err
 	}
 
@@ -282,6 +320,40 @@ func (ms *MinerStore) IncreaseAmountByPrimaryKey(dbTx *gorm.DB, m *Miner) error 
 		"updated_at": m.UpdatedAt,
 	}
 	if err := db.Model(&m).Where("id=?", m.ID).Updates(u).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ms *MinerStore) BatchIncreaseStat(dbTx *gorm.DB, miners []Miner) error {
+	db := ms.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(miners)
+	for i, m := range miners {
+		placeholders += "(?,?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{m.ID, m.Amount, m.UpdatedAt, time.Now()}...)
+	}
+
+	sql := fmt.Sprintf(`
+		insert into 
+    		miners(id, amount, updated_at, first_mining_time)
+		values
+			%s
+		on duplicate key update
+			amount = amount + values(amount),
+			updated_at=values(updated_at)
+	`, placeholders)
+
+	if err := db.Debug().Exec(sql, params...).Error; err != nil {
 		return err
 	}
 
