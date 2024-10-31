@@ -16,6 +16,8 @@ var (
 	ErrNoFileInfoToSync               = errors.New("No file info to sync")
 	BatchGetSubmitsNotFinalized       = 100
 	BatchGetSubmitsNotFinalizedLatest = 100
+	checkStatusIntervalNormal         = time.Second
+	checkStatusIntervalException      = time.Second * 10
 )
 
 type StorageSyncer struct {
@@ -103,17 +105,35 @@ func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
 	return nil
 }
 
-func (ss *StorageSyncer) CheckStatus(ctx context.Context) error {
+func (ss *StorageSyncer) CheckStatus(ctx context.Context) {
+	ticker := time.NewTicker(checkStatusIntervalNormal)
+	defer ticker.Stop()
+
+	logrus.Info("Storage syncer starting to alert.")
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			ss.checkStatusOnce(ctx, ticker)
+		}
+	}
+}
+
+func (ss *StorageSyncer) checkStatusOnce(ctx context.Context, ticker *time.Ticker) {
 	for index, l2Sdk := range ss.l2Sdks {
 		_, err := l2Sdk.ZeroGStorage().GetStatus()
 
 		if ss.alertChannel != "" {
-			if e := rpc.AlertErr(ctx, "StorageNodeRPCError", ss.alertChannel, err, ss.healthReport,
-				ss.storageRpcHealths[index], l2Sdk.URL()); e != nil {
-				return e
+			e := rpc.AlertErr(ctx, "StorageNodeRPCError", ss.alertChannel, err, ss.healthReport,
+				ss.storageRpcHealths[index], l2Sdk.URL())
+
+			if e != nil {
+				ticker.Reset(checkStatusIntervalException)
+				logrus.WithError(err).Error("Failed to alert storage status")
+			} else {
+				ticker.Reset(checkStatusIntervalNormal)
 			}
 		}
 	}
-
-	return nil
 }

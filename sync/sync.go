@@ -149,7 +149,7 @@ func (s *Syncer) mustLoadLastSyncBlock() {
 func (s *Syncer) loadLastSyncBlock() (loaded bool, err error) {
 	maxBlock, ok, err := s.db.MaxBlock()
 	if err != nil {
-		return false, errors.WithMessage(err, "failed to get max block from block table")
+		return false, errors.WithMessage(err, "Failed to get max block from block table")
 	}
 
 	if ok {
@@ -165,7 +165,7 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 
 	err := s.checkReorgData()
 	if err != nil {
-		logrus.WithError(err).Error("Check reorg data error")
+		logrus.WithError(err).Error("Failed to check reorg data")
 		return
 	}
 
@@ -175,7 +175,7 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncOverall)
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncLatest)
-	go s.storageSyncer.Sync(ctx, s.storageSyncer.CheckStatus)
+	go s.storageSyncer.CheckStatus(ctx)
 	go s.patchSyncer.Sync(ctx)
 
 	ticker := time.NewTicker(s.syncIntervalCatchUp)
@@ -185,13 +185,13 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-ctx.Done():
-			logrus.Info("DB syncer shutdown ok")
+			logrus.Info("Syncer shutdown ok")
 			return
 		case <-ticker.C:
 			if err := s.doTicker(ctx, ticker); err != nil {
 				logrus.WithError(err).
 					WithField("currentBlock", s.currentBlock).
-					Warn("Syncer failed to sync eth data")
+					Warn("Failed to sync data")
 			}
 		}
 	}
