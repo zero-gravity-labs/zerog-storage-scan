@@ -1,12 +1,16 @@
 package storage
 
 import (
+	"context"
+	"sync"
 	"time"
 
 	scanApi "github.com/0glabs/0g-storage-scan/api"
+	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,6 +20,8 @@ const (
 	filesTopn      = "files"
 
 	maxRecords = 10
+
+	refreshCacheInterval = time.Second * 10
 )
 
 var (
@@ -23,6 +29,10 @@ var (
 		"24h": time.Hour * 24,
 		"3d":  time.Hour * 24 * 3,
 		"7d":  time.Hour * 24 * 7,
+	}
+	cache = Cache{
+		topnAddresses: make(map[string]map[time.Duration][]store.Address),
+		topnMiners:    make(map[time.Duration][]store.Miner),
 	}
 )
 
@@ -49,10 +59,7 @@ func topnByType(c *gin.Context, t string) (interface{}, error) {
 	}
 
 	statSpan := spanTypes[topnP.SpanType]
-	records, err := db.AddressStore.Topn(t, statSpan, maxRecords)
-	if err != nil {
-		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get submit topn list"))
-	}
+	records := cache.topnAddresses[t][statSpan]
 
 	result := make(map[string]interface{})
 	switch t {
@@ -106,10 +113,7 @@ func topnReward(c *gin.Context) (interface{}, error) {
 	}
 
 	statSpan := spanTypes[topnP.SpanType]
-	miners, err := db.MinerStore.Topn(statSpan, maxRecords)
-	if err != nil {
-		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get reward topn list"))
-	}
+	miners := cache.topnMiners[statSpan]
 	if len(miners) == 0 {
 		return map[string]interface{}{"list": []RewardTopn{}}, nil
 	}
@@ -132,4 +136,68 @@ func topnReward(c *gin.Context) (interface{}, error) {
 	}
 
 	return map[string]interface{}{"list": list}, nil
+}
+
+type Cache struct {
+	topnAddresses map[string]map[time.Duration][]store.Address
+	topnMiners    map[time.Duration][]store.Miner
+	mu            sync.Mutex
+}
+
+func ScheduleCache(ctx context.Context, wg *sync.WaitGroup /*, cacheCh chan<- *Cache*/) {
+	wg.Add(1)
+	defer wg.Done()
+
+	ticker := time.NewTicker(refreshCacheInterval)
+	defer ticker.Stop()
+
+	logrus.Info("Schedule cache starting")
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Info("Schedule cache shutdown ok")
+			return
+		case <-ticker.C:
+			if err := cacheTopn(); err != nil {
+				logrus.WithError(err).Error("Failed to schedule cache")
+			}
+		}
+	}
+}
+
+func cacheTopn() error {
+	statSpan := make([]time.Duration, 0)
+	for _, duration := range spanTypes {
+		statSpan = append(statSpan, duration)
+	}
+	statSpan = append(statSpan, 0)
+
+	topnAddresses := make(map[string]map[time.Duration][]store.Address)
+	topnMiners := make(map[time.Duration][]store.Miner)
+
+	for _, duration := range statSpan {
+		for _, order := range []string{dataSizeTopn, storageFeeTopn, txsTopn, filesTopn} {
+			addresses, err := db.AddressStore.Topn(order, duration, maxRecords)
+			if err != nil {
+				return errors.WithMessage(err, "Failed to cache topn submit")
+			}
+			if _, ok := topnAddresses[order]; !ok {
+				topnAddresses[order] = make(map[time.Duration][]store.Address)
+			}
+			topnAddresses[order][duration] = addresses
+		}
+
+		miners, err := db.MinerStore.Topn(duration, maxRecords)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to cache topn reward")
+		}
+		topnMiners[duration] = miners
+	}
+
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+	cache.topnAddresses = topnAddresses
+	cache.topnMiners = topnMiners
+
+	return nil
 }
