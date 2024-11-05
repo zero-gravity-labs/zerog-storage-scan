@@ -86,7 +86,7 @@ func (ts *TopnReward) calculateStat(r StatRange) error {
 
 	if err := ts.DB.DB.Transaction(func(dbTx *gorm.DB) error {
 		if len(miners) > 0 {
-			if err := ts.DB.MinerStore.BatchIncreaseStat(dbTx, miners); err != nil {
+			if err := ts.DB.MinerStore.BatchDeltaUpdateOrInsert(dbTx, miners); err != nil {
 				return errors.WithMessage(err, "Failed to batch update miners for topn")
 			}
 		}

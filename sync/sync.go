@@ -25,75 +25,32 @@ type SyncConfig struct {
 }
 
 type Syncer struct {
-	conf                *SyncConfig
-	sdk                 *web3go.Client
-	db                  *store.MysqlStore
-	currentBlock        uint64
-	latestBlock         uint64
+	baseSyncer
+	latestBlock uint64
+
 	syncIntervalNormal  time.Duration
 	syncIntervalCatchUp time.Duration
 	catchupSyncer       *CatchupSyncer
 	storageSyncer       *StorageSyncer
 	patchSyncer         *PatchSyncer
-
-	flowAddr        string
-	flowSubmitSig   string
-	flowNewEpochSig string
-	rewardAddr      string
-	rewardSig       string
-
-	daEntranceAddr    string
-	dataUploadSig     string
-	commitVerifiedSig string
-	daRewardSig       string
-	daSignersAddr     string
-	newSignerSig      string
-	socketUpdatedSig  string
-
-	addresses []common.Address
-	topics    [][]common.Hash
 }
 
 // MustNewSyncer creates an instance of Syncer to sync blockchain data.
 func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *CatchupSyncer, ss *StorageSyncer,
 	ps *PatchSyncer) *Syncer {
-	var flow struct {
-		Address                string
-		SubmitEventSignature   string
-		NewEpochEventSignature string
-	}
+	var flow flowConfig
 	viperUtil.MustUnmarshalKey("flow", &flow)
-
-	var reward struct {
-		Address              string
-		RewardEventSignature string
-	}
+	var reward rewardConfig
 	viperUtil.MustUnmarshalKey("reward", &reward)
-
-	var daEntrance struct {
-		Address                            string
-		DataUploadSignature                string
-		ErasureCommitmentVerifiedSignature string
-		DARewardSignature                  string
-	}
+	var daEntrance daEntranceConfig
 	viperUtil.MustUnmarshalKey("daEntrance", &daEntrance)
-
-	var daSigners struct {
-		Address                string
-		NewSignerSignature     string
-		SocketUpdatedSignature string
-	}
+	var daSigners daSignersConfig
 	viperUtil.MustUnmarshalKey("daSigners", &daSigners)
 
-	syncer := &Syncer{
-		conf:                &cf,
-		sdk:                 sdk,
-		db:                  db,
-		syncIntervalNormal:  time.Second,
-		syncIntervalCatchUp: time.Millisecond,
-		catchupSyncer:       cs,
-		storageSyncer:       ss,
-		patchSyncer:         ps,
+	base := baseSyncer{
+		conf: &cf,
+		sdk:  sdk,
+		db:   db,
 
 		flowAddr:        flow.Address,
 		flowSubmitSig:   flow.SubmitEventSignature,
@@ -125,6 +82,14 @@ func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *
 			common.HexToHash(daSigners.NewSignerSignature),
 			common.HexToHash(daSigners.SocketUpdatedSignature),
 		}},
+	}
+	syncer := &Syncer{
+		baseSyncer:          base,
+		syncIntervalNormal:  time.Second,
+		syncIntervalCatchUp: time.Millisecond,
+		catchupSyncer:       cs,
+		storageSyncer:       ss,
+		patchSyncer:         ps,
 	}
 
 	// Load last sync block information
@@ -392,30 +357,10 @@ func (s *Syncer) parseEthData(data *rpc.EthData) (*store.DecodedLogs, error) {
 
 	bn2TimeMap := map[uint64]uint64{data.Block.Number.Uint64(): data.Block.Timestamp}
 
-	decodedLogs, err := s.catchupSyncer.convertLogs(logs, bn2TimeMap)
+	decodedLogs, err := s.convertLogs(logs, bn2TimeMap)
 	if err != nil {
 		return nil, err
 	}
-
-	/*// check submits
-	preSeq, err := s.db.SubmitStore.MaxSubmissionIndex()
-	if err != nil {
-		return nil, errors.WithMessagef(err, "Check submits error at block %v", data.Block.Number.Uint64())
-	}
-	submits := decodedLogs.Submits
-	for i := 0; i < len(submits); i++ {
-		if submits[i].SubmissionIndex != preSeq+1 {
-			logsJ, _ := json.Marshal(logs)
-			decodedLogsJ, _ := json.Marshal(decodedLogs)
-			logrus.WithFields(logrus.Fields{
-				"bn":          data.Block.Number.Uint64(),
-				"logs":        string(logsJ),
-				"decodedLogs": string(decodedLogsJ),
-			}).Info("Check submits error")
-			return nil, errors.Errorf("Check submits error at block %v", data.Block.Number.Uint64())
-		}
-		preSeq = submits[i].SubmissionIndex
-	}*/
 
 	return decodedLogs, nil
 }

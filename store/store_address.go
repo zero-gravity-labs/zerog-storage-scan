@@ -100,7 +100,7 @@ func (as *AddressStore) Count(startTime, endTime time.Time) (uint64, error) {
 	return uint64(count), nil
 }
 
-func (as *AddressStore) IncreaseStatByPrimaryKey(dbTx *gorm.DB, a *Address) error {
+func (as *AddressStore) DeltaUpdate(dbTx *gorm.DB, a *Address) error {
 	db := as.DB
 	if dbTx != nil {
 		db = dbTx
@@ -120,7 +120,7 @@ func (as *AddressStore) IncreaseStatByPrimaryKey(dbTx *gorm.DB, a *Address) erro
 	return nil
 }
 
-func (as *AddressStore) BatchIncreaseStat(dbTx *gorm.DB, addresses []Address) error {
+func (as *AddressStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, addresses []Address) error {
 	db := as.DB
 	if dbTx != nil {
 		db = dbTx
@@ -309,7 +309,7 @@ func (ms *MinerStore) Count(startTime, endTime time.Time) (uint64, error) {
 	return uint64(count), nil
 }
 
-func (ms *MinerStore) IncreaseAmountByPrimaryKey(dbTx *gorm.DB, m *Miner) error {
+func (ms *MinerStore) DeltaUpdate(dbTx *gorm.DB, m *Miner) error {
 	db := ms.DB
 	if dbTx != nil {
 		db = dbTx
@@ -326,7 +326,7 @@ func (ms *MinerStore) IncreaseAmountByPrimaryKey(dbTx *gorm.DB, m *Miner) error 
 	return nil
 }
 
-func (ms *MinerStore) BatchIncreaseStat(dbTx *gorm.DB, miners []Miner) error {
+func (ms *MinerStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, miners []Miner) error {
 	db := ms.DB
 	if dbTx != nil {
 		db = dbTx

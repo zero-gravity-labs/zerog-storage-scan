@@ -96,7 +96,7 @@ func (ts *TopnSubmit) calculateStat(r StatRange) error {
 
 	if err := ts.DB.DB.Transaction(func(dbTx *gorm.DB) error {
 		if len(addresses) > 0 {
-			if err := ts.DB.AddressStore.BatchIncreaseStat(dbTx, addresses); err != nil {
+			if err := ts.DB.AddressStore.BatchDeltaUpdateOrInsert(dbTx, addresses); err != nil {
 				return errors.WithMessage(err, "Failed to batch update submits for topn")
 			}
 		}
