@@ -17,6 +17,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	submitPartitionSize = 10_000_000
+)
+
 type Submit struct {
 	SubmissionIndex uint64 `gorm:"primaryKey;autoIncrement:false"`
 	RootHash        string `gorm:"size:66;index:idx_root"`
@@ -83,12 +87,60 @@ func (Submit) TableName() string {
 
 type SubmitStore struct {
 	*mysql.Store
+
+	partitioner *mysqlRangePartitioner
 }
 
-func newSubmitStore(db *gorm.DB) *SubmitStore {
+func newSubmitStore(db *gorm.DB, config mysql.Config) *SubmitStore {
 	return &SubmitStore{
 		Store: mysql.NewStore(db),
+		partitioner: newMysqlRangePartitioner(
+			config.Database, Submit{}.TableName(), "submission_index",
+		),
 	}
+}
+
+func (ss *SubmitStore) preparePartition(dataSlice []Submit) error {
+	partition, err := ss.partitioner.latestPartition(ss.DB)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to get latest partition")
+	}
+
+	var latestPartitionIndex int
+	if partition != nil {
+		latestPartitionIndex = ss.partitioner.indexOfPartition(partition)
+	} else {
+		// create initial partition
+		initPartitionIndex := int(dataSlice[0].SubmissionIndex / submitPartitionSize)
+		threshold := uint64(initPartitionIndex+1) * submitPartitionSize
+		err = ss.partitioner.convert(ss.DB, initPartitionIndex, threshold)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to init range partitioned table")
+		}
+		latestPartitionIndex = initPartitionIndex
+	}
+
+	for _, data := range dataSlice {
+		if data.SubmissionIndex%submitPartitionSize != 0 {
+			continue
+		}
+
+		// create new partition if necessary
+		partitionIndex := int(data.SubmissionIndex / submitPartitionSize)
+		if partitionIndex <= latestPartitionIndex { // partition already exists
+			continue
+		}
+
+		threshold := uint64(partitionIndex+1) * submitPartitionSize
+		err := ss.partitioner.addPartition(ss.DB, partitionIndex, threshold)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to add partition")
+		}
+
+		latestPartitionIndex = partitionIndex
+	}
+
+	return nil
 }
 
 func (ss *SubmitStore) Add(dbTx *gorm.DB, submits []Submit) error {

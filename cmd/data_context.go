@@ -103,7 +103,7 @@ func MustInitDataContext() DataContext {
 	}
 
 	return DataContext{
-		DB:       store.MustNewStore(db),
+		DB:       store.MustNewStore(db, cfg),
 		L2Sdks:   l2Sdks,
 		Eth:      eth,
 		EthCfg:   sdkCfg,

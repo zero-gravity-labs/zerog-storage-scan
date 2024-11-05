@@ -173,10 +173,6 @@ func (s *CatchupSyncer) batchGetLogsBestEffort(w3c *web3go.Client, bnFrom, bnTo 
 	for {
 		logs, err := rpc.BatchGetLogs(w3c, start, end, addresses, topics)
 		if err == nil {
-			logrus.WithFields(logrus.Fields{
-				"start": start,
-				"end":   end,
-			}).Info("debug batch logs ---1---")
 			return logs, start, end, nil
 		}
 
@@ -185,21 +181,11 @@ func (s *CatchupSyncer) batchGetLogsBestEffort(w3c *web3go.Client, bnFrom, bnTo 
 			strings.Contains(err.Error(), "blocks distance") || // evmos
 			strings.Contains(err.Error(), "returned more than") { // kava
 
-			startSuggested, en, err := s.findClosedInterval(err.Error(), `suggested block range is \[(\d+)\s*,\s*(\d+)\]`)
-			if err != nil {
+			_, en, e := s.findClosedInterval(err.Error(), `suggested block range is \[(\d+)\s*,\s*(\d+)\]`)
+			if e != nil {
 				end = start + (end-start)/2
-				logrus.WithFields(logrus.Fields{
-					"start":          start,
-					"end":            end,
-					"startSuggested": startSuggested,
-				}).Info("debug batch logs ---2---")
 			} else {
 				end = en // use suggested range end when matched
-				logrus.WithFields(logrus.Fields{
-					"start":          start,
-					"end":            end,
-					"startSuggested": startSuggested,
-				}).Info("debug batch logs ---3---")
 			}
 
 			continue

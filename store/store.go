@@ -44,13 +44,13 @@ type MysqlStore struct {
 	*RateLimitStore
 }
 
-func MustNewStore(db *gorm.DB) *MysqlStore {
+func MustNewStore(db *gorm.DB, config mysql.Config) *MysqlStore {
 	return &MysqlStore{
 		Store:              mysql.NewStore(db),
 		AddressStore:       newAddressStore(db),
 		BlockStore:         newBlockStore(db),
 		ConfigStore:        newConfigStore(db),
-		SubmitStore:        newSubmitStore(db),
+		SubmitStore:        newSubmitStore(db, config),
 		AddressSubmitStore: newAddressSubmitStore(db),
 		RewardStore:        newRewardStore(db),
 		RewardStatStore:    newRewardStatStore(db),
@@ -122,6 +122,11 @@ func (ms *MysqlStore) Push(block *Block, decodedLogs *DecodedLogs) error {
 			}
 			addressRewards = append(addressRewards, addressReward)
 		}
+	}
+
+	// prepare submit table partition if necessary
+	if ms.SubmitStore.preparePartition(decodedLogs.Submits) != nil {
+		return errors.New("Failed to prepare submit partition")
 	}
 
 	return ms.Store.DB.Transaction(func(dbTx *gorm.DB) error {
