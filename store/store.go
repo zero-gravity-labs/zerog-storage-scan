@@ -125,7 +125,7 @@ func (ms *MysqlStore) Push(block *Block, decodedLogs *DecodedLogs) error {
 	}
 
 	// prepare submit table partition if necessary
-	if ms.SubmitStore.preparePartition(decodedLogs.Submits) != nil {
+	if len(decodedLogs.Submits) > 0 && ms.SubmitStore.preparePartition(decodedLogs.Submits) != nil {
 		return errors.New("Failed to prepare submit partition")
 	}
 

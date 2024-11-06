@@ -229,17 +229,12 @@ func (ss *SubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip,
 	return total, *list, nil
 }
 
-func (ss *SubmitStore) QueryUnfinalizedByAsc(minSubmissionIndex *uint64, batch int) (
+func (ss *SubmitStore) QueryDesc(batch int) (
 	[]Submit, error) {
-	return ss.query(minSubmissionIndex, nil, []rpc.Status{rpc.NotUploaded, rpc.Uploading}, false, batch)
+	return ss.query(nil, nil, nil, true, batch)
 }
 
-func (ss *SubmitStore) QueryUnfinalizedLatestByDesc(batch int) (
-	[]Submit, error) {
-	return ss.query(nil, nil, []rpc.Status{rpc.NotUploaded, rpc.Uploading}, true, batch)
-}
-
-func (ss *SubmitStore) QueryOverallByAsc(minSubmissionIndex *uint64, batch int) (
+func (ss *SubmitStore) QueryAscWithCursor(minSubmissionIndex *uint64, batch int) (
 	[]Submit, error) {
 	return ss.query(minSubmissionIndex, nil, nil, false, batch)
 }

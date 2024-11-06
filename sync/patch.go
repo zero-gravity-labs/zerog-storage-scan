@@ -6,10 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
-
-	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -82,7 +81,7 @@ func (ps *PatchSyncer) Sync(ctx context.Context) {
 
 func (ps *PatchSyncer) syncOnce(ctx context.Context) error {
 	for {
-		submits, err := ps.db.SubmitStore.QueryOverallByAsc(&ps.currentSubmitId, BatchGetSubmitsToPatch)
+		submits, err := ps.db.SubmitStore.QueryAscWithCursor(&ps.currentSubmitId, BatchGetSubmitsToPatch)
 		if err != nil {
 			return err
 		}
@@ -128,14 +127,14 @@ func (ps *PatchSyncer) syncOnce(ctx context.Context) error {
 			if err := ps.db.SubmitStore.UpdateByPrimaryKey(nil, &update); err != nil {
 				return err
 			}
+
+			if err := ps.db.ConfigStore.Upsert(nil, store.SyncPatchSubmitId,
+				strconv.FormatUint(submit.SubmissionIndex, 10)); err != nil {
+				return err
+			}
 		}
 
 		lastSubmitId := submits[len(submits)-1].SubmissionIndex
-		if err := ps.db.ConfigStore.Upsert(nil, store.SyncPatchSubmitId,
-			strconv.FormatUint(lastSubmitId, 10)); err != nil {
-			return err
-		}
-
 		ps.currentSubmitId = lastSubmitId + 1
 	}
 }

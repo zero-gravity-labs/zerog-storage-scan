@@ -137,7 +137,6 @@ func (s *Syncer) Sync(ctx context.Context, wg *sync.WaitGroup) {
 	s.currentBlock = s.catchupSyncer.finalizedBlock + 1
 	logrus.WithField("block", s.catchupSyncer.finalizedBlock).Info("Catchup syncer done")
 
-	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncOverall)
 	go s.storageSyncer.Sync(ctx, s.storageSyncer.SyncLatest)
 	go s.storageSyncer.CheckStatus(ctx)
 	go s.patchSyncer.Sync(ctx)

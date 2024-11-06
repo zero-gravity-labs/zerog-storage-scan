@@ -14,11 +14,11 @@ type Address struct {
 	ID         uint64
 	Address    string          `gorm:"size:64;unique"`
 	BlockTime  time.Time       `gorm:"not null"`
-	DataSize   uint64          `gorm:"not null;default:0;index:idx_data"`                 // Size of storage data in a specific time interval
-	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0;index:idx_fee"` // The base fee for storage
-	Txs        uint64          `gorm:"not null;default:0;index:idx_txs"`                  // Number of layer1 transaction in a specific time interval
-	Files      uint64          `gorm:"not null;default:0;index:idx_files"`                // Number of files/layer2 transaction in a specific time interval
-	UpdatedAt  time.Time       `gorm:"not null;index:idx_updatedAt"`
+	DataSize   uint64          `gorm:"not null;default:0;index:idx_data,sort:desc"`                 // Size of storage data in a specific time interval
+	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0;index:idx_fee,sort:desc"` // The base fee for storage
+	Txs        uint64          `gorm:"not null;default:0;index:idx_txs,sort:desc"`                  // Number of layer1 transaction in a specific time interval
+	Files      uint64          `gorm:"not null;default:0;index:idx_files,sort:desc"`                // Number of files/layer2 transaction in a specific time interval
+	UpdatedAt  time.Time       `gorm:"not null;index:idx_updatedAt,sort:desc"`
 }
 
 func (Address) TableName() string {
@@ -150,7 +150,7 @@ func (as *AddressStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, addresses []Addr
 			updated_at=values(updated_at)
 	`, placeholders)
 
-	if err := db.Debug().Exec(sql, params...).Error; err != nil {
+	if err := db.Exec(sql, params...).Error; err != nil {
 		return err
 	}
 
@@ -248,8 +248,8 @@ func (t *AddressStatStore) List(intervalType *string, minTimestamp, maxTimestamp
 type Miner struct {
 	ID              uint64
 	FirstMiningTime time.Time       `gorm:"not null"`
-	Amount          decimal.Decimal `gorm:"type:decimal(65);not null;index:idx_amount"`
-	UpdatedAt       time.Time       `gorm:"not null;index:idx_updatedAt"`
+	Amount          decimal.Decimal `gorm:"type:decimal(65);not null;index:idx_amount,sort:desc"`
+	UpdatedAt       time.Time       `gorm:"not null;index:idx_updatedAt,sort:desc"`
 }
 
 func (Miner) TableName() string {
@@ -353,7 +353,7 @@ func (ms *MinerStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, miners []Miner) er
 			updated_at=values(updated_at)
 	`, placeholders)
 
-	if err := db.Debug().Exec(sql, params...).Error; err != nil {
+	if err := db.Exec(sql, params...).Error; err != nil {
 		return err
 	}
 

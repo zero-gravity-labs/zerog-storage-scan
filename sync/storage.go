@@ -13,11 +13,10 @@ import (
 )
 
 var (
-	ErrNoFileInfoToSync               = errors.New("No file info to sync")
-	BatchGetSubmitsNotFinalized       = 100
-	BatchGetSubmitsNotFinalizedLatest = 100
-	checkStatusIntervalNormal         = time.Second
-	checkStatusIntervalException      = time.Second * 10
+	ErrNoFileInfoToSync          = errors.New("No file info to sync")
+	BatchGetSubmitsLatest        = 100
+	checkStatusIntervalNormal    = time.Second
+	checkStatusIntervalException = time.Second * 10
 )
 
 type StorageSyncer struct {
@@ -61,44 +60,32 @@ func (ss *StorageSyncer) Sync(ctx context.Context, syncFunc func(ctx2 context.Co
 	}
 }
 
-func (ss *StorageSyncer) SyncOverall(ctx context.Context) error {
-	lastSubmissionIndex := uint64(0)
-
-	for {
-		submits, err := ss.db.SubmitStore.QueryUnfinalizedByAsc(&lastSubmissionIndex, BatchGetSubmitsNotFinalized)
-		if err != nil {
-			return err
-		}
-		if len(submits) == 0 {
-			return ErrNoFileInfoToSync
-		}
-
-		if interrupted(ctx) {
-			return nil
-		}
-
-		if _, err := ss.db.UpdateFileInfos(ctx, submits, ss.l2Sdks); err != nil {
-			return err
-		}
-
-		lastSubmissionIndex = submits[len(submits)-1].SubmissionIndex + 1
-	}
-}
-
 func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
-	submits, err := ss.db.SubmitStore.QueryUnfinalizedLatestByDesc(BatchGetSubmitsNotFinalizedLatest)
-	if err != nil {
-		return err
-	}
-	if len(submits) == 0 {
-		return ErrNoFileInfoToSync
-	}
-
 	if interrupted(ctx) {
 		return nil
 	}
 
-	if _, err := ss.db.UpdateFileInfos(ctx, submits, ss.l2Sdks); err != nil {
+	submits, err := ss.db.SubmitStore.QueryDesc(BatchGetSubmitsLatest)
+	if err != nil {
+		return err
+	}
+
+	if len(submits) == 0 {
+		return ErrNoFileInfoToSync
+	}
+
+	unfinalized := make([]store.Submit, 0)
+	for _, submit := range submits {
+		if submit.Status < uint8(rpc.Uploaded) {
+			unfinalized = append(unfinalized, submit)
+		}
+	}
+
+	if len(unfinalized) == 0 {
+		return ErrNoFileInfoToSync
+	}
+
+	if _, err := ss.db.UpdateFileInfos(ctx, unfinalized, ss.l2Sdks); err != nil {
 		return err
 	}
 

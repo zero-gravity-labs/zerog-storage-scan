@@ -23,7 +23,7 @@ func init() {
 }
 
 func startSyncService(*cobra.Command, []string) {
-	logrus.Info("Start to sync evm space blockchain data into database")
+	logrus.Info("Start to sync blockchain data into database")
 	dataCtx := MustInitDataContext()
 	defer dataCtx.Close()
 
