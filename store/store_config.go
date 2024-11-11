@@ -20,8 +20,10 @@ const (
 	SyncStatusLog     = "sync.status.log"
 	SyncPatchSubmitId = "sync.patch.submit.id"
 
-	StatTopnSubmitId = "stat.topn.submit.id"
-	StatTopnRewardBn = "stat.topn.reward.bn"
+	StatTopnSubmitId   = "stat.topn.submit.id"
+	StatTopnSubmitHeap = "stat.topn.submit.heap"
+	StatTopnRewardBn   = "stat.topn.reward.bn"
+	StatTopnRewardHeap = "stat.topn.reward.heap"
 )
 
 type Config struct {

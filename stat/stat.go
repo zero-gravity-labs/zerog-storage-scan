@@ -103,7 +103,7 @@ func (bs *BaseStat) calStatRangeStart(t time.Time, statType string) (time.Time, 
 			rangeStart = rangeStart.Add(-time.Hour)
 		}
 	default:
-		return time.Time{}, errors.Errorf("stat type %v not supported", statType)
+		return time.Time{}, errors.Errorf("Stat type %v not supported", statType)
 	}
 
 	return rangeStart, nil
@@ -158,7 +158,7 @@ func (as *AbsStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 				!errors.Is(err, ErrBlockNotSync) &&
 				!errors.Is(err, ErrBlockNotFinalized) {
 				logrus.WithError(err).WithField("timeRange", timeRange).
-					Warn("acquire next time range for stat")
+					Warn("Acquire next time range for stats")
 			}
 			time.Sleep(time.Second)
 			continue
@@ -166,7 +166,7 @@ func (as *AbsStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 
 		err = as.calculateStat(*timeRange)
 		if err != nil {
-			logrus.WithError(err).Error("do stat")
+			logrus.WithError(err).Error("Do stat")
 			time.Sleep(time.Second * 10)
 			continue
 		}
@@ -224,7 +224,7 @@ func defaultRangeStart(sdk *web3go.Client) (time.Time, error) {
 	viper.MustUnmarshalKey("stat", &config)
 
 	if config.BlockOnStatBegin == uint64(0) {
-		return time.Time{}, errors.New("missing block from which the stat begin")
+		return time.Time{}, errors.New("Missing block from which the stat begin")
 	}
 
 	block, err := sdk.Eth.BlockByNumber(types.BlockNumber(config.BlockOnStatBegin), false)

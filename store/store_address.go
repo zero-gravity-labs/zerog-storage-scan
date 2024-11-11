@@ -65,7 +65,6 @@ func (as *AddressStore) Get(address string) (Address, bool, error) {
 	return addr, exist, err
 }
 
-// BatchGetAddresses TODO LRU cache
 func (as *AddressStore) BatchGetAddresses(addrIDs []uint64) (map[uint64]Address, error) {
 	addresses := new([]Address)
 	err := as.DB.Raw("select * from addresses where id in ?", addrIDs).Scan(addresses).Error
@@ -120,7 +119,7 @@ func (as *AddressStore) DeltaUpdate(dbTx *gorm.DB, a *Address) error {
 	return nil
 }
 
-func (as *AddressStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, addresses []Address) error {
+func (as *AddressStore) BatchDeltaUpsert(dbTx *gorm.DB, addresses []Address) error {
 	db := as.DB
 	if dbTx != nil {
 		db = dbTx
@@ -147,6 +146,43 @@ func (as *AddressStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, addresses []Addr
 			storage_fee = storage_fee + values(storage_fee),
 			txs = txs + values(txs),
 			files = files + values(files),
+			updated_at=values(updated_at)
+	`, placeholders)
+
+	if err := db.Exec(sql, params...).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (as *AddressStore) BatchUpsert(dbTx *gorm.DB, addresses []Address) error {
+	db := as.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(addresses)
+	for i, a := range addresses {
+		placeholders += "(?,?,?,?,?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{a.ID, a.DataSize, a.StorageFee, a.Txs, a.Files, a.UpdatedAt, time.Now()}...)
+	}
+
+	sql := fmt.Sprintf(`
+		insert into 
+    		addresses(id, data_size, storage_fee, txs, files, updated_at, block_time)
+		values
+			%s
+		on duplicate key update
+			data_size = values(data_size),
+			storage_fee = values(storage_fee),
+			txs = values(txs),
+			files = values(files),
 			updated_at=values(updated_at)
 	`, placeholders)
 
@@ -309,6 +345,21 @@ func (ms *MinerStore) Count(startTime, endTime time.Time) (uint64, error) {
 	return uint64(count), nil
 }
 
+func (ms *MinerStore) BatchGetMiners(minerIDs []uint64) (map[uint64]Miner, error) {
+	miners := new([]Miner)
+	err := ms.DB.Raw("select * from miners where id in ?", minerIDs).Scan(miners).Error
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[uint64]Miner)
+	for _, miner := range *miners {
+		m[miner.ID] = miner
+	}
+
+	return m, nil
+}
+
 func (ms *MinerStore) DeltaUpdate(dbTx *gorm.DB, m *Miner) error {
 	db := ms.DB
 	if dbTx != nil {
@@ -326,7 +377,7 @@ func (ms *MinerStore) DeltaUpdate(dbTx *gorm.DB, m *Miner) error {
 	return nil
 }
 
-func (ms *MinerStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, miners []Miner) error {
+func (ms *MinerStore) BatchDeltaUpsert(dbTx *gorm.DB, miners []Miner) error {
 	db := ms.DB
 	if dbTx != nil {
 		db = dbTx
@@ -350,7 +401,41 @@ func (ms *MinerStore) BatchDeltaUpdateOrInsert(dbTx *gorm.DB, miners []Miner) er
 			%s
 		on duplicate key update
 			amount = amount + values(amount),
-			updated_at=values(updated_at)
+			updated_at = values(updated_at)
+	`, placeholders)
+
+	if err := db.Exec(sql, params...).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ms *MinerStore) BatchUpsert(dbTx *gorm.DB, miners []Miner) error {
+	db := ms.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(miners)
+	for i, m := range miners {
+		placeholders += "(?,?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{m.ID, m.Amount, m.UpdatedAt, time.Now()}...)
+	}
+
+	sql := fmt.Sprintf(`
+		insert into 
+    		miners(id, amount, updated_at, first_mining_time)
+		values
+			%s
+		on duplicate key update
+			amount = values(amount),
+			updated_at = values(updated_at)
 	`, placeholders)
 
 	if err := db.Exec(sql, params...).Error; err != nil {
