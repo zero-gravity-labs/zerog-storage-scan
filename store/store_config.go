@@ -24,6 +24,8 @@ const (
 	StatTopnSubmitHeap = "stat.topn.submit.heap"
 	StatTopnRewardBn   = "stat.topn.reward.bn"
 	StatTopnRewardHeap = "stat.topn.reward.heap"
+	StatTopnSubmitTime = "stat.topn.submit.time"
+	StatTopnRewardTime = "stat.topn.reward.time"
 )
 
 type Config struct {

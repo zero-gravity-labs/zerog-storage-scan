@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"time"
 
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
@@ -147,6 +148,21 @@ func (rs *RewardStore) GroupByMiner(minBn, maxBn uint64) ([]GroupedReward, error
 	return *groupedRewards, nil
 }
 
+func (rs *RewardStore) GroupByMinerByTime(startBlockTime, endBlockTime time.Time) ([]GroupedReward, error) {
+	groupedRewards := new([]GroupedReward)
+	err := rs.DB.Model(&Reward{}).
+		Select(`miner_id, IFNULL(sum(Amount), 0) amount, max(block_time) updated_at`).
+		Where("block_time >= ? and block_time < ?", startBlockTime, endBlockTime).
+		Group("miner_id").
+		Scan(groupedRewards).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return *groupedRewards, nil
+}
+
 type RewardStat struct {
 	ID          uint64          `json:"-"`
 	StatType    string          `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
@@ -216,4 +232,60 @@ func (t *RewardStatStore) List(intervalType *string, minTimestamp, maxTimestamp 
 	}
 
 	return total, *list, nil
+}
+
+type RewardTopnStat struct {
+	ID        uint64
+	StatTime  time.Time       `gorm:"not null;uniqueIndex:idx_statTime_addressId,priority:1"`
+	AddressID uint64          `gorm:"not null;uniqueIndex:idx_statTime_addressId,priority:2"`
+	Amount    decimal.Decimal `gorm:"type:decimal(65);not null"`
+}
+
+func (RewardTopnStat) TableName() string {
+	return "reward_topn_stats"
+}
+
+type RewardTopnStatStore struct {
+	*mysql.Store
+}
+
+func newRewardTopnStatStore(db *gorm.DB) *RewardTopnStatStore {
+	return &RewardTopnStatStore{
+		Store: mysql.NewStore(db),
+	}
+}
+
+func (t *RewardTopnStatStore) BatchDeltaUpsert(dbTx *gorm.DB, rewards []RewardTopnStat) error {
+	db := t.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(rewards)
+	for i, r := range rewards {
+		placeholders += "(?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{r.StatTime, r.AddressID, r.Amount}...)
+	}
+
+	sqlString := fmt.Sprintf(`
+		insert into 
+    		reward_topn_stats(stat_time, address_id, amount)
+		values
+			%s
+		on duplicate key update
+			stat_time = values(stat_time),
+			address_id = values(address_id),                
+			amount = amount + values(amount)
+	`, placeholders)
+
+	if err := db.Exec(sqlString, params...).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

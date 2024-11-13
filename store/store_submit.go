@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -309,8 +310,7 @@ type GroupedSubmit struct {
 	UpdatedAt  time.Time
 }
 
-func (ss *SubmitStore) GroupBySender(minSubmissionIndex, maxSubmissionIndex uint64) (
-	[]GroupedSubmit, error) {
+func (ss *SubmitStore) GroupBySender(minSubmissionIndex, maxSubmissionIndex uint64) ([]GroupedSubmit, error) {
 	groupedSubmits := new([]GroupedSubmit)
 	err := ss.DB.Model(&Submit{}).
 		Select(`sender_id, IFNULL(sum(length), 0) data_size, IFNULL(sum(fee), 0) storage_fee, count(*) files, 
@@ -326,7 +326,21 @@ func (ss *SubmitStore) GroupBySender(minSubmissionIndex, maxSubmissionIndex uint
 	return *groupedSubmits, nil
 }
 
-// TODO dump for grouped submits
+func (ss *SubmitStore) GroupBySenderByTime(startBlockTime, endBlockTime time.Time) ([]GroupedSubmit, error) {
+	groupedSubmits := new([]GroupedSubmit)
+	err := ss.DB.Model(&Submit{}).
+		Select(`sender_id, IFNULL(sum(length), 0) data_size, IFNULL(sum(fee), 0) storage_fee, count(*) files, 
+		count(distinct tx_hash) txs, max(block_time) updated_at`).
+		Where("block_time >= ? and block_time < ?", startBlockTime, endBlockTime).
+		Group("sender_id").
+		Scan(groupedSubmits).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return *groupedSubmits, nil
+}
 
 const (
 	Min    = "1m"
@@ -460,4 +474,66 @@ func (t *SubmitStatStore) List(intervalType *string, minTimestamp, maxTimestamp 
 	}
 
 	return total, *list, nil
+}
+
+type SubmitTopnStat struct {
+	ID         uint64
+	StatTime   time.Time       `gorm:"not null;uniqueIndex:idx_statTime_addressId,priority:1"`
+	AddressID  uint64          `gorm:"not null;uniqueIndex:idx_statTime_addressId,priority:2"`
+	DataSize   uint64          `gorm:"not null;default:0"`                  // Size of storage data in a specific time interval
+	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0"` // The base fee for storage
+	Txs        uint64          `gorm:"not null;default:0"`                  // Number of layer1 transaction in a specific time interval
+	Files      uint64          `gorm:"not null;default:0"`                  // Number of files/layer2 transaction in a specific time interval
+}
+
+func (SubmitTopnStat) TableName() string {
+	return "submit_topn_stats"
+}
+
+type SubmitTopnStatStore struct {
+	*mysql.Store
+}
+
+func newSubmitTopnStatStore(db *gorm.DB) *SubmitTopnStatStore {
+	return &SubmitTopnStatStore{
+		Store: mysql.NewStore(db),
+	}
+}
+
+func (t *SubmitTopnStatStore) BatchDeltaUpsert(dbTx *gorm.DB, submits []SubmitTopnStat) error {
+	db := t.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(submits)
+	for i, s := range submits {
+		placeholders += "(?,?,?,?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{s.StatTime, s.AddressID, s.DataSize, s.StorageFee, s.Txs, s.Files}...)
+	}
+
+	sqlString := fmt.Sprintf(`
+		insert into 
+    		submit_topn_stats(stat_time, address_id, data_size, storage_fee, txs, files)
+		values
+			%s
+		on duplicate key update
+			stat_time = values(stat_time),
+			address_id = values(address_id),                
+			data_size = data_size + values(data_size),
+			storage_fee = storage_fee + values(storage_fee),
+			txs = txs + values(txs),
+			files = files + values(files)
+	`, placeholders)
+
+	if err := db.Exec(sqlString, params...).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

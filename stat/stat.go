@@ -29,6 +29,8 @@ type StatConfig struct {
 	MinStatIntervalDASubmit string `default:"10m"`
 	MinStatIntervalDAClient string `default:"10m"`
 	MinStatIntervalDASigner string `default:"10m"`
+	MinTopnIntervalSubmit   string `default:"1m"`
+	MinTopnIntervalReward   string `default:"1m"`
 }
 
 type TimeRange struct {
@@ -233,7 +235,7 @@ func defaultRangeStart(sdk *web3go.Client) (time.Time, error) {
 	}
 
 	t := time.Unix(int64(block.Timestamp), 0).UTC()
-	rangeStart := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, t.Location())
+	rangeStart := t.Truncate(time.Hour)
 
 	return rangeStart, nil
 }
