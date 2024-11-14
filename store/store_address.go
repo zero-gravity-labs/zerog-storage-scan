@@ -14,11 +14,11 @@ type Address struct {
 	ID         uint64
 	Address    string          `gorm:"size:64;unique"`
 	BlockTime  time.Time       `gorm:"not null"`
-	DataSize   uint64          `gorm:"not null;default:0;index:idx_data,sort:desc"`                 // Size of storage data in a specific time interval
-	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0;index:idx_fee,sort:desc"` // The base fee for storage
-	Txs        uint64          `gorm:"not null;default:0;index:idx_txs,sort:desc"`                  // Number of layer1 transaction in a specific time interval
-	Files      uint64          `gorm:"not null;default:0;index:idx_files,sort:desc"`                // Number of files/layer2 transaction in a specific time interval
-	UpdatedAt  time.Time       `gorm:"not null;index:idx_updatedAt,sort:desc"`
+	DataSize   uint64          `gorm:"not null;default:0"`                  // Size of storage data in a specific time interval
+	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0"` // The base fee for storage
+	Txs        uint64          `gorm:"not null;default:0"`                  // Number of layer1 transaction in a specific time interval
+	Files      uint64          `gorm:"not null;default:0"`                  // Number of files/layer2 transaction in a specific time interval
+	UpdatedAt  time.Time       `gorm:"not null"`
 }
 
 func (Address) TableName() string {

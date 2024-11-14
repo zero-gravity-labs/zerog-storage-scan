@@ -537,3 +537,36 @@ func (t *SubmitTopnStatStore) BatchDeltaUpsert(dbTx *gorm.DB, submits []SubmitTo
 
 	return nil
 }
+
+type TopnAddress struct {
+	Address    string
+	DataSize   uint64
+	StorageFee decimal.Decimal
+	Txs        uint64
+	Files      uint64
+}
+
+func (t *SubmitTopnStatStore) Topn(field string, duration time.Duration, limit int) ([]TopnAddress, error) {
+	addresses := new([]TopnAddress)
+
+	db := t.DB.Model(&SubmitTopnStat{}).
+		Select(`addresses.address address,
+		IFNULL(sum(submit_topn_stats.data_size), 0) data_size, 
+		IFNULL(sum(submit_topn_stats.storage_fee), 0) storage_fee, 
+		IFNULL(sum(submit_topn_stats.txs), 0) txs, 
+		IFNULL(sum(submit_topn_stats.files), 0) files`).
+		Joins("left join addresses on addresses.id = submit_topn_stats.address_id")
+
+	if duration != 0 {
+		db = db.Where("submit_topn_stats.stat_time >= ?", time.Now().Add(-duration))
+	}
+
+	if err := db.Group("submit_topn_stats.address_id").
+		Order(fmt.Sprintf("%s DESC", field)).
+		Limit(limit).
+		Scan(addresses).Error; err != nil {
+		return nil, err
+	}
+
+	return *addresses, nil
+}

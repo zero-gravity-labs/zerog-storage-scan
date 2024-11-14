@@ -289,3 +289,29 @@ func (t *RewardTopnStatStore) BatchDeltaUpsert(dbTx *gorm.DB, rewards []RewardTo
 
 	return nil
 }
+
+type TopnMiner struct {
+	Address string
+	Amount  decimal.Decimal
+}
+
+func (t *RewardTopnStatStore) Topn(duration time.Duration, limit int) ([]TopnMiner, error) {
+	miners := new([]TopnMiner)
+
+	db := t.DB.Model(&RewardTopnStat{}).
+		Select(`addresses.address address, IFNULL(sum(reward_topn_stats.amount), 0) amount`).
+		Joins("left join addresses on addresses.id = reward_topn_stats.address_id")
+
+	if duration != 0 {
+		db = db.Where("reward_topn_stats.stat_time >= ?", time.Now().Add(-duration))
+	}
+
+	if err := db.Group("reward_topn_stats.address_id").
+		Order("amount DESC").
+		Limit(limit).
+		Scan(miners).Error; err != nil {
+		return nil, err
+	}
+
+	return *miners, nil
+}

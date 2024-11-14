@@ -102,6 +102,7 @@ func (ts *TopnSubmit) calculateStat(r StatRange) error {
 			a := addressesDB[submit.SenderID]
 			addressesUpdate = append(addressesUpdate, store.Address{
 				ID:         submit.SenderID,
+				Address:    a.Address,
 				DataSize:   a.DataSize + submit.DataSize,
 				StorageFee: a.StorageFee.Add(submit.StorageFee),
 				Txs:        a.Txs + submit.Txs,
@@ -270,7 +271,7 @@ func (t *topnSubmitHeap) loadFromDB() (bool, error) {
 	if ok {
 		var heaps map[TopnField][]addressItem
 		if err := json.Unmarshal([]byte(value), &heaps); err != nil {
-			return false, errors.WithMessage(err, "Failed to unmarshal log heap cache")
+			return false, errors.WithMessage(err, "Failed to unmarshal heap cache")
 		}
 
 		heapMap := map[TopnField]heap.Interface{
@@ -280,8 +281,8 @@ func (t *topnSubmitHeap) loadFromDB() (bool, error) {
 			Files:      t.filesHeap,
 		}
 
-		for filed, h := range heapMap {
-			for _, address := range heaps[filed] {
+		for field, h := range heapMap {
+			for _, address := range heaps[field] {
 				heap.Push(h, &address)
 			}
 		}
@@ -298,8 +299,8 @@ func (t *topnSubmitHeap) init() error {
 		Files:      t.filesHeap,
 	}
 
-	for filed, h := range heapMap {
-		addresses, err := t.DB.AddressStore.Topn(string(filed), 0, t.n)
+	for field, h := range heapMap {
+		addresses, err := t.DB.AddressStore.Topn(string(field), 0, t.n)
 		if err != nil {
 			return err
 		}
@@ -389,17 +390,31 @@ func (t *topnSubmitHeap) deduplicate(heap addressHeap, addresses []store.Address
 }
 
 func (t *topnSubmitHeap) snapshot() (string, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	topn := map[TopnField]interface{}{
-		DataSize:   t.dataSizeHeap.addressHeap,
-		StorageFee: t.storageFeeHeap.addressHeap,
-		Txs:        t.txsHeap.addressHeap,
-		Files:      t.filesHeap.addressHeap,
+	heapMap := map[TopnField]heap.Interface{
+		DataSize:   t.dataSizeHeap,
+		StorageFee: t.storageFeeHeap,
+		Txs:        t.txsHeap,
+		Files:      t.filesHeap,
 	}
 
-	info, err := json.Marshal(topn)
+	topnCopy := make(map[TopnField][]store.Address)
+	for field, h := range heapMap {
+		addresses := make([]store.Address, h.Len())
+		for h.Len() > 0 {
+			item := heap.Pop(h).(*addressItem)
+			addresses[h.Len()] = item.Address
+		}
+		topnCopy[field] = addresses
+	}
+
+	for field, addresses := range topnCopy {
+		h := heapMap[field]
+		for _, address := range addresses {
+			h.Push(&addressItem{Address: address})
+		}
+	}
+
+	info, err := json.Marshal(topnCopy)
 	if err != nil {
 		return "", err
 	}

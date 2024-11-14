@@ -282,7 +282,17 @@ func (t *topnMinerHeap) snapshot() (string, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	info, err := json.Marshal(t.minerHeap)
+	topnMiners := make([]store.Miner, t.minerHeap.Len())
+	for t.minerHeap.Len() > 0 {
+		item := heap.Pop(t.minerHeap).(*minerItem)
+		topnMiners[t.minerHeap.Len()] = item.Miner
+	}
+
+	for _, miner := range topnMiners {
+		t.minerHeap.Push(&minerItem{Miner: miner})
+	}
+
+	info, err := json.Marshal(topnMiners)
 	if err != nil {
 		return "", err
 	}

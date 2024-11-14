@@ -2,10 +2,10 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 	"time"
 
-	scanApi "github.com/0glabs/0g-storage-scan/api"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
@@ -31,8 +31,8 @@ var (
 		"7d":  time.Hour * 24 * 7,
 	}
 	cache = Cache{
-		topnAddresses: make(map[string]map[time.Duration][]store.Address),
-		topnMiners:    make(map[time.Duration][]store.Miner),
+		topnAddresses: make(map[string]map[time.Duration][]store.TopnAddress),
+		topnMiners:    make(map[time.Duration][]store.TopnMiner),
 	}
 )
 
@@ -118,19 +118,10 @@ func topnReward(c *gin.Context) (interface{}, error) {
 		return map[string]interface{}{"list": []RewardTopn{}}, nil
 	}
 
-	addrIDs := make([]uint64, 0)
-	for _, miner := range miners {
-		addrIDs = append(addrIDs, miner.ID)
-	}
-	addrMap, err := db.BatchGetAddresses(addrIDs)
-	if err != nil {
-		return nil, scanApi.ErrBatchGetAddress(err)
-	}
-
 	list := make([]RewardTopn, 0)
 	for _, m := range miners {
 		list = append(list, RewardTopn{
-			Address: addrMap[m.ID].Address,
+			Address: m.Address,
 			Amount:  m.Amount,
 		})
 	}
@@ -139,8 +130,8 @@ func topnReward(c *gin.Context) (interface{}, error) {
 }
 
 type Cache struct {
-	topnAddresses map[string]map[time.Duration][]store.Address
-	topnMiners    map[time.Duration][]store.Miner
+	topnAddresses map[string]map[time.Duration][]store.TopnAddress
+	topnMiners    map[time.Duration][]store.TopnMiner
 	mu            sync.Mutex
 }
 
@@ -170,34 +161,114 @@ func cacheTopn() error {
 	for _, duration := range spanTypes {
 		statSpan = append(statSpan, duration)
 	}
-	statSpan = append(statSpan, 0)
 
-	topnAddresses := make(map[string]map[time.Duration][]store.Address)
-	topnMiners := make(map[time.Duration][]store.Miner)
+	topnAddresses := make(map[string]map[time.Duration][]store.TopnAddress) // field => duration => addresses
+	topnMiners := make(map[time.Duration][]store.TopnMiner)                 // duration => miners
 
-	for _, duration := range statSpan {
-		for _, order := range []string{dataSizeTopn, storageFeeTopn, txsTopn, filesTopn} {
-			addresses, err := db.AddressStore.Topn(order, duration, maxRecords)
-			if err != nil {
-				return errors.WithMessage(err, "Failed to cache topn submit")
-			}
-			if _, ok := topnAddresses[order]; !ok {
-				topnAddresses[order] = make(map[time.Duration][]store.Address)
-			}
-			topnAddresses[order][duration] = addresses
-		}
-
-		miners, err := db.MinerStore.Topn(duration, maxRecords)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to cache topn reward")
-		}
-		topnMiners[duration] = miners
+	if err := loadTopnSubmits(statSpan, topnAddresses); err != nil {
+		return err
+	}
+	if err := loadTopnRewards(statSpan, topnMiners); err != nil {
+		return err
+	}
+	if err := loadTopnSubmitsOverall(topnAddresses); err != nil {
+		return err
+	}
+	if err := loadTopnRewardsOverall(topnMiners); err != nil {
+		return err
 	}
 
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 	cache.topnAddresses = topnAddresses
 	cache.topnMiners = topnMiners
+
+	return nil
+}
+
+func loadTopnSubmits(durations []time.Duration, topnAddresses map[string]map[time.Duration][]store.TopnAddress) error {
+	for _, duration := range durations {
+		for _, field := range []string{dataSizeTopn, storageFeeTopn, txsTopn, filesTopn} {
+			addresses, err := db.SubmitTopnStatStore.Topn(field, duration, maxRecords)
+			if err != nil {
+				return errors.WithMessage(err, "Failed to cache topn submit")
+			}
+
+			if _, ok := topnAddresses[field]; !ok {
+				topnAddresses[field] = make(map[time.Duration][]store.TopnAddress)
+			}
+
+			topnAddresses[field][duration] = addresses
+		}
+	}
+
+	return nil
+}
+
+func loadTopnRewards(durations []time.Duration, topnMiners map[time.Duration][]store.TopnMiner) error {
+	for _, duration := range durations {
+		miners, err := db.RewardTopnStatStore.Topn(duration, maxRecords)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to cache topn reward")
+		}
+
+		topnMiners[duration] = miners
+	}
+
+	return nil
+}
+
+func loadTopnSubmitsOverall(topnAddresses map[string]map[time.Duration][]store.TopnAddress) error {
+	value, ok, err := db.ConfigStore.Get(store.StatTopnSubmitHeap)
+	if err != nil {
+		return errors.WithMessagef(err, "Failed to get submit heap")
+	}
+
+	if ok {
+		var heaps map[string][]store.TopnAddress // field => addresses
+		if err := json.Unmarshal([]byte(value), &heaps); err != nil {
+			return errors.WithMessage(err, "Failed to unmarshal submit heap")
+		}
+
+		for field, addresses := range heaps {
+			topnAddresses[field][0] = addresses
+		}
+	}
+
+	return nil
+}
+
+func loadTopnRewardsOverall(topnMiners map[time.Duration][]store.TopnMiner) error {
+	value2, ok, err := db.ConfigStore.Get(store.StatTopnRewardHeap)
+	if err != nil {
+		return errors.WithMessagef(err, "Failed to load reward heap")
+	}
+
+	if ok {
+		var minerSlice []store.Miner
+		if err := json.Unmarshal([]byte(value2), &minerSlice); err != nil {
+			return errors.WithMessage(err, "Failed to unmarshal reward heap")
+		}
+
+		addrIDs := make([]uint64, 0)
+		for _, miner := range minerSlice {
+			addrIDs = append(addrIDs, miner.ID)
+		}
+		addrMap, err := db.BatchGetAddresses(addrIDs)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to batch get addresses")
+		}
+
+		miners := make([]store.TopnMiner, 0)
+		for _, miner := range minerSlice {
+			miners = append(miners, store.TopnMiner{
+				Address: addrMap[miner.ID].Address,
+				Amount:  miner.Amount,
+			})
+		}
+
+		topnMiners[0] = miners
+	}
 
 	return nil
 }
