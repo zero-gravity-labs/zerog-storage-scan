@@ -20,14 +20,14 @@ var (
 )
 
 type StorageSyncer struct {
-	l2Sdks            []*node.Client
+	l2Sdks            []*node.ZgsClient
 	db                *store.MysqlStore
 	alertChannel      string
 	healthReport      health.TimedCounterConfig
 	storageRpcHealths []*health.TimedCounter
 }
 
-func MustNewStorageSyncer(l2Sdks []*node.Client, db *store.MysqlStore, alertChannel string,
+func MustNewStorageSyncer(l2Sdks []*node.ZgsClient, db *store.MysqlStore, alertChannel string,
 	healthReport health.TimedCounterConfig) *StorageSyncer {
 
 	storageRpcHealths := make([]*health.TimedCounter, len(l2Sdks))
@@ -109,7 +109,7 @@ func (ss *StorageSyncer) CheckStatus(ctx context.Context) {
 
 func (ss *StorageSyncer) checkStatusOnce(ctx context.Context, ticker *time.Ticker) {
 	for index, l2Sdk := range ss.l2Sdks {
-		_, err := l2Sdk.ZeroGStorage().GetStatus()
+		_, err := l2Sdk.GetStatus(ctx)
 
 		if ss.alertChannel != "" {
 			e := rpc.AlertErr(ctx, "StorageNodeRPCError", ss.alertChannel, err, ss.healthReport,

@@ -21,12 +21,12 @@ const BasePath = "/api"
 var (
 	sdk *web3go.Client
 
-	l2Sdks      []*node.Client
+	l2Sdks      []*node.ZgsClient
 	db          *store.MysqlStore
 	chargeToken *TokenInfo
 )
 
-func MustInit(client *web3go.Client, storageClients []*node.Client, store *store.MysqlStore) {
+func MustInit(client *web3go.Client, storageClients []*node.ZgsClient, store *store.MysqlStore) {
 	sdk = client
 	l2Sdks = storageClients
 	db = store

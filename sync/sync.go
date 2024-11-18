@@ -9,8 +9,6 @@ import (
 	"github.com/0glabs/0g-storage-scan/metrics"
 	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
-	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
@@ -38,51 +36,14 @@ type Syncer struct {
 // MustNewSyncer creates an instance of Syncer to sync blockchain data.
 func MustNewSyncer(sdk *web3go.Client, db *store.MysqlStore, cf SyncConfig, cs *CatchupSyncer, ss *StorageSyncer,
 	ps *PatchSyncer) *Syncer {
-	var flow flowConfig
-	viperUtil.MustUnmarshalKey("flow", &flow)
-	var reward rewardConfig
-	viperUtil.MustUnmarshalKey("reward", &reward)
-	var daEntrance daEntranceConfig
-	viperUtil.MustUnmarshalKey("daEntrance", &daEntrance)
-	var daSigners daSignersConfig
-	viperUtil.MustUnmarshalKey("daSigners", &daSigners)
-
 	base := baseSyncer{
 		conf: &cf,
 		sdk:  sdk,
 		db:   db,
-
-		flowAddr:        flow.Address,
-		flowSubmitSig:   flow.SubmitEventSignature,
-		flowNewEpochSig: flow.NewEpochEventSignature,
-		rewardAddr:      reward.Address,
-		rewardSig:       reward.RewardEventSignature,
-
-		daEntranceAddr:    daEntrance.Address,
-		dataUploadSig:     daEntrance.DataUploadSignature,
-		commitVerifiedSig: daEntrance.ErasureCommitmentVerifiedSignature,
-		daRewardSig:       daEntrance.DARewardSignature,
-		daSignersAddr:     daSigners.Address,
-		newSignerSig:      daSigners.NewSignerSignature,
-		socketUpdatedSig:  daSigners.SocketUpdatedSignature,
-
-		addresses: []common.Address{
-			common.HexToAddress(flow.Address),
-			common.HexToAddress(reward.Address),
-			common.HexToAddress(daEntrance.Address),
-			common.HexToAddress(daSigners.Address),
-		},
-		topics: [][]common.Hash{{
-			common.HexToHash(flow.SubmitEventSignature),
-			common.HexToHash(flow.NewEpochEventSignature),
-			common.HexToHash(reward.RewardEventSignature),
-			common.HexToHash(daEntrance.DataUploadSignature),
-			common.HexToHash(daEntrance.ErasureCommitmentVerifiedSignature),
-			common.HexToHash(daEntrance.DARewardSignature),
-			common.HexToHash(daSigners.NewSignerSignature),
-			common.HexToHash(daSigners.SocketUpdatedSignature),
-		}},
 	}
+
+	base.mustInit()
+
 	syncer := &Syncer{
 		baseSyncer:          base,
 		syncIntervalNormal:  time.Second,

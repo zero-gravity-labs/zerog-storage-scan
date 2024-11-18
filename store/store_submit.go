@@ -50,7 +50,8 @@ type SubmitExtra struct {
 	GasUsed    uint64              `json:"gasUsed"`
 }
 
-func NewSubmit(blockTime time.Time, log types.Log, filter *contract.FlowFilterer) (*Submit, error) {
+func NewSubmit(pricePerSector *big.Int, blockTime time.Time, log types.Log, filter *contract.FlowFilterer) (*Submit,
+	error) {
 	flowSubmit, err := filter.ParseSubmit(*log.ToEthLog())
 	if err != nil {
 		return nil, err
@@ -74,7 +75,7 @@ func NewSubmit(blockTime time.Time, log types.Log, filter *contract.FlowFilterer
 		BlockNumber:     log.BlockNumber,
 		BlockTime:       blockTime,
 		TxHash:          log.TxHash.String(),
-		Fee:             decimal.NewFromBigInt(flowSubmit.Submission.Fee(), 0),
+		Fee:             decimal.NewFromBigInt(flowSubmit.Submission.Fee(pricePerSector), 0),
 		TotalSegNum:     (length-1)/core.DefaultSegmentSize + 1,
 		Extra:           extra,
 	}

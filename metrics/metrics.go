@@ -28,14 +28,14 @@ func (*APIMetrics) UpdateDuration(path string, status, code int, start time.Time
 	}
 
 	// Overall rate statistics
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/success").Mark(isSuccess)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/internalErr").Mark(isInternalError)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/nonInternalErr").Mark(!isSuccess && !isInternalError)
+	metrics.GetOrRegisterTimeWindowPercentageDefault(100, "openapi/rate/success").Mark(isSuccess)
+	metrics.GetOrRegisterTimeWindowPercentageDefault(0, "openapi/rate/internalErr").Mark(isInternalError)
+	metrics.GetOrRegisterTimeWindowPercentageDefault(0, "openapi/rate/nonInternalErr").Mark(!isSuccess && !isInternalError)
 
 	// API rate statistics
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/success/%v", path).Mark(isSuccess)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/internalErr/%v", path).Mark(isInternalError)
-	metrics.GetOrRegisterTimeWindowPercentageDefault("openapi/rate/nonInternalErr/%v", path).Mark(!isSuccess && !isInternalError)
+	metrics.GetOrRegisterTimeWindowPercentageDefault(100, "openapi/rate/success/%v", path).Mark(isSuccess)
+	metrics.GetOrRegisterTimeWindowPercentageDefault(0, "openapi/rate/internalErr/%v", path).Mark(isInternalError)
+	metrics.GetOrRegisterTimeWindowPercentageDefault(0, "openapi/rate/nonInternalErr/%v", path).Mark(!isSuccess && !isInternalError)
 
 	// Update QPS & Latency
 	metrics.GetOrRegisterTimer("openapi/duration/all").UpdateSince(start)
@@ -61,7 +61,7 @@ func (*SyncMetrics) QueryEthData(rpcMethod string) ethereumMetrics.Timer {
 }
 
 func (*SyncMetrics) QueryEthDataAvailability(rpcMethod string) metrics.Percentage {
-	return metrics.GetOrRegisterTimeWindowPercentageDefault("sync/%v/fullnode/availability", rpcMethod)
+	return metrics.GetOrRegisterTimeWindowPercentageDefault(0, "sync/%v/fullnode/availability", rpcMethod)
 }
 
 // Store metrics

@@ -1,43 +1,22 @@
 package sync
 
 import (
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/0glabs/0g-storage-client/contract"
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/store"
+	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
-
-type baseSyncer struct {
-	conf *SyncConfig
-	sdk  *web3go.Client
-	db   *store.MysqlStore
-
-	flowAddr        string
-	flowSubmitSig   string
-	flowNewEpochSig string
-	rewardAddr      string
-	rewardSig       string
-
-	daEntranceAddr    string
-	dataUploadSig     string
-	commitVerifiedSig string
-	daRewardSig       string
-	daSignersAddr     string
-	newSignerSig      string
-	socketUpdatedSig  string
-
-	addresses []common.Address
-	topics    [][]common.Hash
-
-	currentBlock uint64
-}
 
 type flowConfig struct {
 	Address                string
@@ -63,6 +42,103 @@ type daSignersConfig struct {
 	SocketUpdatedSignature string
 }
 
+type baseSyncer struct {
+	conf *SyncConfig
+	sdk  *web3go.Client
+	db   *store.MysqlStore
+
+	flowAddr        string
+	flowSubmitSig   string
+	flowNewEpochSig string
+	rewardAddr      string
+	rewardSig       string
+
+	daEntranceAddr    string
+	dataUploadSig     string
+	commitVerifiedSig string
+	daRewardSig       string
+	daSignersAddr     string
+	newSignerSig      string
+	socketUpdatedSig  string
+
+	addresses []common.Address
+	topics    [][]common.Hash
+
+	pricePerSector *big.Int
+
+	currentBlock uint64
+}
+
+func (s *baseSyncer) mustInit() {
+	var flow flowConfig
+	viperUtil.MustUnmarshalKey("flow", &flow)
+	var reward rewardConfig
+	viperUtil.MustUnmarshalKey("reward", &reward)
+	var daEntrance daEntranceConfig
+	viperUtil.MustUnmarshalKey("daEntrance", &daEntrance)
+	var daSigners daSignersConfig
+	viperUtil.MustUnmarshalKey("daSigners", &daSigners)
+
+	s.flowAddr = flow.Address
+	s.flowSubmitSig = flow.SubmitEventSignature
+	s.flowNewEpochSig = flow.NewEpochEventSignature
+	s.rewardAddr = reward.Address
+	s.rewardSig = reward.RewardEventSignature
+
+	s.daEntranceAddr = daEntrance.Address
+	s.dataUploadSig = daEntrance.DataUploadSignature
+	s.commitVerifiedSig = daEntrance.ErasureCommitmentVerifiedSignature
+	s.daRewardSig = daEntrance.DARewardSignature
+	s.daSignersAddr = daSigners.Address
+	s.newSignerSig = daSigners.NewSignerSignature
+	s.socketUpdatedSig = daSigners.SocketUpdatedSignature
+
+	s.addresses = []common.Address{
+		common.HexToAddress(flow.Address),
+		common.HexToAddress(reward.Address),
+		common.HexToAddress(daEntrance.Address),
+		common.HexToAddress(daSigners.Address),
+	}
+
+	s.topics = [][]common.Hash{{
+		common.HexToHash(flow.SubmitEventSignature),
+		common.HexToHash(flow.NewEpochEventSignature),
+		common.HexToHash(reward.RewardEventSignature),
+		common.HexToHash(daEntrance.DataUploadSignature),
+		common.HexToHash(daEntrance.ErasureCommitmentVerifiedSignature),
+		common.HexToHash(daEntrance.DARewardSignature),
+		common.HexToHash(daSigners.NewSignerSignature),
+		common.HexToHash(daSigners.SocketUpdatedSignature),
+	}}
+
+	s.mustInitPricePerSector()
+}
+
+func (s *baseSyncer) mustInitPricePerSector() {
+	ethClient, _ := s.sdk.ToClientForContract()
+	flowContract, err := contract.NewFlow(common.HexToAddress(s.flowAddr), ethClient)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to instantiate flow contract")
+	}
+
+	marketAddress, err := flowContract.Market(nil)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to get market contract address")
+	}
+
+	marketContract, err := contract.NewMarket(marketAddress, ethClient)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to instantiate market contract")
+	}
+
+	pricePerSector, err := marketContract.PricePerSector(nil)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to get price per sector")
+	}
+
+	s.pricePerSector = pricePerSector
+}
+
 func (s *baseSyncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.Submit, error) {
 	addr := log.Address.String()
 	sig := log.Topics[0].String()
@@ -70,7 +146,7 @@ func (s *baseSyncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.Subm
 		return nil, nil
 	}
 
-	submit, err := store.NewSubmit(blkTime, log, nhContract.DummyFlowFilterer())
+	submit, err := store.NewSubmit(s.pricePerSector, blkTime, log, nhContract.DummyFlowFilterer())
 	if err != nil {
 		return nil, err
 	}

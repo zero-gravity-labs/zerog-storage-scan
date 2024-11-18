@@ -278,7 +278,7 @@ func (ms *MysqlStore) UpdateSubmitByPrimaryKey(s *Submit, as *AddressSubmit) err
 	})
 }
 
-func (ms *MysqlStore) UpdateFileInfos(ctx context.Context, submits []Submit, l2Sdks []*node.Client) (
+func (ms *MysqlStore) UpdateFileInfos(ctx context.Context, submits []Submit, l2Sdks []*node.ZgsClient) (
 	map[uint64]*rpc.FileInfoResult, error) {
 	params := make([]rpc.FileInfoParam, 0)
 	submitMap := make(map[uint64]Submit)

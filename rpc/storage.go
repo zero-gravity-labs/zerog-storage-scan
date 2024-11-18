@@ -34,7 +34,7 @@ type FileInfoResult struct {
 }
 
 type FileInfoExecutor struct {
-	l2sdks     []*node.Client
+	l2sdks     []*node.ZgsClient
 	rpcParams  []FileInfoParam
 	rpcResults map[uint64]*FileInfoResult
 }
@@ -43,7 +43,7 @@ type FileInfoExecutor struct {
 func (executor *FileInfoExecutor) ParallelDo(ctx context.Context, routine, task int) (*FileInfoResult, error) {
 	rpcParam := executor.rpcParams[task]
 	var result FileInfoResult
-	result.Data, result.Err = executor.getFileInfo(executor.l2sdks, rpcParam, task)
+	result.Data, result.Err = executor.getFileInfo(ctx, executor.l2sdks, rpcParam, task)
 
 	return &result, nil
 }
@@ -62,12 +62,13 @@ type FileInfo struct {
 }
 
 // getFileInfo implements the rpcFunc interface
-func (executor *FileInfoExecutor) getFileInfo(l2Sdks []*node.Client, rpcParam FileInfoParam, task int) (*FileInfo, error) {
+func (executor *FileInfoExecutor) getFileInfo(ctx context.Context, l2Sdks []*node.ZgsClient, rpcParam FileInfoParam,
+	task int) (*FileInfo, error) {
 	fileInfo := FileInfo{rpcParam, 0}
 	updated := false
 
 	for _, l2Sdk := range l2Sdks {
-		info, err := l2Sdk.ZeroGStorage().GetFileInfoByTxSeq(rpcParam.SubmissionIndex)
+		info, err := l2Sdk.GetFileInfoByTxSeq(ctx, rpcParam.SubmissionIndex)
 		if err == nil && info != nil {
 			var status uint8
 			if info.Finalized {
@@ -95,7 +96,7 @@ func (executor *FileInfoExecutor) getFileInfo(l2Sdks []*node.Client, rpcParam Fi
 	return &fileInfo, nil
 }
 
-func BatchGetFileInfos(ctx context.Context, l2sdks []*node.Client, rpcParams []FileInfoParam) (
+func BatchGetFileInfos(ctx context.Context, l2sdks []*node.ZgsClient, rpcParams []FileInfoParam) (
 	map[uint64]*FileInfoResult, error) {
 	executor := FileInfoExecutor{
 		l2sdks:     l2sdks,

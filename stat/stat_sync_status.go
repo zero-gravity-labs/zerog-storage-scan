@@ -16,11 +16,11 @@ import (
 
 type LogSyncInfoStat struct {
 	db       *store.MysqlStore
-	l2Sdk    *node.Client
+	l2Sdk    *node.ZgsClient
 	interval time.Duration
 }
 
-func MustNewSyncStatusStat(db *store.MysqlStore, l2Sdk *node.Client) *LogSyncInfoStat {
+func MustNewSyncStatusStat(db *store.MysqlStore, l2Sdk *node.ZgsClient) *LogSyncInfoStat {
 	var stat struct {
 		StatIntervalSyncStatus time.Duration `default:"1s"`
 	}
@@ -58,7 +58,7 @@ func (s *LogSyncInfoStat) DoStat(ctx context.Context, wg *sync.WaitGroup) {
 			continue
 		}
 
-		nodeStatus, err := s.l2Sdk.ZeroGStorage().GetStatus()
+		nodeStatus, err := s.l2Sdk.GetStatus(ctx)
 		if err != nil {
 			logrus.WithError(err).Error("Failed to get storage node status to update log sync info")
 			time.Sleep(10 * time.Second)
