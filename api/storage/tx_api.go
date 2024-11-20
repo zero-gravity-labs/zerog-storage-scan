@@ -221,7 +221,7 @@ func convertStorageTxs(total int64, submits []store.Submit) (*StorageTxList, err
 func refreshFileInfos(submits []store.Submit) ([]store.Submit, error) {
 	unfinalizedSubmits := make([]store.Submit, 0)
 	for _, submit := range submits {
-		if submit.Status < uint8(rpc.Uploaded) {
+		if submit.Status < uint8(rpc.Pruned) {
 			unfinalizedSubmits = append(unfinalizedSubmits, submit)
 		}
 	}

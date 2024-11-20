@@ -1749,7 +1749,7 @@ const docTemplatestorage = `{
                     "type": "integer"
                 },
                 "status": {
-                    "description": "File upload status, 0-not uploaded,1-uploading,2-uploaded",
+                    "description": "File upload status, 0-not uploaded,1-partial uploaded,2-uploaded,3-pruned",
                     "type": "integer"
                 },
                 "storageFee": {
@@ -1803,7 +1803,7 @@ const docTemplatestorage = `{
                     "type": "integer"
                 },
                 "status": {
-                    "description": "File upload status, 0-not uploaded,1-uploading,2-uploaded",
+                    "description": "File upload status, 0-not uploaded,1-partial uploaded,2-uploaded,3-pruned",
                     "type": "integer"
                 },
                 "storageFee": {

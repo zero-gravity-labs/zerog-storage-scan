@@ -333,7 +333,7 @@ definitions:
         description: The starting position of the file stored in the storage node
         type: integer
       status:
-        description: File upload status, 0-not uploaded,1-uploading,2-uploaded
+        description: File upload status, 0-not uploaded,1-partial uploaded,2-uploaded,3-pruned
         type: integer
       storageFee:
         description: The storage fee required to upload the file
@@ -373,7 +373,7 @@ definitions:
         description: The total number of segments the file is split into
         type: integer
       status:
-        description: File upload status, 0-not uploaded,1-uploading,2-uploaded
+        description: File upload status, 0-not uploaded,1-partial uploaded,2-uploaded,3-pruned
         type: integer
       storageFee:
         description: The storage fee required to upload the file

@@ -76,7 +76,7 @@ func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
 
 	unfinalized := make([]store.Submit, 0)
 	for _, submit := range submits {
-		if submit.Status < uint8(rpc.Uploaded) {
+		if submit.Status < uint8(rpc.Pruned) {
 			unfinalized = append(unfinalized, submit)
 		}
 	}

@@ -169,7 +169,7 @@ type StorageTxInfo struct {
 	RootHash   string          `json:"rootHash"`   // Merkle root of the file to upload
 	DataSize   uint64          `json:"dataSize"`   // File size in bytes
 	StorageFee decimal.Decimal `json:"storageFee"` // The storage fee required to upload the file
-	Status     uint8           `json:"status"`     // File upload status, 0-not uploaded,1-uploading,2-uploaded
+	Status     uint8           `json:"status"`     // File upload status, 0-not uploaded,1-partial uploaded,2-uploaded,3-pruned
 
 	BlockNumber uint64 `json:"blockNumber"` // The block where the submit event is emitted
 	TxHash      string `json:"txHash"`      // The transaction where the submit event is emitted
@@ -190,7 +190,7 @@ type StorageTxDetail struct {
 	DataSize   uint64          `json:"dataSize"`   // File size in bytes
 	Expiration uint64          `json:"expiration"` // Expiration date of the uploaded file
 	StorageFee decimal.Decimal `json:"storageFee"` // The storage fee required to upload the file
-	Status     uint8           `json:"status"`     // File upload status, 0-not uploaded,1-uploading,2-uploaded
+	Status     uint8           `json:"status"`     // File upload status, 0-not uploaded,1-partial uploaded,2-uploaded,3-pruned
 
 	StartPosition    uint64 `json:"startPosition"`    // The starting position of the file stored in the storage node
 	EndPosition      uint64 `json:"endPosition"`      // The ending position of the file stored in the storage node

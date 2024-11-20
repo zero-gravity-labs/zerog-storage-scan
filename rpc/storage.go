@@ -14,8 +14,9 @@ type Status uint8
 
 const (
 	NotUploaded Status = iota
-	Uploading
+	PartialUploaded
 	Uploaded
+	Pruned
 )
 
 var (
@@ -71,10 +72,12 @@ func (executor *FileInfoExecutor) getFileInfo(ctx context.Context, l2Sdks []*nod
 		info, err := l2Sdk.GetFileInfoByTxSeq(ctx, rpcParam.SubmissionIndex)
 		if err == nil && info != nil {
 			var status uint8
-			if info.Finalized {
+			if info.Pruned {
+				status = uint8(Pruned)
+			} else if info.Finalized {
 				status = uint8(Uploaded)
 			} else if info.UploadedSegNum > 0 {
-				status = uint8(Uploading)
+				status = uint8(PartialUploaded)
 			}
 
 			if status > fileInfo.Status {
@@ -83,7 +86,7 @@ func (executor *FileInfoExecutor) getFileInfo(ctx context.Context, l2Sdks []*nod
 				updated = true
 			}
 
-			if status == uint8(Uploaded) {
+			if status == uint8(Pruned) {
 				break
 			}
 		}
