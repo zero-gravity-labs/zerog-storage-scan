@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"math/big"
+
 	"github.com/0glabs/0g-storage-client/node"
 	scanApi "github.com/0glabs/0g-storage-scan/api"
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
@@ -19,11 +21,13 @@ import (
 const BasePath = "/api"
 
 var (
-	sdk *web3go.Client
+	sdk    *web3go.Client
+	l2Sdks []*node.ZgsClient
+	db     *store.MysqlStore
 
-	l2Sdks      []*node.ZgsClient
-	db          *store.MysqlStore
 	chargeToken *TokenInfo
+
+	expireSeconds *big.Int
 )
 
 func MustInit(client *web3go.Client, storageClients []*node.ZgsClient, store *store.MysqlStore) {
@@ -57,11 +61,21 @@ func MustInit(client *web3go.Client, storageClients []*node.ZgsClient, store *st
 		chargeToken.Native = true
 	}
 
-	var flow struct {
-		Address              string
-		SubmitEventSignature string
+	mustInitExpireSeconds()
+}
+
+func mustInitExpireSeconds() {
+	value, exist, err := db.ConfigStore.Get(store.FileExpireSeconds)
+	if err != nil || !exist {
+		logrus.WithError(err).Fatal("Failed to get file expiration from DB")
 	}
-	viperUtil.MustUnmarshalKey("flow", &flow)
+
+	seconds, success := new(big.Int).SetString(value, 10)
+	if !success {
+		logrus.WithError(err).Fatal("Failed to parse file expiration from DB")
+	}
+
+	expireSeconds = seconds
 }
 
 //	@title			0G Storage Scan API

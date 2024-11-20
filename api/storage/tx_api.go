@@ -62,6 +62,7 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	}
 	submit = submits[0]
 
+	submitTime := uint64(submit.BlockTime.Unix())
 	result := StorageTxDetail{
 		TxSeq:       strconv.FormatUint(submit.SubmissionIndex, 10),
 		From:        addrMap[submit.SenderID].Address,
@@ -72,7 +73,8 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 		StorageFee:  submit.Fee,
 		BlockNumber: submit.BlockNumber,
 		TxHash:      submit.TxHash,
-		Timestamp:   uint64(submit.BlockTime.Unix()),
+		Timestamp:   submitTime,
+		Expiration:  submitTime + expireSeconds.Uint64(),
 	}
 
 	var extra store.SubmitExtra

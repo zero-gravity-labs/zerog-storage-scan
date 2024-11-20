@@ -17,6 +17,8 @@ const (
 	RateLimitStrategyConfKeyPrefix   = "ratelimit.strategy."
 	rateLimitStrategySqlMatchPattern = RateLimitStrategyConfKeyPrefix + "%"
 
+	FileExpireSeconds = "file.expire.seconds"
+
 	SyncStatusLog     = "sync.status.log"
 	SyncPatchSubmitId = "sync.patch.submit.id"
 

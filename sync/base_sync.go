@@ -65,8 +65,7 @@ type baseSyncer struct {
 	topics    [][]common.Hash
 
 	pricePerSector *big.Int
-
-	currentBlock uint64
+	currentBlock   uint64
 }
 
 func (s *baseSyncer) mustInit() {
@@ -112,15 +111,16 @@ func (s *baseSyncer) mustInit() {
 	}}
 
 	s.mustInitPricePerSector()
+	s.mustInitExpireInSec()
 }
 
 func (s *baseSyncer) mustInitPricePerSector() {
 	ethClient, _ := s.sdk.ToClientForContract()
+
 	flowContract, err := contract.NewFlow(common.HexToAddress(s.flowAddr), ethClient)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to instantiate flow contract")
 	}
-
 	marketAddress, err := flowContract.Market(nil)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to get market contract address")
@@ -130,13 +130,76 @@ func (s *baseSyncer) mustInitPricePerSector() {
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to instantiate market contract")
 	}
-
 	pricePerSector, err := marketContract.PricePerSector(nil)
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to get price per sector")
 	}
 
 	s.pricePerSector = pricePerSector
+}
+
+func (s *baseSyncer) mustInitExpireInSec() {
+	value, exist, err := s.db.ConfigStore.Get(store.FileExpireSeconds)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to get file expiration from DB")
+	}
+	if exist {
+		_, success := new(big.Int).SetString(value, 10)
+		if !success {
+			logrus.WithError(err).Fatal("Failed to parse file expiration from DB")
+		}
+		return
+	}
+
+	releaseSeconds, err := s.initReleaseSeconds()
+	if err == nil {
+		if err := s.db.ConfigStore.Upsert(nil, store.FileExpireSeconds, releaseSeconds.String()); err != nil {
+			logrus.WithError(err).Fatal("Failed to create file expiration config")
+		}
+		return
+	}
+
+	lifetimeInSeconds, err1 := s.initLifetimeInSeconds()
+	if err1 == nil {
+		if err := s.db.ConfigStore.Upsert(nil, store.FileExpireSeconds, lifetimeInSeconds.String()); err != nil {
+			logrus.WithError(err).Fatal("Failed to create file expiration config")
+		}
+		return
+	}
+
+	logrus.WithError(err).WithError(err1).Fatal("Failed to init file expiration config")
+}
+
+func (s *baseSyncer) initReleaseSeconds() (*big.Int, error) {
+	ethClient, _ := s.sdk.ToClientForContract()
+
+	chunkLinearReward, err := nhContract.NewChunkLinearReward(common.HexToAddress(s.rewardAddr), ethClient)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to instantiate ChunkLinearReward contract")
+	}
+
+	releaseSeconds, err := chunkLinearReward.ReleaseSeconds(nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to get release seconds")
+	}
+
+	return releaseSeconds, nil
+}
+
+func (s *baseSyncer) initLifetimeInSeconds() (*big.Int, error) {
+	ethClient, _ := s.sdk.ToClientForContract()
+
+	rewardContract, err := nhContract.NewOnePoolReward(common.HexToAddress(s.rewardAddr), ethClient)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to instantiate OnePoolReward contract")
+	}
+
+	lifetimeInSeconds, err := rewardContract.LifetimeInSeconds(nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to get lifetime in seconds")
+	}
+
+	return lifetimeInSeconds, nil
 }
 
 func (s *baseSyncer) decodeSubmit(blkTime time.Time, log types.Log) (*store.Submit, error) {
