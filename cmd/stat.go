@@ -35,9 +35,6 @@ func startStatService(*cobra.Command, []string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup
 
-	stSyncStatus := stat.MustNewSyncStatusStat(dataCtx.DB, dataCtx.L2Sdks[0])
-	go stSyncStatus.DoStat(ctx, &wg)
-
 	stSubmit := stat.MustNewStatSubmit(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
 	go stSubmit.DoStat(ctx, &wg)
 	stAddress := stat.MustNewStatAddress(&cfg, dataCtx.DB, dataCtx.Eth, startTime)

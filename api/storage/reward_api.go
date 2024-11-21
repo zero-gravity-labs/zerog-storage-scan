@@ -26,7 +26,7 @@ func listAddressStorageRewards(c *gin.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	addrIDPtr := &addressInfo.addressId
+	addrIDPtr := &addressInfo.ID
 
 	var param PageParam
 	if err := c.ShouldBind(&param); err != nil {

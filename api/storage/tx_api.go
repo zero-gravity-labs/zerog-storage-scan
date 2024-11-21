@@ -121,7 +121,7 @@ func listAddressStorageTxs(c *gin.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	addrIDPtr := &addressInfo.addressId
+	addrIDPtr := &addressInfo.ID
 
 	var param listStorageTxParam
 	if err := c.ShouldBind(&param); err != nil {

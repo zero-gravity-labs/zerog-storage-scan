@@ -2,21 +2,21 @@ package sync
 
 import (
 	"context"
+	"sort"
+	"strconv"
 	"time"
 
 	"github.com/0glabs/0g-storage-client/node"
 	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/health"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 var (
-	ErrNoFileInfoToSync          = errors.New("No file info to sync")
-	BatchGetSubmitsLatest        = 100
-	checkStatusIntervalNormal    = time.Second
-	checkStatusIntervalException = time.Second * 10
+	BatchGetSubmitsLatest = 100
+	intervalNormal        = time.Second
+	intervalException     = time.Second * 10
 )
 
 type StorageSyncer struct {
@@ -44,34 +44,33 @@ func MustNewStorageSyncer(l2Sdks []*node.ZgsClient, db *store.MysqlStore, alertC
 	}
 }
 
-func (ss *StorageSyncer) Sync(ctx context.Context, syncFunc func(ctx2 context.Context) error) {
+func (ss *StorageSyncer) Sync(ctx context.Context, f func(ctx context.Context, ticker *time.Ticker)) {
+	ticker := time.NewTicker(intervalNormal)
+	defer ticker.Stop()
+
 	logrus.Info("Storage syncer starting to sync data.")
 	for {
-		if interrupted(ctx) {
+		select {
+		case <-ctx.Done():
 			return
-		}
-
-		if err := syncFunc(ctx); err != nil {
-			if !errors.Is(err, ErrNoFileInfoToSync) {
-				logrus.WithError(err).Error("Failed to sync storage data")
-			}
-			time.Sleep(time.Second * 10)
+		case <-ticker.C:
+			f(ctx, ticker)
 		}
 	}
 }
 
-func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
+func (ss *StorageSyncer) LatestFiles(ctx context.Context, ticker *time.Ticker) {
 	if interrupted(ctx) {
-		return nil
+		return
 	}
 
 	submits, err := ss.db.SubmitStore.QueryDesc(BatchGetSubmitsLatest)
 	if err != nil {
-		return err
+		ticker.Reset(intervalException)
 	}
 
 	if len(submits) == 0 {
-		return ErrNoFileInfoToSync
+		return
 	}
 
 	unfinalized := make([]store.Submit, 0)
@@ -82,45 +81,46 @@ func (ss *StorageSyncer) SyncLatest(ctx context.Context) error {
 	}
 
 	if len(unfinalized) == 0 {
-		return ErrNoFileInfoToSync
+		return
 	}
 
 	if _, err := ss.db.UpdateFileInfos(ctx, unfinalized, ss.l2Sdks); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ss *StorageSyncer) CheckStatus(ctx context.Context) {
-	ticker := time.NewTicker(checkStatusIntervalNormal)
-	defer ticker.Stop()
-
-	logrus.Info("Storage syncer starting to alert.")
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			ss.checkStatusOnce(ctx, ticker)
-		}
+		ticker.Reset(intervalException)
 	}
 }
 
-func (ss *StorageSyncer) checkStatusOnce(ctx context.Context, ticker *time.Ticker) {
+func (ss *StorageSyncer) NodeSyncHeight(ctx context.Context, ticker *time.Ticker) {
+	heights := make([]uint64, len(ss.l2Sdks))
+
 	for index, l2Sdk := range ss.l2Sdks {
-		_, err := l2Sdk.GetStatus(ctx)
+		if interrupted(ctx) {
+			return
+		}
+
+		nodeStatus, err := l2Sdk.GetStatus(ctx)
+		if err == nil {
+			heights[index] = nodeStatus.LogSyncHeight
+		}
 
 		if ss.alertChannel != "" {
 			e := rpc.AlertErr(ctx, "StorageNodeRPCError", ss.alertChannel, err, ss.healthReport,
 				ss.storageRpcHealths[index], l2Sdk.URL())
 
 			if e != nil {
-				ticker.Reset(checkStatusIntervalException)
-				logrus.WithError(err).Error("Failed to alert storage status")
+				ticker.Reset(intervalException)
+				logrus.WithError(err).Error("Failed to alert storage node status")
 			} else {
-				ticker.Reset(checkStatusIntervalNormal)
+				ticker.Reset(intervalException)
 			}
+		}
+	}
+
+	sort.Slice(heights, func(i, j int) bool { return heights[i] > heights[j] })
+
+	if heights[0] > 0 {
+		err := ss.db.ConfigStore.Upsert(nil, store.SyncHeightNode, strconv.FormatUint(heights[0], 10))
+		if err != nil {
+			logrus.WithError(err).Error("Failed to upsert storage node sync height")
 		}
 	}
 }

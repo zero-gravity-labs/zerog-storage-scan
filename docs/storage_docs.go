@@ -1293,44 +1293,26 @@ const docTemplatestorage = `{
                 }
             }
         },
-        "stat.LogSyncInfo": {
-            "description": "Submit log sync information",
-            "type": "object",
-            "properties": {
-                "layer1-logSyncHeight": {
-                    "description": "Synchronization height of submit log on blockchain",
-                    "type": "integer"
-                },
-                "logSyncHeight": {
-                    "description": "Synchronization height of submit log on storage node",
-                    "type": "integer"
-                }
-            }
-        },
         "storage.AccountInfo": {
             "type": "object",
             "properties": {
-                "balance": {
-                    "description": "The balance in layer 1",
-                    "type": "number"
-                },
-                "dataTotal": {
+                "dataSize": {
                     "description": "Total Size of storage data",
                     "type": "integer"
                 },
-                "fileCount": {
+                "files": {
                     "description": "Total number of files",
                     "type": "integer"
                 },
-                "rewardCount": {
-                    "description": "Total number of distributed reward recodes",
-                    "type": "integer"
+                "rewards": {
+                    "description": "Total amount of distributed rewards",
+                    "type": "number"
                 },
-                "storageFeeTotal": {
+                "storageFee": {
                     "description": "Total storage fee",
                     "type": "number"
                 },
-                "txCount": {
+                "txs": {
                     "description": "Total number of layer1 transaction",
                     "type": "integer"
                 }
@@ -1531,6 +1513,20 @@ const docTemplatestorage = `{
                     "items": {
                         "$ref": "#/definitions/storage.FilesTopn"
                     }
+                }
+            }
+        },
+        "storage.LogSyncInfo": {
+            "description": "Submit log sync information",
+            "type": "object",
+            "properties": {
+                "layer1-logSyncHeight": {
+                    "description": "Synchronization height of submit log on blockchain",
+                    "type": "integer"
+                },
+                "logSyncHeight": {
+                    "description": "Synchronization height of submit log on storage node",
+                    "type": "integer"
                 }
             }
         },
@@ -1853,7 +1849,7 @@ const docTemplatestorage = `{
                     "description": "Synchronization information of submit event",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/stat.LogSyncInfo"
+                            "$ref": "#/definitions/storage.LogSyncInfo"
                         }
                     ]
                 },

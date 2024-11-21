@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"sync"
 	"time"
 
@@ -33,6 +34,7 @@ var (
 	cache = Cache{
 		topnAddresses: make(map[string]map[time.Duration][]store.TopnAddress),
 		topnMiners:    make(map[time.Duration][]store.TopnMiner),
+		syncHeights:   LogSyncInfo{},
 	}
 )
 
@@ -132,6 +134,7 @@ func topnReward(c *gin.Context) (interface{}, error) {
 type Cache struct {
 	topnAddresses map[string]map[time.Duration][]store.TopnAddress
 	topnMiners    map[time.Duration][]store.TopnMiner
+	syncHeights   LogSyncInfo
 	mu            sync.Mutex
 }
 
@@ -150,7 +153,10 @@ func ScheduleCache(ctx context.Context, wg *sync.WaitGroup /*, cacheCh chan<- *C
 			return
 		case <-ticker.C:
 			if err := cacheTopn(); err != nil {
-				logrus.WithError(err).Error("Failed to schedule cache")
+				logrus.WithError(err).Error("Failed to schedule cache topn")
+			}
+			if err := cacheSyncHeights(); err != nil {
+				logrus.WithError(err).Error("Failed to schedule cache sync heights")
 			}
 		}
 	}
@@ -268,6 +274,38 @@ func loadTopnRewardsOverall(topnMiners map[time.Duration][]store.TopnMiner) erro
 		}
 
 		topnMiners[0] = miners
+	}
+
+	return nil
+}
+
+func cacheSyncHeights() error {
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+
+	value, ok, err := db.ConfigStore.Get(store.SyncHeightNode)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to get node sync height")
+	}
+	if !ok {
+		return errors.New("No matching record found(node sync height)")
+	}
+	nodeSyncHeight, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to parse node sync height")
+	}
+
+	scanSyncHeight, ok, err := db.BlockStore.MaxBlock()
+	if err != nil {
+		return errors.WithMessage(err, "Failed to get scan sync height")
+	}
+	if !ok {
+		return errors.New("No matching record found(scan sync height)")
+	}
+
+	cache.syncHeights = LogSyncInfo{
+		Layer1LogSyncHeight: nodeSyncHeight,
+		LogSyncHeight:       scanSyncHeight,
 	}
 
 	return nil

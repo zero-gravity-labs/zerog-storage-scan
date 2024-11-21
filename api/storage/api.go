@@ -431,19 +431,19 @@ func topnRewardHandler(c *gin.Context) {
 	api.Wrap(topnReward)(c)
 }
 
-func getAddressInfo(c *gin.Context) (*AddressInfo, error) {
-	address := c.Param("address")
-	if address == "" {
-		return nil, api.ErrValidation(errors.Errorf("Invalid address '%v'", address))
+func getAddressInfo(c *gin.Context) (*store.Address, error) {
+	addr := c.Param("address")
+	if addr == "" {
+		return nil, api.ErrValidation(errors.Errorf("Invalid address %v", addr))
 	}
 
-	addressInfo, exist, err := db.AddressStore.Get(address)
+	addrInfo, exist, err := db.AddressStore.Get(addr)
 	if err != nil {
-		return nil, scanApi.ErrDatabase(errors.WithMessagef(err, "Failed to get address info '%v'", address))
+		return nil, scanApi.ErrDatabase(errors.WithMessagef(err, "Failed to get address info %v", addr))
 	}
 	if !exist {
-		return nil, api.ErrInternal(errors.Errorf("No matching address record found, address %v", address))
+		return nil, api.ErrInternal(errors.Errorf("No matching record found(address %v)", addr))
 	}
 
-	return &AddressInfo{address, addressInfo.ID}, nil
+	return &addrInfo, nil
 }

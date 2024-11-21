@@ -4,7 +4,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/0glabs/0g-storage-scan/stat"
 	"github.com/shopspring/decimal"
 )
 
@@ -127,11 +126,18 @@ type RewardStat struct {
 	RewardTotal decimal.Decimal `json:"rewardTotal"` // Total miner reward by a certain time
 }
 
+// LogSyncInfo model info
+// @Description Submit log sync information
+type LogSyncInfo struct {
+	Layer1LogSyncHeight uint64 `json:"layer1-logSyncHeight"` // Synchronization height of submit log on blockchain
+	LogSyncHeight       uint64 `json:"logSyncHeight"`        // Synchronization height of submit log on storage node
+}
+
 // Summary model info
 // @Description Storage summary information
 type Summary struct {
-	StorageFeeStat   `json:"storageFee"` // Storage fee information
-	stat.LogSyncInfo `json:"logSync"`    // Synchronization information of submit event
+	StorageFeeStat `json:"storageFee"` // Storage fee information
+	LogSyncInfo    `json:"logSync"`    // Synchronization information of submit event
 }
 
 // StorageFeeStat model info
@@ -229,14 +235,14 @@ type AddressInfo struct {
 }
 
 type AccountInfo struct {
-	Balance decimal.Decimal `json:"balance"` // The balance in layer 1
+	/*Balance decimal.Decimal `json:"balance"` // The balance in layer 1*/
 
-	FileCount  uint64          `json:"fileCount"`       // Total number of files
-	TxCount    uint64          `json:"txCount"`         // Total number of layer1 transaction
-	DataSize   uint64          `json:"dataTotal"`       // Total Size of storage data
-	StorageFee decimal.Decimal `json:"storageFeeTotal"` // Total storage fee
+	DataSize   uint64          `json:"dataSize"`   // Total Size of storage data
+	StorageFee decimal.Decimal `json:"storageFee"` // Total storage fee
+	Txs        uint64          `json:"txs"`        // Total number of layer1 transaction
+	Files      uint64          `json:"files"`      // Total number of files
 
-	RewardCount uint64 `json:"rewardCount"` // Total number of distributed reward recodes
+	Rewards decimal.Decimal `json:"rewards"` // Total amount of distributed rewards
 }
 
 type topnParam struct {

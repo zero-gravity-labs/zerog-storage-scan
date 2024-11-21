@@ -19,7 +19,7 @@ const (
 
 	FileExpireSeconds = "file.expire.seconds"
 
-	SyncStatusLog     = "sync.status.log"
+	SyncHeightNode    = "sync.height.node"
 	SyncPatchSubmitId = "sync.patch.submit.id"
 
 	StatTopnSubmitId   = "stat.topn.submit.id"

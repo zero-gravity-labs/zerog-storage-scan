@@ -1,10 +1,7 @@
 package storage
 
 import (
-	"encoding/json"
-
 	scanApi "github.com/0glabs/0g-storage-scan/api"
-	"github.com/0glabs/0g-storage-scan/stat"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/gin-gonic/gin"
@@ -173,34 +170,22 @@ func listRewardStat(c *gin.Context) (interface{}, error) {
 }
 
 func summary(_ *gin.Context) (interface{}, error) {
-	value, exist, err := db.ConfigStore.Get(store.SyncStatusLog)
-	if err != nil {
-		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get log sync info"))
-	}
-	if !exist {
-		return nil, api.ErrInternal(errors.New("No matching log-sync-info record found"))
-	}
-
-	var logSyncInfo stat.LogSyncInfo
-	if err := json.Unmarshal([]byte(value), &logSyncInfo); err != nil {
-		return nil, api.ErrInternal(errors.New("Failed to unmarshal log sync info"))
-	}
-
 	submitStat, err := db.SubmitStatStore.LastByType(store.Day)
 	if err != nil {
 		return nil, scanApi.ErrDatabase(errors.WithMessage(err, "Failed to get the latest submit stat"))
 	}
 	if submitStat == nil {
-		return nil, api.ErrInternal(errors.New("No matching storage-fee-stat record found"))
+		return nil, api.ErrInternal(errors.New("No matching record found(storage fee stat)"))
 	}
 
 	storageFee := StorageFeeStat{
 		TokenInfo:       *chargeToken,
 		StorageFeeTotal: submitStat.BaseFeeTotal,
 	}
+
 	result := Summary{
 		StorageFeeStat: storageFee,
-		LogSyncInfo:    logSyncInfo,
+		LogSyncInfo:    cache.syncHeights,
 	}
 
 	return result, nil

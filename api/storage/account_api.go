@@ -1,42 +1,41 @@
 package storage
 
 import (
-	"github.com/0glabs/0g-storage-scan/api"
-	"github.com/ethereum/go-ethereum/common"
+	scanApi "github.com/0glabs/0g-storage-scan/api"
+	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
 
 func getAccountInfo(c *gin.Context) (interface{}, error) {
-	addressInfo, err := getAddressInfo(c)
+	addr, err := getAddressInfo(c)
 	if err != nil {
 		return nil, err
 	}
 
-	addr := common.HexToAddress(addressInfo.address)
-	balance, err := sdk.Eth.Balance(addr, nil)
+	/*balance, err := sdk.Eth.Balance(common.HexToAddress(addr.Address), nil)
 	if err != nil {
-		return nil, api.ErrBlockchainRPC(errors.WithMessagef(err, "Failed to get balance, address %v", addressInfo.address))
-	}
+		return nil, scanApi.ErrBlockchainRPC(errors.WithMessagef(err, "Failed to get balance %v", addr.Address))
+	}*/
 
-	submitStat, err := db.AddressSubmitStore.Count(&addressInfo.addressId)
+	var amount decimal.Decimal
+	var miner store.Miner
+	exist, err := db.MinerStore.GetById(&miner, addr.ID)
 	if err != nil {
-		return nil, api.ErrDatabase(errors.WithMessage(err, "Failed to get submit stat"))
+		return nil, scanApi.ErrDatabase(errors.WithMessagef(err, "Failed to get miner info %v", addr.Address))
 	}
-
-	rewardStat, err := db.AddressRewardStore.Count(&addressInfo.addressId)
-	if err != nil {
-		return nil, api.ErrDatabase(errors.WithMessage(err, "Failed to get reward stat"))
+	if exist {
+		amount = miner.Amount
 	}
 
 	accountInfo := AccountInfo{
-		Balance:     decimal.NewFromBigInt(balance, 0),
-		FileCount:   submitStat.FileCount,
-		TxCount:     submitStat.TxCount,
-		DataSize:    submitStat.DataSize,
-		StorageFee:  submitStat.BaseFee,
-		RewardCount: rewardStat.RewardCount,
+		/*Balance:    decimal.NewFromBigInt(balance, 0),*/
+		DataSize:   addr.DataSize,
+		StorageFee: addr.StorageFee,
+		Txs:        addr.Txs,
+		Files:      addr.Files,
+		Rewards:    amount,
 	}
 
 	return accountInfo, nil
