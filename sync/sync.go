@@ -16,6 +16,7 @@ import (
 )
 
 type SyncConfig struct {
+	EthURL                   string
 	BlockWhenFlowCreated     uint64
 	DelayBlocksAgainstLatest uint64 `default:"3"`
 	BatchBlocksOnCatchup     uint64 `default:"0"`
@@ -155,7 +156,7 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 			e = errors.Errorf("Blockchain height stops growing at %v", latestBlock)
 		}
 		if e = rpc.AlertErr(ctx, "BlockchainRPCError", s.catchupSyncer.alertChannel, e,
-			s.catchupSyncer.healthReport, &s.catchupSyncer.nodeRpcHealth); e != nil {
+			s.catchupSyncer.healthReport, &s.catchupSyncer.nodeRpcHealth, s.conf.EthURL); e != nil {
 			return false, e
 		}
 	}

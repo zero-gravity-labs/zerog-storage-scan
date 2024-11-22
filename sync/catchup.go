@@ -187,7 +187,7 @@ func (s *CatchupSyncer) updateBlockRange(ctx context.Context) error {
 	finalizedBlock, err := s.sdk.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
 	if s.alertChannel != "" {
 		if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.alertChannel, err, s.healthReport,
-			&s.nodeRpcHealth); e != nil {
+			&s.nodeRpcHealth, s.conf.EthURL); e != nil {
 			return e
 		}
 	}

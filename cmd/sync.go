@@ -28,6 +28,7 @@ func startSyncService(*cobra.Command, []string) {
 	defer dataCtx.Close()
 
 	var conf nhSync.SyncConfig
+	conf.EthURL = dataCtx.EthCfg.URL
 	viperUtil.MustUnmarshalKey("sync", &conf)
 
 	cs := nhSync.MustNewCatchupSyncer(dataCtx.Eth, dataCtx.DB, conf, dataCtx.EthCfg.AlertChannel, dataCtx.EthCfg.HealthReport)
