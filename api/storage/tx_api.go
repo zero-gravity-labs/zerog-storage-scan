@@ -232,7 +232,7 @@ func refreshFileInfos(submits []store.Submit) ([]store.Submit, error) {
 		return submits, nil
 	}
 
-	result, err := db.UpdateFileInfos(context.Background(), unfinalizedSubmits, l2Sdks)
+	result, err := db.UpdateFileInfos(context.Background(), unfinalizedSubmits, storageConfig)
 	if err != nil {
 		return nil, err
 	}

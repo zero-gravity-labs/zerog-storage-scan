@@ -20,7 +20,7 @@ eth:
 # storage SDK client configurations
 storage:
   # Storage node rpc url
-  urls: [http://192.168.10.26:5678, http://192.168.10.27:5678, http://192.168.10.28:5678]
+  indexer: http://192.168.10.26:5678
   # Retry times if failure, if 0 never
   # retry: 0
   # Interval duration before each retry

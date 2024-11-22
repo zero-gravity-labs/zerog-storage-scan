@@ -2,10 +2,13 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/0glabs/0g-storage-client/node"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/Conflux-Chain/go-conflux-util/parallel"
+	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -35,16 +38,16 @@ type FileInfoResult struct {
 }
 
 type FileInfoExecutor struct {
-	l2sdks     []*node.ZgsClient
-	rpcParams  []FileInfoParam
-	rpcResults map[uint64]*FileInfoResult
+	storageConfig StorageConfig
+	rpcParams     []FileInfoParam
+	rpcResults    map[uint64]*FileInfoResult
 }
 
 // ParallelDo implements the parallel.Interface
 func (executor *FileInfoExecutor) ParallelDo(ctx context.Context, routine, task int) (*FileInfoResult, error) {
 	rpcParam := executor.rpcParams[task]
 	var result FileInfoResult
-	result.Data, result.Err = executor.getFileInfo(ctx, executor.l2sdks, rpcParam, task)
+	result.Data, result.Err = executor.getFileInfo(ctx, executor.storageConfig, rpcParam, task)
 
 	return &result, nil
 }
@@ -62,33 +65,37 @@ type FileInfo struct {
 	UploadedSegNum uint64
 }
 
+type StorageConfig struct {
+	Indexer         string
+	Retry           int
+	RetryInterval   time.Duration `default:"1s"`
+	RequestTimeout  time.Duration `default:"3s"`
+	MaxConnsPerHost int           `default:"1024"`
+	AlertChannel    string
+	HealthReport    health.TimedCounterConfig
+}
+
 // getFileInfo implements the rpcFunc interface
-func (executor *FileInfoExecutor) getFileInfo(ctx context.Context, l2Sdks []*node.ZgsClient, rpcParam FileInfoParam,
-	task int) (*FileInfo, error) {
+func (executor *FileInfoExecutor) getFileInfo(ctx context.Context, storageConfig StorageConfig,
+	rpcParam FileInfoParam, task int) (*FileInfo, error) {
 	fileInfo := FileInfo{rpcParam, 0}
 	updated := false
 
-	for _, l2Sdk := range l2Sdks {
-		info, err := l2Sdk.GetFileInfoByTxSeq(ctx, rpcParam.SubmissionIndex)
-		if err == nil && info != nil {
-			var status uint8
-			if info.Pruned {
-				status = uint8(Pruned)
-			} else if info.Finalized {
-				status = uint8(Uploaded)
-			} else if info.UploadedSegNum > 0 {
-				status = uint8(PartialUploaded)
-			}
+	info, err := GetFileInfoByTxSeq(storageConfig, rpcParam.SubmissionIndex)
+	if err == nil && info != nil {
+		var status uint8
+		if info.Pruned {
+			status = uint8(Pruned)
+		} else if info.Finalized {
+			status = uint8(Uploaded)
+		} else if info.UploadedSegNum > 0 {
+			status = uint8(PartialUploaded)
+		}
 
-			if status > fileInfo.Status {
-				fileInfo.Status = status
-				fileInfo.UploadedSegNum = info.UploadedSegNum
-				updated = true
-			}
-
-			if status == uint8(Pruned) {
-				break
-			}
+		if status > fileInfo.Status {
+			fileInfo.Status = status
+			fileInfo.UploadedSegNum = info.UploadedSegNum
+			updated = true
 		}
 	}
 
@@ -99,12 +106,12 @@ func (executor *FileInfoExecutor) getFileInfo(ctx context.Context, l2Sdks []*nod
 	return &fileInfo, nil
 }
 
-func BatchGetFileInfos(ctx context.Context, l2sdks []*node.ZgsClient, rpcParams []FileInfoParam) (
+func BatchGetFileInfos(ctx context.Context, storageConfig StorageConfig, rpcParams []FileInfoParam) (
 	map[uint64]*FileInfoResult, error) {
 	executor := FileInfoExecutor{
-		l2sdks:     l2sdks,
-		rpcParams:  rpcParams,
-		rpcResults: make(map[uint64]*FileInfoResult),
+		storageConfig: storageConfig,
+		rpcParams:     rpcParams,
+		rpcResults:    make(map[uint64]*FileInfoResult),
 	}
 
 	start := time.Now()
@@ -121,4 +128,30 @@ func BatchGetFileInfos(ctx context.Context, l2sdks []*node.ZgsClient, rpcParams 
 	}).Debug("Batch get file info")
 
 	return executor.rpcResults, nil
+}
+
+func GetFileInfoByTxSeq(storageConfig StorageConfig, seqNo uint64) (*node.FileInfo, error) {
+	url := fmt.Sprintf("%s/file/info/%v", storageConfig.Indexer, seqNo)
+
+	var result node.FileInfo
+	client := resty.New()
+	resp, err := client.R().SetResult(&result).Get(url)
+	if err != nil || resp.IsError() {
+		return nil, errors.WithMessagef(err, "Failed to get file info, seqNo %v %s", seqNo, resp.String())
+	}
+
+	return &result, nil
+}
+
+func GetNodeStatus(storageConfig StorageConfig) (*node.Status, error) {
+	url := fmt.Sprintf("%s/node/status", storageConfig.Indexer)
+
+	var result node.Status
+	client := resty.New()
+	resp, err := client.R().SetResult(&result).Get(url)
+	if err != nil || resp.IsError() {
+		return nil, errors.WithMessagef(err, "Failed to get node status %s", resp.String())
+	}
+
+	return &result, nil
 }

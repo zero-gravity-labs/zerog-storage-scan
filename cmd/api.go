@@ -25,7 +25,7 @@ func startAPIService(*cobra.Command, []string) {
 	dataCtx := MustInitDataContext()
 	defer dataCtx.Close()
 
-	storage.MustInit(dataCtx.Eth, dataCtx.L2Sdks, dataCtx.DB)
+	storage.MustInit(dataCtx.DB, dataCtx.Eth, dataCtx.StorageConfig)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	var wg sync.WaitGroup

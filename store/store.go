@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/0glabs/0g-storage-client/node"
 	"github.com/0glabs/0g-storage-scan/metrics"
 	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
@@ -278,7 +277,7 @@ func (ms *MysqlStore) UpdateSubmitByPrimaryKey(s *Submit, as *AddressSubmit) err
 	})
 }
 
-func (ms *MysqlStore) UpdateFileInfos(ctx context.Context, submits []Submit, l2Sdks []*node.ZgsClient) (
+func (ms *MysqlStore) UpdateFileInfos(ctx context.Context, submits []Submit, storageConfig rpc.StorageConfig) (
 	map[uint64]*rpc.FileInfoResult, error) {
 	params := make([]rpc.FileInfoParam, 0)
 	submitMap := make(map[uint64]Submit)
@@ -287,7 +286,7 @@ func (ms *MysqlStore) UpdateFileInfos(ctx context.Context, submits []Submit, l2S
 		submitMap[submit.SubmissionIndex] = submit
 	}
 
-	result, err := rpc.BatchGetFileInfos(ctx, l2Sdks, params)
+	result, err := rpc.BatchGetFileInfos(ctx, storageConfig, params)
 	if err != nil {
 		return nil, err
 	}

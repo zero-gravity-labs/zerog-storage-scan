@@ -2,11 +2,9 @@ package sync
 
 import (
 	"context"
-	"sort"
 	"strconv"
 	"time"
 
-	"github.com/0glabs/0g-storage-client/node"
 	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/health"
@@ -20,27 +18,21 @@ var (
 )
 
 type StorageSyncer struct {
-	l2Sdks            []*node.ZgsClient
-	db                *store.MysqlStore
-	alertChannel      string
-	healthReport      health.TimedCounterConfig
-	storageRpcHealths []*health.TimedCounter
+	db               *store.MysqlStore
+	storageConfig    rpc.StorageConfig
+	alertChannel     string
+	healthReport     health.TimedCounterConfig
+	storageRpcHealth health.TimedCounter
 }
 
-func MustNewStorageSyncer(l2Sdks []*node.ZgsClient, db *store.MysqlStore, alertChannel string,
+func MustNewStorageSyncer(db *store.MysqlStore, storageConfig rpc.StorageConfig, alertChannel string,
 	healthReport health.TimedCounterConfig) *StorageSyncer {
-
-	storageRpcHealths := make([]*health.TimedCounter, len(l2Sdks))
-	for i := 0; i < len(l2Sdks); i++ {
-		storageRpcHealths[i] = &health.TimedCounter{}
-	}
-
 	return &StorageSyncer{
-		l2Sdks:            l2Sdks,
-		db:                db,
-		alertChannel:      alertChannel,
-		healthReport:      healthReport,
-		storageRpcHealths: storageRpcHealths,
+		db:               db,
+		storageConfig:    storageConfig,
+		alertChannel:     alertChannel,
+		healthReport:     healthReport,
+		storageRpcHealth: health.TimedCounter{},
 	}
 }
 
@@ -84,43 +76,30 @@ func (ss *StorageSyncer) LatestFiles(ctx context.Context, ticker *time.Ticker) {
 		return
 	}
 
-	if _, err := ss.db.UpdateFileInfos(ctx, unfinalized, ss.l2Sdks); err != nil {
+	if _, err := ss.db.UpdateFileInfos(ctx, unfinalized, ss.storageConfig); err != nil {
 		ticker.Reset(intervalException)
 	}
 }
 
 func (ss *StorageSyncer) NodeSyncHeight(ctx context.Context, ticker *time.Ticker) {
-	heights := make([]uint64, len(ss.l2Sdks))
-
-	for index, l2Sdk := range ss.l2Sdks {
-		if interrupted(ctx) {
-			return
-		}
-
-		nodeStatus, err := l2Sdk.GetStatus(ctx)
-		if err == nil {
-			heights[index] = nodeStatus.LogSyncHeight
-		}
-
-		if ss.alertChannel != "" {
-			e := rpc.AlertErr(ctx, "StorageNodeRPCError", ss.alertChannel, err, ss.healthReport,
-				ss.storageRpcHealths[index], l2Sdk.URL())
-
-			if e != nil {
-				ticker.Reset(intervalException)
-				logrus.WithError(err).Error("Failed to alert storage node status")
-			} else {
-				ticker.Reset(intervalException)
-			}
+	nodeStatus, err := rpc.GetNodeStatus(ss.storageConfig)
+	if err == nil {
+		height := nodeStatus.LogSyncHeight
+		err := ss.db.ConfigStore.Upsert(nil, store.SyncHeightNode, strconv.FormatUint(height, 10))
+		if err != nil {
+			logrus.WithError(err).Error("Failed to upsert storage node sync height")
 		}
 	}
 
-	sort.Slice(heights, func(i, j int) bool { return heights[i] > heights[j] })
+	if ss.alertChannel != "" {
+		e := rpc.AlertErr(ctx, "StorageNodeRPCError", ss.alertChannel, err, ss.healthReport,
+			&ss.storageRpcHealth, ss.storageConfig.Indexer)
 
-	if heights[0] > 0 {
-		err := ss.db.ConfigStore.Upsert(nil, store.SyncHeightNode, strconv.FormatUint(heights[0], 10))
-		if err != nil {
-			logrus.WithError(err).Error("Failed to upsert storage node sync height")
+		if e != nil {
+			ticker.Reset(intervalException)
+			logrus.WithError(err).Error("Failed to alert storage node status")
+		} else {
+			ticker.Reset(intervalException)
 		}
 	}
 }

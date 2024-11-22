@@ -3,10 +3,10 @@ package storage
 import (
 	"math/big"
 
-	"github.com/0glabs/0g-storage-client/node"
 	scanApi "github.com/0glabs/0g-storage-scan/api"
 	nhContract "github.com/0glabs/0g-storage-scan/contract"
 	"github.com/0glabs/0g-storage-scan/docs"
+	"github.com/0glabs/0g-storage-scan/rpc"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	viperUtil "github.com/Conflux-Chain/go-conflux-util/viper"
@@ -21,19 +21,19 @@ import (
 const BasePath = "/api"
 
 var (
-	sdk    *web3go.Client
-	l2Sdks []*node.ZgsClient
-	db     *store.MysqlStore
+	db            *store.MysqlStore
+	sdk           *web3go.Client
+	storageConfig rpc.StorageConfig
 
 	chargeToken *TokenInfo
 
 	expireSeconds *big.Int
 )
 
-func MustInit(client *web3go.Client, storageClients []*node.ZgsClient, store *store.MysqlStore) {
-	sdk = client
-	l2Sdks = storageClients
+func MustInit(store *store.MysqlStore, client *web3go.Client, storageCfg rpc.StorageConfig) {
 	db = store
+	sdk = client
+	storageConfig = storageCfg
 
 	var charge struct {
 		Erc20TokenAddress string
