@@ -21,7 +21,7 @@ var (
 )
 
 type StatConfig struct {
-	BlockOnStatBegin        uint64
+	BlockOnStatBegin        uint64 `default:"0"`
 	MinStatIntervalSubmit   string `default:"10m"`
 	MinStatIntervalAddress  string `default:"10m"`
 	MinStatIntervalMiner    string `default:"1h"`
@@ -224,10 +224,6 @@ func MustDefaultRangeStart(sdk *web3go.Client) time.Time {
 func defaultRangeStart(sdk *web3go.Client) (time.Time, error) {
 	config := StatConfig{}
 	viper.MustUnmarshalKey("stat", &config)
-
-	if config.BlockOnStatBegin == uint64(0) {
-		return time.Time{}, errors.New("Missing block from which the stat begin")
-	}
 
 	block, err := sdk.Eth.BlockByNumber(types.BlockNumber(config.BlockOnStatBegin), false)
 	if err != nil {

@@ -1,35 +1,61 @@
-version: '3.3'
-
 services:
   sync:
     build: .
     image: 0g-scan:latest
     command: sync
     restart: unless-stopped
-    network_mode: host
+    depends_on:
+      - db
     env_file:
-      - .env
+      - path: .env
 
   stat:
     image: 0g-scan:latest
     command: stat
     restart: unless-stopped
-    network_mode: host
+    depends_on:
+      - db
     env_file:
-      - .env
+      - path: .env
 
   api:
     image: 0g-scan:latest
     command: api
+    ports:
+      - ${ZG_SCAN_API_EXPOSE_PORT:-16451}:16451
     restart: unless-stopped
-    network_mode: host
+    depends_on:
+      - db
     env_file:
-      - .env
+      - path: .env
 
   da_api:
     image: 0g-scan:latest
     command: da_api
+    ports:
+      - ${ZG_SCAN_DAAPI_EXPOSE_PORT:-17451}:17451
     restart: unless-stopped
-    network_mode: host
+    depends_on:
+      - db
     env_file:
-      - .env
+      - path: .env
+
+  db:
+    image: mysql:8
+    ports:
+      - "3306"
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    volumes:
+      - db-data:/var/lib/mysql
+
+networks:
+  default:
+    name: 0g-scan-internal
+
+volumes:
+  db-data: {}
