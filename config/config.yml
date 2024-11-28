@@ -1,7 +1,7 @@
 # EVM space SDK client configurations
 eth:
   # Fullnode HTTP endpoint
-  url: https://evmtestnet.confluxrpc.com/
+  url: https://evmrpc-test-us.0g.ai
   # Retry times if failure, if 0 never
   # retry: 0
   # Interval duration before each retry
@@ -20,7 +20,7 @@ eth:
 # storage SDK client configurations
 storage:
   # Storage node rpc url
-  urls: [http://192.168.10.26:5678, http://192.168.10.27:5678, http://192.168.10.28:5678]
+  urls: [https://rpc1-storage-testnet-turbo.0g.ai,https://rpc2-storage-testnet-turbo.0g.ai]
   # Retry times if failure, if 0 never
   # retry: 0
   # Interval duration before each retry
@@ -36,27 +36,34 @@ storage:
   # Alert channel
   # alertChannel: tgRobot
 
-# Blockchain sync configurations
-sync:
-  # The block number from which to sync flow submit
-  blockWhenFlowCreated: 1000
-  # To avoid pivot switch frequently, skip some blocks ahead of the latest block
-  # delayBlocksAgainstLatest: 30
-  # The number of blocks to query at a time during catchup, 0 means no limit
-  # batchBlocksOnCatchup: 0
-  # The number of blocks to query at a batch all
-  # batchBlocksOnBatchCall: 1000
-  # The number of txs to query at a batch all
-  # batchTxsOnBatchCall: 1000
+## Blockchain sync configurations
+#sync:
+#  # The block number from which to sync flow submit
+#  blockWhenFlowCreated: 0
+#  # To avoid pivot switch frequently, skip some blocks ahead of the latest block
+#  # delayBlocksAgainstLatest: 30
+#  # The number of blocks to query at a time during catchup, 0 means no limit
+#  # batchBlocksOnCatchup: 0
+#  # The number of blocks to query at a batch all
+#  # batchBlocksOnBatchCall: 1000
+#  # The number of txs to query at a batch all
+#  # batchTxsOnBatchCall: 1000
 
 # Flow contract info configurations
 flow:
   # Flow contract address
-  # address: 0xbD2C3F0E65eDF5582141C35969d66e34629cC768
+  address: 0xbD2C3F0E65eDF5582141C35969d66e34629cC768
   # Flow submit event signature
   submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
   # New epoch event signature
-  newEpochEventSignature:
+  newEpochEventSignature: 0xfbdb91bfb20161df2476c3c873d04c9200564c7f77e14dae0b679813cb332961
+
+# Reward contract info configurations
+reward:
+  # Reward contract address
+  address: 0x51998C4d486F406a788B766d93510980ae1f9360
+  # Distribute reward event signature
+  rewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
 
 # Charge info configurations
 # When charging in ERC20 token, configure `erc20TokenAddress` and `erc20TransferEventSignature`
@@ -71,17 +78,10 @@ charge:
   # Token decimals
   decimals: 18
 
-# Reward contract info configurations
-reward:
-  # Reward contract address
-  # address: 0x51998C4d486F406a788B766d93510980ae1f9360
-  # Distribute reward event signature
-  rewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
-
 # DAEntrance contract info configurations
 daEntrance:
   # DAEntrance contract address
-  # address: 0x5ea5BDF94909EF030C0F36d0F3BEd04Ed87489B1
+  address: 0x857C0A28A8634614BB2C96039Cf4a20AFF709Aa9
   # Data upload event signature
   dataUploadSignature: 0x57b8b1a6583dc6ce934dfba3d66f2a8e1591b6e171bb2e0921cc64640277087b
   # Erasure commitment verified event signature
@@ -98,49 +98,55 @@ daSigners:
   # Socket updated event signature
   socketUpdatedSignature: 0x09617a966176a40f8f1410768b118506db0096484acd5811064fcc12038798de
 
-# MySQL database configurations
-store:
-  mysql:
-    host: :3306
-    username:
-    password:
-    database:
-    # connMaxLifeTime: 3m
-    # maxOpenConns: 10
-    # maxIdleConns: 10
+## MySQL database configurations
+#store:
+#  mysql:
+#    host: :3306
+#    username:
+#    password:
+#    database:
+#    # connMaxLifeTime: 3m
+#    # maxOpenConns: 10
+#    # maxIdleConns: 10
 
-# Data statistics configurations
-stat:
-  # The block number from which to stat
-  blockOnStatBegin: 1000
-  # The minimum interval for submit stat
-  # minStatIntervalSubmit: 10m
-  # The minimum interval for address stat
-  # minStatIntervalAddress: 10m
-  # The minimum interval for miner stat
-  # minStatIntervalMiner: 1h
-  # The minimum interval for reward stat
-  # minStatIntervalReward: 10m
-  # The minimum interval for DA submit stat
-  # minStatIntervalDASubmit: 10m
-  # The minimum interval for DA client stat
-  # minStatIntervalDAClient: 10m
-  # The minimum interval for DA signer stat
-  # minStatIntervalDASigner: 10m
-
+## Data statistics configurations
+#stat:
+#  # The block number from which to stat
+#  blockOnStatBegin: 0
+#  # The minimum interval for submit stat
+#  # minStatIntervalSubmit: 10m
+#  # The minimum interval for address stat
+#  # minStatIntervalAddress: 10m
+#  # The minimum interval for miner stat
+#  # minStatIntervalMiner: 1h
+#  # The minimum interval for reward stat
+#  # minStatIntervalReward: 10m
+#  # The minimum interval for DA submit stat
+#  # minStatIntervalDASubmit: 10m
+#  # The minimum interval for DA client stat
+#  # minStatIntervalDAClient: 10m
+#  # The minimum interval for DA signer stat
+#  # minStatIntervalDASigner: 10m
 
 # Api configurations
 api:
-  endpoint: :12345
+  endpoint: :16451
   # recoveryDisabled: false
   # corsOrigins: []
   # logger: false
 
-# Logs configurations
-log:
-  # Available levels are `trace`, `debug`, `info`, `error` and `fatal`
-  level: info
-  forceColor: false
+# DA api configurations
+daApi:
+  endpoint: :17451
+  # recoveryDisabled: false
+  # corsOrigins: []
+  # logger: false
+
+## Logs configurations
+#log:
+#  # Available levels are `trace`, `debug`, `info`, `error` and `fatal`
+#  level: info
+#  forceColor: false
 
 ## Alert Configurations
 #alert:

@@ -17,7 +17,7 @@ import (
 
 type SyncConfig struct {
 	EthURL                   string
-	BlockWhenFlowCreated     uint64
+	BlockWhenFlowCreated     uint64 `default:"0"`
 	DelayBlocksAgainstLatest uint64 `default:"3"`
 	BatchBlocksOnCatchup     uint64 `default:"0"`
 	BatchBlocksOnBatchCall   uint64 `default:"16"`
