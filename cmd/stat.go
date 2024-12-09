@@ -43,10 +43,13 @@ func startStatService(*cobra.Command, []string) {
 	go stMiner.DoStat(ctx, &wg)
 	stReward := stat.MustNewStatReward(&cfg, dataCtx.DB, dataCtx.Eth, startTime)
 	go stReward.DoStat(ctx, &wg)
+	stExpiredFiles := stat.MustNewStatSubmitExpired(&cfg, dataCtx.DB, dataCtx.Eth)
+	go stExpiredFiles.DoStat(ctx, &wg)
+	stPrunedFiles := stat.MustNewStatSubmitPruned(dataCtx.DB)
+	go stPrunedFiles.DoStat(ctx, &wg)
 
 	topnSubmit := stat.MustNewTopnSubmit(&cfg, dataCtx.DB, dataCtx.Eth)
 	go topnSubmit.DoStat(ctx, &wg)
-
 	topnReward := stat.MustNewTopnReward(&cfg, dataCtx.DB, dataCtx.Eth)
 	go topnReward.DoStat(ctx, &wg)
 	topnSubmitRange := stat.MustNewTopnSubmitRange(&cfg, dataCtx.DB, dataCtx.Eth, startTime)

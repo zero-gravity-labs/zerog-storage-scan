@@ -180,6 +180,20 @@ func (ss *SubmitStore) UpdateByPrimaryKey(dbTx *gorm.DB, s *Submit) error {
 	return nil
 }
 
+func (ss *SubmitStore) UpdateByPrimaryKeys(dbTx *gorm.DB, s *Submit, submissionIndexes []uint64) error {
+	db := ss.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	if err := db.Model(&s).Where("submission_index in ?", submissionIndexes).
+		Updates(s).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (ss *SubmitStore) List(rootHash *string, txHash *string, idDesc bool, skip, limit int) (int64, []Submit, error) {
 	dbRaw := ss.DB.Model(&Submit{})
 	var conds []func(db *gorm.DB) *gorm.DB
@@ -241,6 +255,12 @@ func (ss *SubmitStore) QueryAscWithCursor(minSubmissionIndex *uint64, batch int)
 	return ss.query(minSubmissionIndex, nil, nil, false, batch)
 }
 
+func (ss *SubmitStore) QueryFinalizedAscWithCursor(minSubmissionIndex, maxSubmissionIndex *uint64) (
+	[]Submit, error) {
+	batch := int(*maxSubmissionIndex - *minSubmissionIndex + 1)
+	return ss.query(minSubmissionIndex, maxSubmissionIndex, []rpc.Status{rpc.Pruned}, false, batch)
+}
+
 func (ss *SubmitStore) query(minSubmissionIndex, maxSubmissionIndex *uint64, status []rpc.Status, isDesc bool, batch int) (
 	[]Submit, error) {
 	db := ss.DB.Model(&Submit{}).Select("submission_index, sender_id, total_seg_num, tx_hash, extra")
@@ -292,6 +312,20 @@ func (ss *SubmitStore) MaxSubmissionIndexFinalized(finalizedBN uint64) (uint64, 
 	var submit Submit
 
 	result := ss.DB.Where("block_number <= ?", finalizedBN).Order("block_number desc").Limit(1).Find(&submit)
+	if result.Error != nil {
+		return 0, false, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return 0, false, nil
+	}
+
+	return submit.SubmissionIndex, true, nil
+}
+
+func (ss *SubmitStore) MaxSubmissionIndexExpired(maxExpireTime time.Time) (uint64, bool, error) {
+	var submit Submit
+
+	result := ss.DB.Where("block_time <= ?", maxExpireTime).Order("block_time desc").Limit(1).Find(&submit)
 	if result.Error != nil {
 		return 0, false, result.Error
 	}

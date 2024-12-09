@@ -12,8 +12,14 @@ definitions:
       dataSize:
         description: Total Size of storage data
         type: integer
+      expiredFiles:
+        description: The number of expired files
+        type: integer
       files:
         description: Total number of files
+        type: integer
+      prunedFiles:
+        description: The number of pruned files
         type: integer
       rewards:
         description: Total amount of distributed rewards
@@ -290,6 +296,16 @@ definitions:
         description: Total storage fee
         type: number
     type: object
+  storage.StorageFileStat:
+    description: Stat storage file information
+    properties:
+      totalExpiredFiles:
+        description: Total number of expired files
+        type: integer
+      totalPrunedFiles:
+        description: Total number of pruned files
+        type: integer
+    type: object
   storage.StorageTxDetail:
     description: Submission transaction information
     properties:
@@ -411,6 +427,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/storage.StorageFeeStat'
         description: Storage fee information
+      storageFile:
+        allOf:
+        - $ref: '#/definitions/storage.StorageFileStat'
+        description: Storage file information
     type: object
   storage.TokenInfo:
     description: Charge token information

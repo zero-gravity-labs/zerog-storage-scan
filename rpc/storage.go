@@ -20,6 +20,7 @@ const (
 	PartialUploaded
 	Uploaded
 	Pruned
+	PrunedCounted
 )
 
 var (

@@ -1300,8 +1300,16 @@ const docTemplatestorage = `{
                     "description": "Total Size of storage data",
                     "type": "integer"
                 },
+                "expiredFiles": {
+                    "description": "The number of expired files",
+                    "type": "integer"
+                },
                 "files": {
                     "description": "Total number of files",
+                    "type": "integer"
+                },
+                "prunedFiles": {
+                    "description": "The number of pruned files",
                     "type": "integer"
                 },
                 "rewards": {
@@ -1692,6 +1700,20 @@ const docTemplatestorage = `{
                 }
             }
         },
+        "storage.StorageFileStat": {
+            "description": "Stat storage file information",
+            "type": "object",
+            "properties": {
+                "totalExpiredFiles": {
+                    "description": "Total number of expired files",
+                    "type": "integer"
+                },
+                "totalPrunedFiles": {
+                    "description": "Total number of pruned files",
+                    "type": "integer"
+                }
+            }
+        },
         "storage.StorageTxDetail": {
             "description": "Submission transaction information",
             "type": "object",
@@ -1858,6 +1880,14 @@ const docTemplatestorage = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/storage.StorageFeeStat"
+                        }
+                    ]
+                },
+                "storageFile": {
+                    "description": "Storage file information",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.StorageFileStat"
                         }
                     ]
                 }

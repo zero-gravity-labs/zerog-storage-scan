@@ -31,11 +31,13 @@ func getAccountInfo(c *gin.Context) (interface{}, error) {
 
 	accountInfo := AccountInfo{
 		/*Balance:    decimal.NewFromBigInt(balance, 0),*/
-		DataSize:   addr.DataSize,
-		StorageFee: addr.StorageFee,
-		Txs:        addr.Txs,
-		Files:      addr.Files,
-		Rewards:    amount,
+		DataSize:     addr.DataSize,
+		StorageFee:   addr.StorageFee,
+		Txs:          addr.Txs,
+		Files:        addr.Files,
+		ExpiredFiles: addr.ExpiredFiles,
+		PrunedFiles:  addr.PrunedFiles,
+		Rewards:      amount,
 	}
 
 	return accountInfo, nil

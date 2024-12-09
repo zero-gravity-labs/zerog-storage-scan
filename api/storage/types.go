@@ -136,8 +136,9 @@ type LogSyncInfo struct {
 // Summary model info
 // @Description Storage summary information
 type Summary struct {
-	StorageFeeStat `json:"storageFee"` // Storage fee information
-	LogSyncInfo    `json:"logSync"`    // Synchronization information of submit event
+	StorageFeeStat  `json:"storageFee"`  // Storage fee information
+	LogSyncInfo     `json:"logSync"`     // Synchronization information of submit event
+	StorageFileStat `json:"storageFile"` // Storage file information
 }
 
 // StorageFeeStat model info
@@ -145,6 +146,13 @@ type Summary struct {
 type StorageFeeStat struct {
 	TokenInfo       `json:"chargeToken"` // Charge token info
 	StorageFeeTotal decimal.Decimal      `json:"storageFeeTotal"` // Total storage fee
+}
+
+// StorageFileStat model info
+// @Description Stat storage file information
+type StorageFileStat struct {
+	TotalExpiredFiles uint64 `json:"totalExpiredFiles"` // Total number of expired files
+	TotalPrunedFiles  uint64 `json:"totalPrunedFiles"`  // Total number of pruned files
 }
 
 // TokenInfo model info
@@ -237,10 +245,12 @@ type AddressInfo struct {
 type AccountInfo struct {
 	/*Balance decimal.Decimal `json:"balance"` // The balance in layer 1*/
 
-	DataSize   uint64          `json:"dataSize"`   // Total Size of storage data
-	StorageFee decimal.Decimal `json:"storageFee"` // Total storage fee
-	Txs        uint64          `json:"txs"`        // Total number of layer1 transaction
-	Files      uint64          `json:"files"`      // Total number of files
+	DataSize     uint64          `json:"dataSize"`     // Total Size of storage data
+	StorageFee   decimal.Decimal `json:"storageFee"`   // Total storage fee
+	Txs          uint64          `json:"txs"`          // Total number of layer1 transaction
+	Files        uint64          `json:"files"`        // Total number of files
+	ExpiredFiles uint64          `json:"expiredFiles"` // The number of expired files
+	PrunedFiles  uint64          `json:"prunedFiles"`  // The number of pruned files
 
 	Rewards decimal.Decimal `json:"rewards"` // Total amount of distributed rewards
 }

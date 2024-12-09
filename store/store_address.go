@@ -11,14 +11,16 @@ import (
 )
 
 type Address struct {
-	ID         uint64
-	Address    string          `gorm:"size:64;unique"`
-	BlockTime  time.Time       `gorm:"not null"`
-	DataSize   uint64          `gorm:"not null;default:0"`                  // Size of storage data in a specific time interval
-	StorageFee decimal.Decimal `gorm:"type:decimal(65);not null;default:0"` // The base fee for storage
-	Txs        uint64          `gorm:"not null;default:0"`                  // Number of layer1 transaction in a specific time interval
-	Files      uint64          `gorm:"not null;default:0"`                  // Number of files/layer2 transaction in a specific time interval
-	UpdatedAt  time.Time       `gorm:"not null"`
+	ID           uint64
+	Address      string          `gorm:"size:64;unique"`
+	BlockTime    time.Time       `gorm:"not null"`
+	DataSize     uint64          `gorm:"not null;default:0"`                  // Size of storage data
+	StorageFee   decimal.Decimal `gorm:"type:decimal(65);not null;default:0"` // The base fee for storage
+	Txs          uint64          `gorm:"not null;default:0"`                  // Number of layer1 transaction
+	Files        uint64          `gorm:"not null;default:0"`                  // Number of files/layer2 transaction
+	ExpiredFiles uint64          `gorm:"not null;default:0"`                  // Number of expired files
+	PrunedFiles  uint64          `gorm:"not null;default:0"`                  // Number of pruned files
+	UpdatedAt    time.Time       `gorm:"not null"`
 }
 
 func (Address) TableName() string {
@@ -119,7 +121,7 @@ func (as *AddressStore) DeltaUpdate(dbTx *gorm.DB, a *Address) error {
 	return nil
 }
 
-func (as *AddressStore) BatchDeltaUpsert(dbTx *gorm.DB, addresses []Address) error {
+func (as *AddressStore) BatchDeltaUpsertExpiredFiles(dbTx *gorm.DB, addresses []Address) error {
 	db := as.DB
 	if dbTx != nil {
 		db = dbTx
@@ -129,24 +131,53 @@ func (as *AddressStore) BatchDeltaUpsert(dbTx *gorm.DB, addresses []Address) err
 	var params []interface{}
 	size := len(addresses)
 	for i, a := range addresses {
-		placeholders += "(?,?,?,?,?,?,?)"
+		placeholders += "(?,?,?,?)"
 		if i != size-1 {
 			placeholders += ",\n\t\t\t"
 		}
-		params = append(params, []interface{}{a.ID, a.DataSize, a.StorageFee, a.Txs, a.Files, a.UpdatedAt, time.Now()}...)
+		params = append(params, []interface{}{a.ID, a.ExpiredFiles, time.Now(), time.Now()}...)
 	}
 
 	sql := fmt.Sprintf(`
 		insert into 
-    		addresses(id, data_size, storage_fee, txs, files, updated_at, block_time)
+    		addresses(id, expired_files, updated_at, block_time)
 		values
 			%s
 		on duplicate key update
-			data_size = data_size + values(data_size),
-			storage_fee = storage_fee + values(storage_fee),
-			txs = txs + values(txs),
-			files = files + values(files),
-			updated_at=values(updated_at)
+			expired_files = expired_files + values(expired_files)
+	`, placeholders)
+
+	if err := db.Exec(sql, params...).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (as *AddressStore) BatchDeltaUpsertPrunedFiles(dbTx *gorm.DB, addresses []Address) error {
+	db := as.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(addresses)
+	for i, a := range addresses {
+		placeholders += "(?,?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{a.ID, a.PrunedFiles, time.Now(), time.Now()}...)
+	}
+
+	sql := fmt.Sprintf(`
+		insert into 
+    		addresses(id, pruned_files, updated_at, block_time)
+		values
+			%s
+		on duplicate key update
+			pruned_files = pruned_files + values(pruned_files)
 	`, placeholders)
 
 	if err := db.Exec(sql, params...).Error; err != nil {
