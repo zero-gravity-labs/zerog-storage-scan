@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"strconv"
+
 	scanApi "github.com/0glabs/0g-storage-scan/api"
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
@@ -178,15 +180,48 @@ func summary(_ *gin.Context) (interface{}, error) {
 		return nil, api.ErrInternal(errors.New("No matching record found(storage fee stat)"))
 	}
 
+	totalExpiredFiles, err := loadConfigValue(store.StatFileExpiredTotal)
+	if err != nil {
+		return nil, err
+	}
+
+	totalPrunedFiles, err := loadConfigValue(store.StatFilePrunedTotal)
+	if err != nil {
+		return nil, err
+	}
+
 	storageFee := StorageFeeStat{
 		TokenInfo:       *chargeToken,
 		StorageFeeTotal: submitStat.BaseFeeTotal,
 	}
 
+	storageFile := StorageFileStat{
+		TotalExpiredFiles: totalExpiredFiles,
+		TotalPrunedFiles:  totalPrunedFiles,
+	}
+
 	result := Summary{
-		StorageFeeStat: storageFee,
-		LogSyncInfo:    cache.syncHeights,
+		StorageFeeStat:  storageFee,
+		LogSyncInfo:     cache.syncHeights,
+		StorageFileStat: storageFile,
 	}
 
 	return result, nil
+}
+
+func loadConfigValue(configName string) (uint64, error) {
+	value, exist, err := db.ConfigStore.Get(configName)
+	if err != nil {
+		return 0, scanApi.ErrDatabase(errors.WithMessagef(err, "Failed to get value(%s)", configName))
+	}
+	if !exist {
+		return 0, api.ErrInternal(errors.Errorf("No matching record found(%s)", configName))
+	}
+
+	configValue, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return 0, api.ErrInternal(errors.Errorf("Failed to parse value(%s)", configName))
+	}
+
+	return configValue, nil
 }

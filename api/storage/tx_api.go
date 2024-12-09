@@ -62,6 +62,10 @@ func getStorageTx(c *gin.Context) (interface{}, error) {
 	}
 	submit = submits[0]
 
+	if submit.Status == uint8(rpc.PrunedCounted) {
+		submit.Status = uint8(rpc.Pruned)
+	}
+
 	submitTime := uint64(submit.BlockTime.Unix())
 	result := StorageTxDetail{
 		TxSeq:       strconv.FormatUint(submit.SubmissionIndex, 10),
@@ -196,6 +200,9 @@ func convertStorageTxs(total int64, submits []store.Submit) (*StorageTxList, err
 
 	storageTxs := make([]*StorageTxInfo, 0)
 	for _, submit := range submits {
+		if submit.Status == uint8(rpc.PrunedCounted) {
+			submit.Status = uint8(rpc.Pruned)
+		}
 		storageTx := &StorageTxInfo{
 			TxSeq:            submit.SubmissionIndex,
 			BlockNumber:      submit.BlockNumber,

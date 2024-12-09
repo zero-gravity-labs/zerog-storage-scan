@@ -22,12 +22,15 @@ const (
 	SyncHeightNode    = "sync.height.node"
 	SyncPatchSubmitId = "sync.patch.submit.id"
 
-	StatTopnSubmitId   = "stat.topn.submit.id"
-	StatTopnSubmitHeap = "stat.topn.submit.heap"
-	StatTopnRewardBn   = "stat.topn.reward.bn"
-	StatTopnRewardHeap = "stat.topn.reward.heap"
-	StatTopnSubmitTime = "stat.topn.submit.time"
-	StatTopnRewardTime = "stat.topn.reward.time"
+	StatTopnSubmitId        = "stat.topn.submit.id"
+	StatTopnSubmitHeap      = "stat.topn.submit.heap"
+	StatTopnRewardBn        = "stat.topn.reward.bn"
+	StatTopnRewardHeap      = "stat.topn.reward.heap"
+	StatTopnSubmitTime      = "stat.topn.submit.time"
+	StatTopnRewardTime      = "stat.topn.reward.time"
+	StatFileExpiredSubmitId = "stat.file.expired.submit.id"
+	StatFileExpiredTotal    = "stat.file.expired.total"
+	StatFilePrunedTotal     = "stat.file.pruned.total"
 )
 
 type Config struct {
