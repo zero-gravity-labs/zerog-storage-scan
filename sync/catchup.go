@@ -81,6 +81,12 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 			bn2TimeMap, err = rpc.BatchGetBlockTimes(ctx, s.sdk, blockNums, s.conf.BatchBlocksOnBatchCall)
 		}
 		if err != nil {
+			if s.alertChannel != "" {
+				if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.alertChannel, err, s.healthReport,
+					&s.nodeRpcHealth, s.conf.EthURL); e != nil {
+					return e
+				}
+			}
 			return err
 		}
 
@@ -185,12 +191,6 @@ func (s *CatchupSyncer) updateBlockRange(ctx context.Context) error {
 	}
 
 	finalizedBlock, err := s.sdk.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
-	if s.alertChannel != "" {
-		if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.alertChannel, err, s.healthReport,
-			&s.nodeRpcHealth, s.conf.EthURL); e != nil {
-			return e
-		}
-	}
 	if err != nil {
 		return errors.WithMessage(err, "failed to get finalized block")
 	}
