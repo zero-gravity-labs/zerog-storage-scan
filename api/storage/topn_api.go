@@ -20,7 +20,7 @@ const (
 	txsTopn        = "txs"
 	filesTopn      = "files"
 
-	maxRecords = 10
+	maxRecords = 100
 
 	refreshCacheInterval = time.Second * 10
 )
