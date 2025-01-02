@@ -3,6 +3,7 @@ package store
 import (
 	"crypto/md5"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/0glabs/0g-storage-scan/api/middlewares/rate"
@@ -36,7 +37,7 @@ const (
 type Config struct {
 	ID        uint32
 	Name      string `gorm:"unique;size:128;not null"` // config name
-	Value     string `gorm:"size:16250;not null"`      // config value
+	Value     string `gorm:"type:mediumText;not null"` // config value
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -69,6 +70,40 @@ func (cs *ConfigStore) Upsert(dbTx *gorm.DB, name, value string) error {
 	}).Error
 }
 
+func (cs *ConfigStore) BatchUpsert(dbTx *gorm.DB, configs []Config) error {
+	db := cs.DB
+	if dbTx != nil {
+		db = dbTx
+	}
+
+	var placeholders string
+	var params []interface{}
+	size := len(configs)
+	for i, c := range configs {
+		placeholders += "(?,?,?,?)"
+		if i != size-1 {
+			placeholders += ",\n\t\t\t"
+		}
+		params = append(params, []interface{}{c.Name, c.Value, time.Now(), c.UpdatedAt}...)
+	}
+
+	sql := fmt.Sprintf(`
+		insert into 
+    		configs(name, value, created_at, updated_at)
+		values
+			%s
+		on duplicate key update
+			value = values(value),
+			updated_at = values(updated_at)
+	`, placeholders)
+
+	if err := db.Exec(sql, params...).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (cs *ConfigStore) Get(name string) (string, bool, error) {
 	var cfg Config
 	err := cs.DB.Where("name = ?", name).Take(&cfg).Error
@@ -81,6 +116,20 @@ func (cs *ConfigStore) Get(name string) (string, bool, error) {
 	}
 
 	return cfg.Value, false, err
+}
+
+func (cs *ConfigStore) BatchGet(names []string) (map[string]Config, error) {
+	configs := new([]Config)
+	if err := cs.DB.Raw("select * from configs where `name` in ?", names).Scan(configs).Error; err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]Config)
+	for _, config := range *configs {
+		m[config.Name] = config
+	}
+
+	return m, nil
 }
 
 func (cs *ConfigStore) LoadRateLimitConfigs() (*rate.Config, error) {

@@ -3,8 +3,10 @@ package stat
 import (
 	"container/heap"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/0glabs/0g-storage-scan/store"
 	"github.com/openweb3/web3go"
@@ -16,6 +18,7 @@ import (
 
 var (
 	batchInSubmitIds = 10000
+	maxSubmits       = 100
 )
 
 type TopnSubmit struct {
@@ -32,7 +35,7 @@ func MustNewTopnSubmit(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client
 
 	topnSubmit := &TopnSubmit{
 		BaseStat: baseStat,
-		heap:     newTopnSubmitHeap(10, store.StatTopnSubmitHeap, db),
+		heap:     newTopnSubmitHeap(maxSubmits, store.StatTopnSubmitHeap, db),
 	}
 	topnSubmit.mustLoadLastPos()
 
@@ -119,12 +122,8 @@ func (ts *TopnSubmit) calculateStat(r StatRange) error {
 			}
 
 			ts.heap.sort(addressesUpdate)
-			snapshot, err := ts.heap.snapshot()
-			if err != nil {
-				return err
-			}
 
-			if err := ts.DB.ConfigStore.Upsert(dbTx, ts.heap.configKey, snapshot); err != nil {
+			if err := ts.heap.store(dbTx); err != nil {
 				return err
 			}
 		}
@@ -263,32 +262,49 @@ func (t *topnSubmitHeap) mustLoadFromDB() {
 }
 
 func (t *topnSubmitHeap) loadFromDB() (bool, error) {
-	value, ok, err := t.DB.ConfigStore.Get(t.configKey)
+	heapMap := map[TopnField]heap.Interface{
+		DataSize:   t.dataSizeHeap,
+		StorageFee: t.storageFeeHeap,
+		Txs:        t.txsHeap,
+		Files:      t.filesHeap,
+	}
+	fields := make([]TopnField, 0)
+	for field := range heapMap {
+		fields = append(fields, field)
+	}
+
+	names := make([]string, 0)
+	for _, field := range fields {
+		names = append(names, fmt.Sprintf("%s.%s", t.configKey, string(field)))
+	}
+	configs, err := t.DB.ConfigStore.BatchGet(names)
 	if err != nil {
-		return false, errors.WithMessagef(err, "Failed to get heap cache")
+		return false, err
 	}
 
-	if ok {
-		var heaps map[TopnField][]addressItem
-		if err := json.Unmarshal([]byte(value), &heaps); err != nil {
-			return false, errors.WithMessage(err, "Failed to unmarshal heap cache")
+	configCount := len(configs)
+	if configCount == 0 { // not exist
+		return false, nil
+	}
+
+	if configCount != len(fields) {
+		return false, errors.New("Topn cache not match with topn fields")
+	}
+
+	for _, field := range fields {
+		var addresses []addressItem
+		c := configs[fmt.Sprintf("%s.%s", t.configKey, string(field))]
+		if err := json.Unmarshal([]byte(c.Value), &addresses); err != nil {
+			return false, errors.WithMessagef(err, "Failed to unmarshal heap cache for %s", field)
 		}
 
-		heapMap := map[TopnField]heap.Interface{
-			DataSize:   t.dataSizeHeap,
-			StorageFee: t.storageFeeHeap,
-			Txs:        t.txsHeap,
-			Files:      t.filesHeap,
-		}
-
-		for field, h := range heapMap {
-			for _, address := range heaps[field] {
-				heap.Push(h, &address)
-			}
+		h := heapMap[field]
+		for _, address := range addresses {
+			heap.Push(h, &address)
 		}
 	}
 
-	return ok, nil
+	return true, nil
 }
 
 func (t *topnSubmitHeap) init() error {
@@ -310,12 +326,7 @@ func (t *topnSubmitHeap) init() error {
 		}
 	}
 
-	snapshot, err := t.snapshot()
-	if err != nil {
-		return err
-	}
-
-	if err := t.DB.ConfigStore.Upsert(nil, t.configKey, snapshot); err != nil {
+	if err := t.store(nil); err != nil {
 		return err
 	}
 
@@ -389,7 +400,29 @@ func (t *topnSubmitHeap) deduplicate(heap addressHeap, addresses []store.Address
 	return dsm
 }
 
-func (t *topnSubmitHeap) snapshot() (string, error) {
+func (t *topnSubmitHeap) store(dbTx *gorm.DB) error {
+	snapshots, err := t.snapshot()
+	if err != nil {
+		return err
+	}
+
+	configs := make([]store.Config, 0)
+	for field, s := range snapshots {
+		configs = append(configs, store.Config{
+			Name:      fmt.Sprintf("%s.%s", t.configKey, string(field)),
+			Value:     s,
+			UpdatedAt: time.Now(),
+		})
+	}
+
+	if err := t.DB.ConfigStore.BatchUpsert(dbTx, configs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (t *topnSubmitHeap) snapshot() (map[TopnField]string, error) {
 	heapMap := map[TopnField]heap.Interface{
 		DataSize:   t.dataSizeHeap,
 		StorageFee: t.storageFeeHeap,
@@ -407,17 +440,19 @@ func (t *topnSubmitHeap) snapshot() (string, error) {
 		topnCopy[field] = addresses
 	}
 
+	snapshots := make(map[TopnField]string)
 	for field, addresses := range topnCopy {
+		snapshot, err := json.Marshal(addresses)
+		if err != nil {
+			return nil, err
+		}
+		snapshots[field] = string(snapshot)
+
 		h := heapMap[field]
 		for _, address := range addresses {
 			h.Push(&addressItem{Address: address})
 		}
 	}
 
-	info, err := json.Marshal(topnCopy)
-	if err != nil {
-		return "", err
-	}
-
-	return string(info), nil
+	return snapshots, nil
 }

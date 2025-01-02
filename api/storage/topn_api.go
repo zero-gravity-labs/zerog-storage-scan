@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -225,20 +226,33 @@ func loadTopnRewards(durations []time.Duration, topnMiners map[time.Duration][]s
 }
 
 func loadTopnSubmitsOverall(topnAddresses map[string]map[time.Duration][]store.TopnAddress) error {
-	value, ok, err := db.ConfigStore.Get(store.StatTopnSubmitHeap)
+	fields := []string{dataSizeTopn, storageFeeTopn, txsTopn, filesTopn}
+	names := make([]string, 0)
+	for _, field := range fields {
+		names = append(names, fmt.Sprintf("%s.%s", store.StatTopnSubmitHeap, field))
+	}
+	configs, err := db.ConfigStore.BatchGet(names)
 	if err != nil {
-		return errors.WithMessagef(err, "Failed to get submit heap")
+		return err
 	}
 
-	if ok {
-		var heaps map[string][]store.TopnAddress // field => addresses
-		if err := json.Unmarshal([]byte(value), &heaps); err != nil {
-			return errors.WithMessage(err, "Failed to unmarshal submit heap")
+	configCount := len(configs)
+	if configCount == 0 { // not exist
+		return nil
+	}
+
+	if configCount != len(fields) {
+		return errors.New("Topn cache not match with topn fields")
+	}
+
+	for _, field := range fields {
+		var addresses []store.TopnAddress
+		c := configs[fmt.Sprintf("%s.%s", store.StatTopnSubmitHeap, field)]
+		if err := json.Unmarshal([]byte(c.Value), &addresses); err != nil {
+			return errors.WithMessagef(err, "Failed to unmarshal heap cache for %s", field)
 		}
 
-		for field, addresses := range heaps {
-			topnAddresses[field][0] = addresses
-		}
+		topnAddresses[field][0] = addresses
 	}
 
 	return nil
