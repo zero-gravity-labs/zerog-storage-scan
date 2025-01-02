@@ -204,6 +204,7 @@ func summary(_ *gin.Context) (interface{}, error) {
 		StorageFeeStat:  storageFee,
 		LogSyncInfo:     cache.syncHeights,
 		StorageFileStat: storageFile,
+		MinerRewardStat: cache.minerRewardStat,
 	}
 
 	return result, nil

@@ -139,6 +139,7 @@ type Summary struct {
 	StorageFeeStat  `json:"storageFee"`  // Storage fee information
 	LogSyncInfo     `json:"logSync"`     // Synchronization information of submit event
 	StorageFileStat `json:"storageFile"` // Storage file information
+	MinerRewardStat `json:"minerReward"` // Miner reward information
 }
 
 // StorageFeeStat model info
@@ -153,6 +154,13 @@ type StorageFeeStat struct {
 type StorageFileStat struct {
 	TotalExpiredFiles uint64 `json:"totalExpiredFiles"` // Total number of expired files
 	TotalPrunedFiles  uint64 `json:"totalPrunedFiles"`  // Total number of pruned files
+}
+
+// MinerRewardStat model info
+// @Description Stat miner reward information
+type MinerRewardStat struct {
+	AvgReward24Hours decimal.Decimal `json:"avgReward24Hours"` // average reward in 24 hours
+	TotalReward      decimal.Decimal `json:"totalReward"`      // Total amount of miner reward
 }
 
 // TokenInfo model info

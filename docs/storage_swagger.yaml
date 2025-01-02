@@ -182,6 +182,16 @@ definitions:
         description: Synchronization height of submit log on storage node
         type: integer
     type: object
+  storage.MinerRewardStat:
+    description: Stat miner reward information
+    properties:
+      avgReward24Hours:
+        description: average reward in 24 hours
+        type: number
+      totalReward:
+        description: Total amount of miner reward
+        type: number
+    type: object
   storage.MinerStat:
     description: Miner stat data information
     properties:
@@ -423,6 +433,10 @@ definitions:
         allOf:
         - $ref: '#/definitions/storage.LogSyncInfo'
         description: Synchronization information of submit event
+      minerReward:
+        allOf:
+        - $ref: '#/definitions/storage.MinerRewardStat'
+        description: Miner reward information
       storageFee:
         allOf:
         - $ref: '#/definitions/storage.StorageFeeStat'
