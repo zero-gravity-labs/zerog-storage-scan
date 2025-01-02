@@ -1538,6 +1538,20 @@ const docTemplatestorage = `{
                 }
             }
         },
+        "storage.MinerRewardStat": {
+            "description": "Stat miner reward information",
+            "type": "object",
+            "properties": {
+                "avgReward24Hours": {
+                    "description": "average reward in 24 hours",
+                    "type": "number"
+                },
+                "totalReward": {
+                    "description": "Total amount of miner reward",
+                    "type": "number"
+                }
+            }
+        },
         "storage.MinerStat": {
             "description": "Miner stat data information",
             "type": "object",
@@ -1872,6 +1886,14 @@ const docTemplatestorage = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/storage.LogSyncInfo"
+                        }
+                    ]
+                },
+                "minerReward": {
+                    "description": "Miner reward information",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.MinerRewardStat"
                         }
                     ]
                 },

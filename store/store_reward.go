@@ -163,6 +163,34 @@ func (rs *RewardStore) GroupByMinerByTime(startBlockTime, endBlockTime time.Time
 	return *groupedRewards, nil
 }
 
+func (rs *RewardStore) AvgRewardRecently(duration time.Duration) (*decimal.Decimal, error) {
+	var stat struct {
+		DistinctMiners int64
+		TotalAmount    decimal.Decimal
+	}
+
+	err := rs.DB.Model(&Reward{}).
+		Select(`COUNT(DISTINCT miner_id) distinct_miners, IFNULL(SUM(amount), 0) total_amount`).
+		Where("block_time >= ?", time.Now().Add(-duration)).
+		Find(&stat).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if stat.DistinctMiners == 0 {
+		return &decimal.Zero, nil
+	}
+
+	miners, err := decimal.NewFromString(fmt.Sprintf("%d", stat.DistinctMiners))
+	if err != nil {
+		return nil, err
+	}
+
+	avgReward := stat.TotalAmount.DivRound(miners, 0)
+
+	return &avgReward, nil
+}
+
 type RewardStat struct {
 	ID          uint64          `json:"-"`
 	StatType    string          `gorm:"size:4;not null;uniqueIndex:idx_statType_statTime,priority:1" json:"-"`
