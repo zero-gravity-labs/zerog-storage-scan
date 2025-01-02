@@ -17,6 +17,7 @@ import (
 
 var (
 	batchInBns = 1000
+	maxMiners  = 100
 )
 
 type TopnReward struct {
@@ -33,7 +34,7 @@ func MustNewTopnReward(cfg *StatConfig, db *store.MysqlStore, sdk *web3go.Client
 
 	topnReward := &TopnReward{
 		BaseStat: baseStat,
-		heap:     newTopnMinerHeap(10, store.StatTopnRewardHeap, db),
+		heap:     newTopnMinerHeap(maxMiners, store.StatTopnRewardHeap, db),
 	}
 	topnReward.mustLoadLastPos()
 
