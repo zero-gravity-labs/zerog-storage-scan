@@ -80,13 +80,13 @@ func (s *CatchupSyncer) syncRange(ctx context.Context, rangeStart, rangeEnd uint
 			}
 			bn2TimeMap, err = rpc.BatchGetBlockTimes(ctx, s.sdk, blockNums, s.conf.BatchBlocksOnBatchCall)
 		}
-		if err != nil {
-			if s.alertChannel != "" {
-				if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.alertChannel, err, s.healthReport,
-					&s.nodeRpcHealth, s.conf.EthURL); e != nil {
-					return e
-				}
+		if s.alertChannel != "" {
+			if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.alertChannel, err, s.healthReport,
+				&s.nodeRpcHealth, s.conf.EthURL); e != nil {
+				return e
 			}
+		}
+		if err != nil {
 			return err
 		}
 
