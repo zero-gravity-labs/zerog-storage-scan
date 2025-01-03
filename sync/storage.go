@@ -110,7 +110,7 @@ func (ss *StorageSyncer) NodeSyncHeight(ctx context.Context, ticker *time.Ticker
 				ticker.Reset(intervalException)
 				logrus.WithError(err).Error("Failed to alert storage node status")
 			} else {
-				ticker.Reset(intervalException)
+				ticker.Reset(intervalNormal)
 			}
 		}
 	}

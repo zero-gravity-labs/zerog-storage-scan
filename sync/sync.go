@@ -173,9 +173,23 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 
 	// check parity api available
 	if !checkParityAPIAlready {
-		if _, err = rpc.GetEthDataByReceipts(s.sdk, curBlock); err != nil && strings.Contains(err.Error(), "parity_getBlockReceipts") {
-			syncDataByLogs = true
+		_, err := rpc.GetEthDataByReceipts(s.sdk, curBlock)
+
+		if s.catchupSyncer.alertChannel != "" {
+			if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.catchupSyncer.alertChannel, err,
+				s.catchupSyncer.healthReport, &s.catchupSyncer.nodeRpcHealth, s.conf.EthURL); e != nil {
+				return false, e
+			}
 		}
+
+		if err != nil {
+			if strings.Contains(err.Error(), "parity_getBlockReceipts") {
+				syncDataByLogs = true
+			} else {
+				return false, err
+			}
+		}
+
 		checkParityAPIAlready = true
 	}
 
