@@ -54,6 +54,7 @@ var migrationModels = []interface{}{
 	&store.AddressStat{},
 	&store.Miner{},
 	&store.MinerStat{},
+	&store.MinerRegister{},
 	&store.FlowEpoch{},
 	&store.DASigner{},
 	&store.DASignerStat{},

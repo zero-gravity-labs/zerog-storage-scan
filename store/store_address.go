@@ -4,6 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
+
+	nhContract "github.com/0glabs/0g-storage-scan/contract"
+
+	"github.com/openweb3/web3go/types"
+
 	"github.com/Conflux-Chain/go-conflux-util/store/mysql"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -391,57 +397,6 @@ func (ms *MinerStore) BatchGetMiners(minerIDs []uint64) (map[uint64]Miner, error
 	return m, nil
 }
 
-func (ms *MinerStore) DeltaUpdate(dbTx *gorm.DB, m *Miner) error {
-	db := ms.DB
-	if dbTx != nil {
-		db = dbTx
-	}
-
-	u := map[string]interface{}{
-		"amount":     gorm.Expr("amount + ?", m.Amount),
-		"updated_at": m.UpdatedAt,
-	}
-	if err := db.Model(&m).Where("id=?", m.ID).Updates(u).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ms *MinerStore) BatchDeltaUpsert(dbTx *gorm.DB, miners []Miner) error {
-	db := ms.DB
-	if dbTx != nil {
-		db = dbTx
-	}
-
-	var placeholders string
-	var params []interface{}
-	size := len(miners)
-	for i, m := range miners {
-		placeholders += "(?,?,?,?)"
-		if i != size-1 {
-			placeholders += ",\n\t\t\t"
-		}
-		params = append(params, []interface{}{m.ID, m.Amount, m.UpdatedAt, time.Now()}...)
-	}
-
-	sql := fmt.Sprintf(`
-		insert into 
-    		miners(id, amount, updated_at, first_mining_time)
-		values
-			%s
-		on duplicate key update
-			amount = amount + values(amount),
-			updated_at = values(updated_at)
-	`, placeholders)
-
-	if err := db.Exec(sql, params...).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (ms *MinerStore) BatchUpsert(dbTx *gorm.DB, miners []Miner) error {
 	db := ms.DB
 	if dbTx != nil {
@@ -562,4 +517,78 @@ func (t *MinerStatStore) List(intervalType *string, minTimestamp, maxTimestamp *
 	}
 
 	return total, *list, nil
+}
+
+type MinerRegister struct {
+	ID              uint64
+	RegisterMinerID string `gorm:"size:66;not null"`
+	Address         string `gorm:"-"`
+	AddressID       uint64 `gorm:"not null"`
+	PreAddress      string `gorm:"-"`
+	PreID           uint64 `gorm:"not null;default:0"`
+
+	BlockNumber uint64    `gorm:"not null;index:idx_bn"`
+	BlockTime   time.Time `gorm:"not null;index:idx_bt"`
+	TxHash      string    `gorm:"size:66;not null;index:idx_txHash,length:10"`
+}
+
+func NewMinerRegister(blockTime time.Time, log types.Log, filter *nhContract.PoraMineFilterer) (*MinerRegister,
+	error) {
+	minerRegister, err := filter.ParseNewMinerId(*log.ToEthLog())
+	if err != nil {
+		return nil, err
+	}
+
+	register := &MinerRegister{
+		RegisterMinerID: common.BytesToHash(minerRegister.MinerId[:]).String(),
+		Address:         minerRegister.Beneficiary.String(),
+
+		BlockNumber: log.BlockNumber,
+		BlockTime:   blockTime,
+		TxHash:      log.TxHash.String(),
+	}
+
+	return register, nil
+}
+
+func NewMinerUpdate(blockTime time.Time, log types.Log, filter *nhContract.PoraMineFilterer) (*MinerRegister,
+	error) {
+	minerUpdate, err := filter.ParseUpdateMinerId(*log.ToEthLog())
+	if err != nil {
+		return nil, err
+	}
+
+	register := &MinerRegister{
+		RegisterMinerID: common.BytesToHash(minerUpdate.MinerId[:]).String(),
+		Address:         minerUpdate.To.String(),
+		PreAddress:      minerUpdate.From.String(),
+
+		BlockNumber: log.BlockNumber,
+		BlockTime:   blockTime,
+		TxHash:      log.TxHash.String(),
+	}
+
+	return register, nil
+}
+
+func (MinerRegister) TableName() string {
+	return "miner_registers"
+}
+
+type MinerRegisterStore struct {
+	*mysql.Store
+}
+
+func newMinerRegisterStore(db *gorm.DB) *MinerRegisterStore {
+	return &MinerRegisterStore{
+		Store: mysql.NewStore(db),
+	}
+}
+
+func (mrs *MinerRegisterStore) Add(dbTx *gorm.DB, registers []MinerRegister) error {
+	return dbTx.CreateInBatches(registers, batchSizeInsert).Error
+}
+
+func (mrs *MinerRegisterStore) Pop(dbTx *gorm.DB, block uint64) error {
+	return dbTx.Where("block_number >= ?", block).Delete(&MinerRegister{}).Error
 }

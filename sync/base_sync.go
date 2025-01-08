@@ -18,40 +18,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type flowConfig struct {
-	Address                string
-	SubmitEventSignature   string
-	NewEpochEventSignature string
-}
-
-type rewardConfig struct {
-	Address              string
-	RewardEventSignature string
-}
-
-type daEntranceConfig struct {
-	Address                            string
-	DataUploadSignature                string
-	ErasureCommitmentVerifiedSignature string
-	DARewardSignature                  string
-}
-
-type daSignersConfig struct {
-	Address                string
-	NewSignerSignature     string
-	SocketUpdatedSignature string
-}
-
 type baseSyncer struct {
 	conf *SyncConfig
 	sdk  *web3go.Client
 	db   *store.MysqlStore
 
-	flowAddr        string
-	flowSubmitSig   string
-	flowNewEpochSig string
-	rewardAddr      string
-	rewardSig       string
+	flowAddr              string
+	flowSubmitSig         string
+	flowNewEpochSig       string
+	rewardAddr            string
+	rewardSig             string
+	mineAddr              string
+	minerRegSig           string
+	minerUpdateSig        string
+	minerNewSubmissionSig string
 
 	daEntranceAddr    string
 	dataUploadSig     string
@@ -69,49 +49,110 @@ type baseSyncer struct {
 }
 
 func (s *baseSyncer) mustInit() {
-	var flow flowConfig
-	viperUtil.MustUnmarshalKey("flow", &flow)
-	var reward rewardConfig
-	viperUtil.MustUnmarshalKey("reward", &reward)
-	var daEntrance daEntranceConfig
-	viperUtil.MustUnmarshalKey("daEntrance", &daEntrance)
-	var daSigners daSignersConfig
-	viperUtil.MustUnmarshalKey("daSigners", &daSigners)
-
-	s.flowAddr = flow.Address
-	s.flowSubmitSig = flow.SubmitEventSignature
-	s.flowNewEpochSig = flow.NewEpochEventSignature
-	s.rewardAddr = reward.Address
-	s.rewardSig = reward.RewardEventSignature
-
-	s.daEntranceAddr = daEntrance.Address
-	s.dataUploadSig = daEntrance.DataUploadSignature
-	s.commitVerifiedSig = daEntrance.ErasureCommitmentVerifiedSignature
-	s.daRewardSig = daEntrance.DARewardSignature
-	s.daSignersAddr = daSigners.Address
-	s.newSignerSig = daSigners.NewSignerSignature
-	s.socketUpdatedSig = daSigners.SocketUpdatedSignature
-
-	s.addresses = []common.Address{
-		common.HexToAddress(flow.Address),
-		common.HexToAddress(reward.Address),
-		common.HexToAddress(daEntrance.Address),
-		common.HexToAddress(daSigners.Address),
-	}
-
-	s.topics = [][]common.Hash{{
-		common.HexToHash(flow.SubmitEventSignature),
-		common.HexToHash(flow.NewEpochEventSignature),
-		common.HexToHash(reward.RewardEventSignature),
-		common.HexToHash(daEntrance.DataUploadSignature),
-		common.HexToHash(daEntrance.ErasureCommitmentVerifiedSignature),
-		common.HexToHash(daEntrance.DARewardSignature),
-		common.HexToHash(daSigners.NewSignerSignature),
-		common.HexToHash(daSigners.SocketUpdatedSignature),
-	}}
+	s.mustInitLogFilterParam()
+	s.mustInitLogFilterParamDA()
 
 	s.mustInitPricePerSector()
 	s.mustInitExpireInSec()
+}
+
+func (s *baseSyncer) mustInitLogFilterParam() {
+	var cfg logFilterParamConfig
+	viperUtil.MustUnmarshalKey("logFilterParam", &cfg)
+
+	if !cfg.Enabled {
+		return
+	}
+
+	s.flowAddr = cfg.Flow.Address
+	s.mustInitAddresses()
+
+	s.flowSubmitSig = cfg.Flow.SubmitEventSignature
+	s.flowNewEpochSig = cfg.Flow.NewEpochEventSignature
+	s.rewardSig = cfg.Reward.DistributeRewardEventSignature
+	s.minerRegSig = cfg.Mine.NewMinerIdEventSignature
+	s.minerUpdateSig = cfg.Mine.UpdateMinerIdEventSignature
+
+	s.topics = make([][]common.Hash, 0)
+	s.topics = append(s.topics, []common.Hash{
+		common.HexToHash(cfg.Flow.SubmitEventSignature),
+		common.HexToHash(cfg.Flow.NewEpochEventSignature),
+		common.HexToHash(cfg.Reward.DistributeRewardEventSignature),
+		common.HexToHash(cfg.Mine.NewMinerIdEventSignature),
+		common.HexToHash(cfg.Mine.UpdateMinerIdEventSignature),
+	})
+}
+
+func (s *baseSyncer) mustInitAddresses() {
+	ethClient, _ := s.sdk.ToClientForContract()
+
+	flowContract, err := contract.NewFlow(common.HexToAddress(s.flowAddr), ethClient)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to instantiate flow contract")
+	}
+	marketAddress, err := flowContract.Market(nil)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to get market contract address")
+	}
+
+	marketContract, err := contract.NewMarket(marketAddress, ethClient)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to instantiate market contract")
+	}
+	rewardAddress, err := marketContract.Reward(nil)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to get reward contract address")
+	}
+
+	rewardContract, err := nhContract.NewChunkLinearReward(rewardAddress, ethClient)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to instantiate Reward contract")
+	}
+	mineAddress, err := rewardContract.Mine(nil)
+	if err != nil {
+		logrus.WithError(err).Fatal("Failed to get mine contract address")
+	}
+
+	s.rewardAddr = rewardAddress.String()
+	s.mineAddr = mineAddress.String()
+
+	s.addresses = make([]common.Address, 0)
+	s.addresses = append(s.addresses, []common.Address{
+		common.HexToAddress(s.flowAddr),
+		common.HexToAddress(s.rewardAddr),
+		common.HexToAddress(s.mineAddr),
+	}...)
+}
+
+func (s *baseSyncer) mustInitLogFilterParamDA() {
+	var cfg logFilterParamDAConfig
+	viperUtil.MustUnmarshalKey("logFilterParamDA", &cfg)
+
+	if !cfg.Enabled {
+		return
+	}
+
+	s.daEntranceAddr = cfg.DAEntrance.Address
+	s.dataUploadSig = cfg.DAEntrance.DataUploadSignature
+	s.commitVerifiedSig = cfg.DAEntrance.ErasureCommitmentVerifiedSignature
+	s.daRewardSig = cfg.DAEntrance.DARewardSignature
+
+	s.daSignersAddr = cfg.DASigners.Address
+	s.newSignerSig = cfg.DASigners.NewSignerSignature
+	s.socketUpdatedSig = cfg.DASigners.SocketUpdatedSignature
+
+	s.addresses = append(s.addresses, []common.Address{
+		common.HexToAddress(cfg.DAEntrance.Address),
+		common.HexToAddress(cfg.DASigners.Address),
+	}...)
+
+	s.topics = append(s.topics, []common.Hash{
+		common.HexToHash(cfg.DAEntrance.DataUploadSignature),
+		common.HexToHash(cfg.DAEntrance.ErasureCommitmentVerifiedSignature),
+		common.HexToHash(cfg.DAEntrance.DARewardSignature),
+		common.HexToHash(cfg.DASigners.NewSignerSignature),
+		common.HexToHash(cfg.DASigners.SocketUpdatedSignature),
+	})
 }
 
 func (s *baseSyncer) mustInitPricePerSector() {
@@ -246,6 +287,7 @@ func (s *baseSyncer) decodeFlowEpoch(blkTime time.Time, log types.Log) (*store.F
 	return flowEpoch, nil
 }
 
+// TODO check if register miner id exists
 func (s *baseSyncer) decodeReward(blkTime time.Time, log types.Log) (*store.Reward, error) {
 	addr := log.Address.String()
 	sig := log.Topics[0].String()
@@ -271,6 +313,55 @@ func (s *baseSyncer) decodeReward(blkTime time.Time, log types.Log) (*store.Rewa
 	reward.MinerID = minerID
 
 	return reward, nil
+}
+
+func (s *baseSyncer) decodeNewMinerId(blkTime time.Time, log types.Log) (*store.MinerRegister, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.mineAddr) || sig != s.minerRegSig {
+		return nil, nil
+	}
+
+	register, err := store.NewMinerRegister(blkTime, log, nhContract.DummyMineFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	addressID, err := s.db.AddressStore.Add(register.Address, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	register.AddressID = addressID
+
+	return register, nil
+}
+
+func (s *baseSyncer) decodeUpdateMinerId(blkTime time.Time, log types.Log) (*store.MinerRegister, error) {
+	addr := log.Address.String()
+	sig := log.Topics[0].String()
+	if !strings.EqualFold(addr, s.mineAddr) || sig != s.minerUpdateSig {
+		return nil, nil
+	}
+
+	update, err := store.NewMinerUpdate(blkTime, log, nhContract.DummyMineFilterer())
+	if err != nil {
+		return nil, err
+	}
+
+	addressID, err := s.db.AddressStore.Add(update.Address, blkTime)
+	if err != nil {
+		return nil, err
+	}
+	preID, err := s.db.AddressStore.Add(update.PreAddress, blkTime)
+	if err != nil {
+		return nil, err
+	}
+
+	update.AddressID = addressID
+	update.PreID = preID
+
+	return update, nil
 }
 
 func (s *baseSyncer) decodeNewSigner(blkTime time.Time, log types.Log) (*store.DASigner, error) {
@@ -417,6 +508,22 @@ func (s *baseSyncer) convertLogs(logs []types.Log, bn2TimeMap map[uint64]uint64)
 			if reward != nil {
 				decodedLogs.Rewards = append(decodedLogs.Rewards, *reward)
 			}
+		case s.minerRegSig:
+			register, err := s.decodeNewMinerId(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if register != nil {
+				decodedLogs.MinerRegisters = append(decodedLogs.MinerRegisters, *register)
+			}
+		case s.minerUpdateSig:
+			update, err := s.decodeUpdateMinerId(blockTime, log)
+			if err != nil {
+				return nil, err
+			}
+			if update != nil {
+				decodedLogs.MinerRegisters = append(decodedLogs.MinerRegisters, *update)
+			}
 		case s.newSignerSig:
 			signer, err := s.decodeNewSigner(blockTime, log)
 			if err != nil {
@@ -483,4 +590,47 @@ func (s *baseSyncer) findClosedInterval(input string, regStr string) (uint64, ui
 	}
 
 	return start, end, nil
+}
+
+type logFilterParamConfig struct {
+	Enabled bool
+	Flow    flowConfig
+	Reward  rewardConfig
+	Mine    mineConfig
+}
+
+type flowConfig struct {
+	Address                string
+	SubmitEventSignature   string
+	NewEpochEventSignature string
+}
+
+type rewardConfig struct {
+	//Address                        string
+	DistributeRewardEventSignature string
+}
+
+type mineConfig struct {
+	//Address                     string
+	NewMinerIdEventSignature    string
+	UpdateMinerIdEventSignature string
+}
+
+type logFilterParamDAConfig struct {
+	Enabled    bool
+	DAEntrance daEntranceConfig
+	DASigners  daSignersConfig
+}
+
+type daEntranceConfig struct {
+	Address                            string
+	DataUploadSignature                string
+	ErasureCommitmentVerifiedSignature string
+	DARewardSignature                  string
+}
+
+type daSignersConfig struct {
+	Address                string
+	NewSignerSignature     string
+	SocketUpdatedSignature string
 }

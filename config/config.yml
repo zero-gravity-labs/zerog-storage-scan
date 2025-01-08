@@ -49,22 +49,6 @@ storage:
 #  # The number of txs to query at a batch all
 #  # batchTxsOnBatchCall: 1000
 
-# Flow contract info configurations
-flow:
-  # Flow contract address
-  address: 0xbD2C3F0E65eDF5582141C35969d66e34629cC768
-  # Flow submit event signature
-  submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
-  # New epoch event signature
-  newEpochEventSignature: 0xfbdb91bfb20161df2476c3c873d04c9200564c7f77e14dae0b679813cb332961
-
-# Reward contract info configurations
-reward:
-  # Reward contract address
-  address: 0x51998C4d486F406a788B766d93510980ae1f9360
-  # Distribute reward event signature
-  rewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
-
 # Charge info configurations
 # When charging in ERC20 token, configure `erc20TokenAddress` and `erc20TransferEventSignature`
 # When charging in native token, configure `symbol` and `decimals`
@@ -72,31 +56,57 @@ charge:
   # Charge in ERC20 token address
   # erc20TokenAddress: 0x7d682e65efc5c13bf4e394b8f376c48e6bae0355
   # ERC20 transfer event signature
-  erc20TransferEventSignature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+  # erc20TransferEventSignature: 0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
   # Token symbol
   symbol: A0GI
   # Token decimals
   decimals: 18
 
-# DAEntrance contract info configurations
-daEntrance:
-  # DAEntrance contract address
-  address: 0x857C0A28A8634614BB2C96039Cf4a20AFF709Aa9
-  # Data upload event signature
-  dataUploadSignature: 0x57b8b1a6583dc6ce934dfba3d66f2a8e1591b6e171bb2e0921cc64640277087b
-  # Erasure commitment verified event signature
-  erasureCommitmentVerifiedSignature: 0x0f1b20d87bebd11dddaaab51f01cf2726880cb3f8073b636dbafa2aa8cacd256
-  # DA reward event signature
-  DARewardSignature: 0xc3898eb7106c1cb2f727da316a76320c0035f5692950aa7f6b65d20a5efaedc5
+# storage contracts info configurations
+logFilterParam:
+  # Whether to sync data from storage node
+  enabled: true
+  # Flow contract info configurations
+  flow:
+    # Flow contract address
+    address: 0xbD2C3F0E65eDF5582141C35969d66e34629cC768
+    # Flow submit event signature
+    submitEventSignature: 0x167ce04d2aa1981994d3a31695da0d785373335b1078cec239a1a3a2c7675555
+    # New epoch event signature
+    newEpochEventSignature: 0xfbdb91bfb20161df2476c3c873d04c9200564c7f77e14dae0b679813cb332961
+  # Reward contract info configurations
+  reward:
+    # Distribute reward event signature
+    distributeRewardEventSignature: 0x83617a1b0f847971f005bd162dde513cfe93df96e6293c3bbb5fe9c40629dd4c
+  # Mining contract info configurations
+  mine:
+    # Miner register event signature
+    newMinerIdEventSignature: 0xbfeb006f16aca8eb3d9953cf44db6b11b6f3041a313875dfa18f2e9d71bd309e
+    # Update miner id event signature
+    updateMinerIdEventSignature: 0x9a26a8e7fd42c501b452c02016def8048e3ea28c2bf15127a9b5e2029d989bf1
 
-# DASigners contract info configurations
-daSigners:
-  # DASigners contract address
-  address: "0x0000000000000000000000000000000000001000"
-  # New signer event signature
-  newSignerSignature: 0x679917c2006df1daaa987a56bf1d66e99764d5ad317892d9e83a6eb4e3f051e7
-  # Socket updated event signature
-  socketUpdatedSignature: 0x09617a966176a40f8f1410768b118506db0096484acd5811064fcc12038798de
+## DA contracts info configurations
+#logFilterParamDA:
+#  # Whether to sync data from DA node
+#  enabled: false
+#  # DAEntrance contract info configurations
+#  daEntrance:
+#    # DAEntrance contract address
+#    address: 0x857C0A28A8634614BB2C96039Cf4a20AFF709Aa9
+#    # Data upload event signature
+#    dataUploadSignature: 0x57b8b1a6583dc6ce934dfba3d66f2a8e1591b6e171bb2e0921cc64640277087b
+#    # Erasure commitment verified event signature
+#    erasureCommitmentVerifiedSignature: 0x0f1b20d87bebd11dddaaab51f01cf2726880cb3f8073b636dbafa2aa8cacd256
+#    # DA reward event signature
+#    DARewardSignature: 0xc3898eb7106c1cb2f727da316a76320c0035f5692950aa7f6b65d20a5efaedc5
+#  # DASigners contract info configurations
+#  daSigners:
+#    # DASigners contract address
+#    address: "0x0000000000000000000000000000000000001000"
+#    # New signer event signature
+#    newSignerSignature: 0x679917c2006df1daaa987a56bf1d66e99764d5ad317892d9e83a6eb4e3f051e7
+#    # Socket updated event signature
+#    socketUpdatedSignature: 0x09617a966176a40f8f1410768b118506db0096484acd5811064fcc12038798de
 
 ## MySQL database configurations
 #store:
