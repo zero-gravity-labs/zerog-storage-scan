@@ -172,25 +172,8 @@ func (s *Syncer) syncOnce(ctx context.Context) (bool, error) {
 	}
 
 	// check parity api available
-	if !checkParityAPIAlready {
-		_, err := rpc.GetEthDataByReceipts(s.sdk, curBlock)
-
-		if s.catchupSyncer.alertChannel != "" {
-			if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.catchupSyncer.alertChannel, err,
-				s.catchupSyncer.healthReport, &s.catchupSyncer.nodeRpcHealth, s.conf.EthURL); e != nil {
-				return false, e
-			}
-		}
-
-		if err != nil {
-			if strings.Contains(err.Error(), "parity_getBlockReceipts") {
-				syncDataByLogs = true
-			} else {
-				return false, err
-			}
-		}
-
-		checkParityAPIAlready = true
+	if err := s.tryParityAPI(ctx, curBlock); err != nil {
+		return false, err
 	}
 
 	// get eth data
@@ -338,4 +321,30 @@ func (s *Syncer) parseEthData(data *rpc.EthData) (*store.DecodedLogs, error) {
 	}
 
 	return decodedLogs, nil
+}
+
+// check parity api available
+func (s *Syncer) tryParityAPI(ctx context.Context, curBlock uint64) error {
+	if !checkParityAPIAlready {
+		_, err := rpc.GetEthDataByReceipts(s.sdk, curBlock)
+
+		if s.catchupSyncer.alertChannel != "" {
+			if e := rpc.AlertErr(ctx, "BlockchainRPCError", s.catchupSyncer.alertChannel, err,
+				s.catchupSyncer.healthReport, &s.catchupSyncer.nodeRpcHealth, s.conf.EthURL); e != nil {
+				return e
+			}
+		}
+
+		if err != nil {
+			if strings.Contains(err.Error(), "parity_getBlockReceipts") {
+				syncDataByLogs = true
+			} else {
+				return err
+			}
+		}
+
+		checkParityAPIAlready = true
+	}
+
+	return nil
 }

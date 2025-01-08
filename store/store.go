@@ -35,6 +35,7 @@ type MysqlStore struct {
 	*AddressStatStore
 	*MinerStore
 	*MinerStatStore
+	*MinerRegisterStore
 	*FlowEpochStore
 	*DASignerStore
 	*DASignerStatStore
@@ -63,6 +64,7 @@ func MustNewStore(db *gorm.DB, config mysql.Config) *MysqlStore {
 		AddressStatStore:    newAddressStatStore(db),
 		MinerStore:          newMinerStore(db),
 		MinerStatStore:      newMinerStatStore(db),
+		MinerRegisterStore:  newMinerRegisterStore(db),
 		FlowEpochStore:      newFlowEpochStore(db),
 		DASignerStore:       newDASignerStore(db),
 		DASignerStatStore:   newDASignerStatStore(db),
@@ -79,6 +81,7 @@ type DecodedLogs struct {
 	Submits                    []Submit
 	FlowEpochs                 []FlowEpoch
 	Rewards                    []Reward
+	MinerRegisters             []MinerRegister
 	DASigners                  []DASigner
 	DASignersWithSocketUpdated []DASigner
 	DASubmits                  []DASubmit
@@ -165,6 +168,13 @@ func (ms *MysqlStore) Push(block *Block, decodedLogs *DecodedLogs) error {
 			}
 		}
 
+		// save miner registers
+		if len(decodedLogs.MinerRegisters) > 0 {
+			if err := ms.MinerRegisterStore.Add(dbTx, decodedLogs.MinerRegisters); err != nil {
+				return errors.WithMessage(err, "failed to save miner registers")
+			}
+		}
+
 		// save DA signers
 		if len(decodedLogs.DASigners) > 0 {
 			if err := ms.DASignerStore.Add(dbTx, decodedLogs.DASigners); err != nil {
@@ -207,7 +217,7 @@ func (ms *MysqlStore) Push(block *Block, decodedLogs *DecodedLogs) error {
 			}
 		}
 
-		// save DA submits
+		// save DA rewards
 		if len(decodedLogs.DARewards) > 0 {
 			if err := ms.DARewardStore.Add(dbTx, decodedLogs.DARewards); err != nil {
 				return errors.WithMessage(err, "failed to save DA rewards")
@@ -248,6 +258,9 @@ func (ms *MysqlStore) Pop(block uint64) error {
 		}
 		if err := ms.AddressRewardStore.Pop(dbTx, block); err != nil {
 			return errors.WithMessage(err, "failed to remove address rewards")
+		}
+		if err := ms.MinerRegisterStore.Pop(dbTx, block); err != nil {
+			return errors.WithMessage(err, "failed to remove miner registers")
 		}
 		if err := ms.DASignerStore.Pop(dbTx, block); err != nil {
 			return errors.WithMessage(err, "failed to remove da signers")
