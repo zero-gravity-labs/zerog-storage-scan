@@ -9,6 +9,9 @@ definitions:
     type: object
   storage.AccountInfo:
     properties:
+      balance:
+        description: The balance in layer 1
+        type: number
       dataSize:
         description: Total Size of storage data
         type: integer
@@ -21,11 +24,11 @@ definitions:
       prunedFiles:
         description: The number of pruned files
         type: integer
-      rewards:
-        description: Total amount of distributed rewards
-        type: number
       storageFee:
         description: Total storage fee
+        type: number
+      totalReward:
+        description: Total amount of distributed rewards
         type: number
       txs:
         description: Total number of layer1 transaction
@@ -99,6 +102,9 @@ definitions:
       dataSize:
         description: Size of storage data
         type: integer
+      rank:
+        description: Data ranking
+        type: integer
     type: object
   storage.DataTopnList:
     description: Topn list of data size
@@ -140,6 +146,9 @@ definitions:
       address:
         description: Address on blockchain
         type: string
+      rank:
+        description: Data ranking
+        type: integer
       storageFee:
         description: The total base fee for storage
         type: number
@@ -162,6 +171,9 @@ definitions:
       files:
         description: Number of files
         type: integer
+      rank:
+        description: Data ranking
+        type: integer
     type: object
   storage.FilesTopnList:
     description: Topn list of files
@@ -180,6 +192,40 @@ definitions:
         type: integer
       logSyncHeight:
         description: Synchronization height of submit log on storage node
+        type: integer
+    type: object
+  storage.Miner:
+    description: Miner information
+    properties:
+      miner:
+        description: Miner address
+        type: string
+      timestamp:
+        description: The block time when the latest reward event emits
+        type: integer
+      totalReward:
+        description: The total reward amount
+        type: number
+    type: object
+  storage.MinerInfo:
+    properties:
+      balance:
+        description: The balance in layer 1
+        type: number
+      totalReward:
+        description: Total amount of distributed rewards
+        type: number
+    type: object
+  storage.MinerList:
+    description: Miner  list
+    properties:
+      list:
+        description: Miner list
+        items:
+          $ref: '#/definitions/storage.Miner'
+        type: array
+      total:
+        description: The total number of miner returned
         type: integer
     type: object
   storage.MinerRewardStat:
@@ -223,15 +269,15 @@ definitions:
   storage.Reward:
     description: Reward information
     properties:
-      amount:
-        description: The reward amount
-        type: number
       blockNumber:
         description: The block where the reward event is emitted
         type: integer
       miner:
         description: Miner address
         type: string
+      reward:
+        description: The reward amount
+        type: number
       timestamp:
         description: The block time when reward event emits
         type: integer
@@ -279,10 +325,13 @@ definitions:
   storage.RewardTopn:
     description: Reward topn information
     properties:
-      address:
+      miner:
         description: Address on blockchain
         type: string
-      amount:
+      rank:
+        description: Data ranking
+        type: integer
+      totalReward:
         description: Reward amount
         type: number
     type: object
@@ -496,6 +545,9 @@ definitions:
       address:
         description: Address on blockchain
         type: string
+      rank:
+        description: Data ranking
+        type: integer
       txs:
         description: Number of layer1 transaction
         type: integer
@@ -562,49 +614,6 @@ paths:
       summary: Account's information
       tags:
       - account
-  /accounts/{address}/rewards:
-    get:
-      consumes:
-      - application/json
-      description: Query storage rewards for specified account
-      parameters:
-      - description: The submitter address of the uploaded file
-        in: path
-        name: address
-        type: string
-      - default: 0
-        description: The number of skipped records, usually it's pageSize * (pageNumber
-          - 1)
-        in: query
-        minimum: 0
-        name: skip
-        type: integer
-      - default: 10
-        description: The number of records displayed on the page
-        in: query
-        maximum: 100
-        minimum: 1
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/api.BusinessError'
-            - properties:
-                Data:
-                  $ref: '#/definitions/storage.RewardList'
-              type: object
-        "600":
-          description: ""
-          schema:
-            $ref: '#/definitions/api.BusinessError'
-      summary: Account's storage reward list
-      tags:
-      - account
   /accounts/{address}/txs:
     get:
       consumes:
@@ -665,11 +674,122 @@ paths:
       summary: Account's storage transaction list
       tags:
       - account
+  /miners:
+    get:
+      consumes:
+      - application/json
+      description: Query miners
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.MinerList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Miner list
+      tags:
+      - miner reward
+  /miners/{address}:
+    get:
+      consumes:
+      - application/json
+      description: Query miner information for specified account
+      parameters:
+      - description: The miner address
+        in: path
+        name: address
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.MinerInfo'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Miner's information
+      tags:
+      - miner reward
+  /miners/{address}/rewards:
+    get:
+      consumes:
+      - application/json
+      description: Query rewards for specified miner
+      parameters:
+      - description: The submitter address of the uploaded file
+        in: path
+        name: address
+        type: string
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.RewardList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Miner's reward list
+      tags:
+      - miner reward
   /rewards:
     get:
       consumes:
       - application/json
-      description: Query storage rewards
+      description: Query mining rewards
       parameters:
       - default: 0
         description: The number of skipped records, usually it's pageSize * (pageNumber
@@ -701,9 +821,9 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/api.BusinessError'
-      summary: Storage reward list
+      summary: Mining reward list
       tags:
-      - reward
+      - miner reward
   /stats/address:
     get:
       consumes:

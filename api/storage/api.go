@@ -110,13 +110,16 @@ func Register(router *gin.Engine) {
 	txsRoute.GET("", listTxsHandler)
 	txsRoute.GET(":txSeq", getTxHandler)
 
-	rewardsRoute := apiRoute.Group("/rewards")
-	rewardsRoute.GET("", listRewardsHandler)
-
 	accountsRoute := apiRoute.Group("/accounts")
 	accountsRoute.GET(":address", getAccountInfoHandler)
 	accountsRoute.GET(":address/txs", listAddressTxsHandler)
-	accountsRoute.GET(":address/rewards", listAddressRewardsHandler)
+
+	minersRoute := apiRoute.Group("/miners")
+	minersRoute.GET("", listMinersHandler)
+	minersRoute.GET(":address", getMinerInfoHandler)
+	minersRoute.GET(":address/rewards", listMinerRewardsHandler)
+	rewardsRoute := apiRoute.Group("/rewards")
+	rewardsRoute.GET("", listRewardsHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.InstanceName("storage")))
 }
@@ -287,11 +290,59 @@ func getTxHandler(c *gin.Context) {
 	api.Wrap(getStorageTx)(c)
 }
 
+// listMinersHandler godoc
+//
+//	@Summary		Miner list
+//	@Description	Query miners
+//	@Tags			miner reward
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip	query		int	false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit	query		int	false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Success		200		{object}	api.BusinessError{Data=MinerList}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/miners [get]
+func listMinersHandler(c *gin.Context) {
+	api.Wrap(listMiners)(c)
+}
+
+// getMinerInfoHandler godoc
+//
+//	@Summary		Miner's information
+//	@Description	Query miner information for specified account
+//	@Tags			miner reward
+//	@Accept			json
+//	@Produce		json
+//	@Param			address	path		string	false	"The miner address"
+//	@Success		200		{object}	api.BusinessError{Data=MinerInfo}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/miners/{address} [get]
+func getMinerInfoHandler(c *gin.Context) {
+	api.Wrap(getMinerInfo)(c)
+}
+
+// listMinerRewardsHandler godoc
+//
+//	@Summary		Miner's reward list
+//	@Description	Query rewards for specified miner
+//	@Tags			miner reward
+//	@Accept			json
+//	@Produce		json
+//	@Param			address	path		string	false	"The submitter address of the uploaded file"
+//	@Param			skip	query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit	query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Success		200		{object}	api.BusinessError{Data=RewardList}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/miners/{address}/rewards [get]
+func listMinerRewardsHandler(c *gin.Context) {
+	api.Wrap(listAddressStorageRewards)(c)
+}
+
 // listRewardsHandler godoc
 //
-//	@Summary		Storage reward list
-//	@Description	Query storage rewards
-//	@Tags			reward
+//	@Summary		Mining reward list
+//	@Description	Query mining rewards
+//	@Tags			miner reward
 //	@Accept			json
 //	@Produce		json
 //	@Param			skip	query		int	false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
@@ -337,23 +388,6 @@ func getAccountInfoHandler(c *gin.Context) {
 //	@Router			/accounts/{address}/txs [get]
 func listAddressTxsHandler(c *gin.Context) {
 	api.Wrap(listAddressStorageTxs)(c)
-}
-
-// listAddressRewardsHandler godoc
-//
-//	@Summary		Account's storage reward list
-//	@Description	Query storage rewards for specified account
-//	@Tags			account
-//	@Accept			json
-//	@Produce		json
-//	@Param			address	path		string	false	"The submitter address of the uploaded file"
-//	@Param			skip	query		int		false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
-//	@Param			limit	query		int		false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
-//	@Success		200		{object}	api.BusinessError{Data=RewardList}
-//	@Failure		600		{object}	api.BusinessError
-//	@Router			/accounts/{address}/rewards [get]
-func listAddressRewardsHandler(c *gin.Context) {
-	api.Wrap(listAddressStorageRewards)(c)
 }
 
 // topnDataHandler godoc

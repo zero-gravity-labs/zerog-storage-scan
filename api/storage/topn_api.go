@@ -54,37 +54,37 @@ func topnByType(c *gin.Context, t string) (interface{}, error) {
 	switch t {
 	case dataSizeTopn:
 		list := make([]DataTopn, 0)
-		for _, r := range records {
+		for rank, r := range records {
 			list = append(list, DataTopn{
-				Address:  r.Address,
+				Topn:     Topn{Rank: rank + 1, Address: r.Address},
 				DataSize: r.DataSize,
 			})
 		}
 		result["list"] = list
 	case storageFeeTopn:
 		list := make([]FeeTopn, 0)
-		for _, r := range records {
+		for rank, r := range records {
 			list = append(list, FeeTopn{
-				Address:    r.Address,
+				Topn:       Topn{Rank: rank + 1, Address: r.Address},
 				StorageFee: r.StorageFee,
 			})
 		}
 		result["list"] = list
 	case txsTopn:
 		list := make([]TxsTopn, 0)
-		for _, r := range records {
+		for rank, r := range records {
 			list = append(list, TxsTopn{
-				Address: r.Address,
-				Txs:     r.Txs,
+				Topn: Topn{Rank: rank + 1, Address: r.Address},
+				Txs:  r.Txs,
 			})
 		}
 		result["list"] = list
 	case filesTopn:
 		list := make([]FilesTopn, 0)
-		for _, r := range records {
+		for rank, r := range records {
 			list = append(list, FilesTopn{
-				Address: r.Address,
-				Files:   r.Files,
+				Topn:  Topn{Rank: rank + 1, Address: r.Address},
+				Files: r.Files,
 			})
 		}
 		result["list"] = list
@@ -108,8 +108,9 @@ func topnReward(c *gin.Context) (interface{}, error) {
 	}
 
 	list := make([]RewardTopn, 0)
-	for _, m := range miners {
+	for rank, m := range miners {
 		list = append(list, RewardTopn{
+			Rank:    rank + 1,
 			Address: m.Address,
 			Amount:  m.Amount,
 		})
