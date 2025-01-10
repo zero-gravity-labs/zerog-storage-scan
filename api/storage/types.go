@@ -239,10 +239,25 @@ type RewardList struct {
 // @Description Reward information
 type Reward struct {
 	Miner       string          `json:"miner"`       // Miner address
-	Amount      decimal.Decimal `json:"amount"`      // The reward amount
+	Amount      decimal.Decimal `json:"reward"`      // The reward amount
 	BlockNumber uint64          `json:"blockNumber"` // The block where the reward event is emitted
 	TxHash      string          `json:"txHash"`      // The transaction where the reward event is emitted
 	Timestamp   int64           `json:"timestamp"`   // The block time when reward event emits
+}
+
+// MinerList model info
+// @Description Miner  list
+type MinerList struct {
+	Total int64   `json:"total"` // The total number of miner returned
+	List  []Miner `json:"list"`  // Miner list
+}
+
+// Miner model info
+// @Description Miner information
+type Miner struct {
+	Miner       string          `json:"miner"`       // Miner address
+	TotalReward decimal.Decimal `json:"totalReward"` // The total reward amount
+	Timestamp   int64           `json:"timestamp"`   // The block time when the latest reward event emits
 }
 
 type AddressInfo struct {
@@ -251,7 +266,7 @@ type AddressInfo struct {
 }
 
 type AccountInfo struct {
-	/*Balance decimal.Decimal `json:"balance"` // The balance in layer 1*/
+	Balance decimal.Decimal `json:"balance"` // The balance in layer 1
 
 	DataSize     uint64          `json:"dataSize"`     // Total Size of storage data
 	StorageFee   decimal.Decimal `json:"storageFee"`   // Total storage fee
@@ -260,17 +275,27 @@ type AccountInfo struct {
 	ExpiredFiles uint64          `json:"expiredFiles"` // The number of expired files
 	PrunedFiles  uint64          `json:"prunedFiles"`  // The number of pruned files
 
-	Rewards decimal.Decimal `json:"rewards"` // Total amount of distributed rewards
+	TotalReward decimal.Decimal `json:"totalReward"` // Total amount of distributed rewards
+}
+
+type MinerInfo struct {
+	Balance     decimal.Decimal `json:"balance"`     // The balance in layer 1
+	TotalReward decimal.Decimal `json:"totalReward"` // Total amount of distributed rewards
 }
 
 type topnParam struct {
 	SpanType string `form:"spanType" binding:"omitempty,oneof=24h 3d 7d"`
 }
 
+type Topn struct {
+	Rank    int    `json:"rank"`    // Data ranking
+	Address string `json:"address"` // Address on blockchain
+}
+
 // DataTopn model info
 // @Description Storage data size topn information
 type DataTopn struct {
-	Address  string `json:"address"`  // Address on blockchain
+	Topn
 	DataSize uint64 `json:"dataSize"` // Size of storage data
 
 }
@@ -278,29 +303,30 @@ type DataTopn struct {
 // FeeTopn model info
 // @Description Storage fee topn information
 type FeeTopn struct {
-	Address    string          `json:"address"`    // Address on blockchain
+	Topn
 	StorageFee decimal.Decimal `json:"storageFee"` // The total base fee for storage
 }
 
 // TxsTopn model info
 // @Description Storage transaction topn information
 type TxsTopn struct {
-	Address string `json:"address"` // Address on blockchain
-	Txs     uint64 `json:"txs"`     // Number of layer1 transaction
+	Topn
+	Txs uint64 `json:"txs"` // Number of layer1 transaction
 }
 
 // FilesTopn model info
 // @Description Storage files topn information
 type FilesTopn struct {
-	Address string `json:"address"` // Address on blockchain
-	Files   uint64 `json:"files"`   // Number of files
+	Topn
+	Files uint64 `json:"files"` // Number of files
 }
 
 // RewardTopn model info
 // @Description Reward topn information
 type RewardTopn struct {
-	Address string          `json:"address"` // Address on blockchain
-	Amount  decimal.Decimal `json:"amount"`  // Reward amount
+	Rank    int             `json:"rank"`        // Data ranking
+	Address string          `json:"miner"`       // Address on blockchain
+	Amount  decimal.Decimal `json:"totalReward"` // Reward amount
 }
 
 // DataTopnList model info

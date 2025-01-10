@@ -64,72 +64,6 @@ const docTemplatestorage = `{
                 }
             }
         },
-        "/accounts/{address}/rewards": {
-            "get": {
-                "description": "Query storage rewards for specified account",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "account"
-                ],
-                "summary": "Account's storage reward list",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "The submitter address of the uploaded file",
-                        "name": "address",
-                        "in": "path"
-                    },
-                    {
-                        "minimum": 0,
-                        "type": "integer",
-                        "default": 0,
-                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
-                        "name": "skip",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "default": 10,
-                        "description": "The number of records displayed on the page",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "Data": {
-                                            "$ref": "#/definitions/storage.RewardList"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "",
-                        "schema": {
-                            "$ref": "#/definitions/api.BusinessError"
-                        }
-                    }
-                }
-            }
-        },
         "/accounts/{address}/txs": {
             "get": {
                 "description": "Query storage transactions for specified account, support root hash filter",
@@ -220,9 +154,9 @@ const docTemplatestorage = `{
                 }
             }
         },
-        "/rewards": {
+        "/miners": {
             "get": {
-                "description": "Query storage rewards",
+                "description": "Query miners",
                 "consumes": [
                     "application/json"
                 ],
@@ -230,9 +164,184 @@ const docTemplatestorage = `{
                     "application/json"
                 ],
                 "tags": [
-                    "reward"
+                    "miner reward"
                 ],
-                "summary": "Storage reward list",
+                "summary": "Miner list",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.MinerList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/miners/{address}": {
+            "get": {
+                "description": "Query miner information for specified account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "miner reward"
+                ],
+                "summary": "Miner's information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The miner address",
+                        "name": "address",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.MinerInfo"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/miners/{address}/rewards": {
+            "get": {
+                "description": "Query rewards for specified miner",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "miner reward"
+                ],
+                "summary": "Miner's reward list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The submitter address of the uploaded file",
+                        "name": "address",
+                        "in": "path"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.RewardList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
+        "/rewards": {
+            "get": {
+                "description": "Query mining rewards",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "miner reward"
+                ],
+                "summary": "Mining reward list",
                 "parameters": [
                     {
                         "minimum": 0,
@@ -1296,6 +1405,10 @@ const docTemplatestorage = `{
         "storage.AccountInfo": {
             "type": "object",
             "properties": {
+                "balance": {
+                    "description": "The balance in layer 1",
+                    "type": "number"
+                },
                 "dataSize": {
                     "description": "Total Size of storage data",
                     "type": "integer"
@@ -1312,12 +1425,12 @@ const docTemplatestorage = `{
                     "description": "The number of pruned files",
                     "type": "integer"
                 },
-                "rewards": {
-                    "description": "Total amount of distributed rewards",
-                    "type": "number"
-                },
                 "storageFee": {
                     "description": "Total storage fee",
+                    "type": "number"
+                },
+                "totalReward": {
+                    "description": "Total amount of distributed rewards",
                     "type": "number"
                 },
                 "txs": {
@@ -1419,6 +1532,10 @@ const docTemplatestorage = `{
                 "dataSize": {
                     "description": "Size of storage data",
                     "type": "integer"
+                },
+                "rank": {
+                    "description": "Data ranking",
+                    "type": "integer"
                 }
             }
         },
@@ -1478,6 +1595,10 @@ const docTemplatestorage = `{
                     "description": "Address on blockchain",
                     "type": "string"
                 },
+                "rank": {
+                    "description": "Data ranking",
+                    "type": "integer"
+                },
                 "storageFee": {
                     "description": "The total base fee for storage",
                     "type": "number"
@@ -1508,6 +1629,10 @@ const docTemplatestorage = `{
                 "files": {
                     "description": "Number of files",
                     "type": "integer"
+                },
+                "rank": {
+                    "description": "Data ranking",
+                    "type": "integer"
                 }
             }
         },
@@ -1534,6 +1659,54 @@ const docTemplatestorage = `{
                 },
                 "logSyncHeight": {
                     "description": "Synchronization height of submit log on storage node",
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.Miner": {
+            "description": "Miner information",
+            "type": "object",
+            "properties": {
+                "miner": {
+                    "description": "Miner address",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "The block time when the latest reward event emits",
+                    "type": "integer"
+                },
+                "totalReward": {
+                    "description": "The total reward amount",
+                    "type": "number"
+                }
+            }
+        },
+        "storage.MinerInfo": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "description": "The balance in layer 1",
+                    "type": "number"
+                },
+                "totalReward": {
+                    "description": "Total amount of distributed rewards",
+                    "type": "number"
+                }
+            }
+        },
+        "storage.MinerList": {
+            "description": "Miner  list",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Miner list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Miner"
+                    }
+                },
+                "total": {
+                    "description": "The total number of miner returned",
                     "type": "integer"
                 }
             }
@@ -1595,10 +1768,6 @@ const docTemplatestorage = `{
             "description": "Reward information",
             "type": "object",
             "properties": {
-                "amount": {
-                    "description": "The reward amount",
-                    "type": "number"
-                },
                 "blockNumber": {
                     "description": "The block where the reward event is emitted",
                     "type": "integer"
@@ -1606,6 +1775,10 @@ const docTemplatestorage = `{
                 "miner": {
                     "description": "Miner address",
                     "type": "string"
+                },
+                "reward": {
+                    "description": "The reward amount",
+                    "type": "number"
                 },
                 "timestamp": {
                     "description": "The block time when reward event emits",
@@ -1673,11 +1846,15 @@ const docTemplatestorage = `{
             "description": "Reward topn information",
             "type": "object",
             "properties": {
-                "address": {
+                "miner": {
                     "description": "Address on blockchain",
                     "type": "string"
                 },
-                "amount": {
+                "rank": {
+                    "description": "Data ranking",
+                    "type": "integer"
+                },
+                "totalReward": {
                     "description": "Reward amount",
                     "type": "number"
                 }
@@ -1983,6 +2160,10 @@ const docTemplatestorage = `{
                 "address": {
                     "description": "Address on blockchain",
                     "type": "string"
+                },
+                "rank": {
+                    "description": "Data ranking",
+                    "type": "integer"
                 },
                 "txs": {
                     "description": "Number of layer1 transaction",
