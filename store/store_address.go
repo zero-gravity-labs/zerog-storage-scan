@@ -431,6 +431,25 @@ func (ms *MinerStore) BatchUpsert(dbTx *gorm.DB, miners []Miner) error {
 	return nil
 }
 
+func (ms *MinerStore) List(idDesc bool, skip, limit int) (int64, []Miner, error) {
+	dbRaw := ms.DB.Model(&Miner{})
+
+	var orderBy string
+	if idDesc {
+		orderBy = "updated_at DESC"
+	} else {
+		orderBy = "updated_at ASC"
+	}
+
+	list := new([]Miner)
+	total, err := ms.Store.ListByOrder(dbRaw, orderBy, skip, limit, list)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	return total, *list, nil
+}
+
 func (ms *MinerStore) Topn(duration time.Duration, limit int) ([]Miner, error) {
 	db := ms.DB.Model(&Miner{})
 

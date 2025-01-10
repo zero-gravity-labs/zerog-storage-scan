@@ -113,6 +113,9 @@ func Register(router *gin.Engine) {
 	rewardsRoute := apiRoute.Group("/rewards")
 	rewardsRoute.GET("", listRewardsHandler)
 
+	minersRoute := apiRoute.Group("/miners")
+	minersRoute.GET("", listMinersHandler)
+
 	accountsRoute := apiRoute.Group("/accounts")
 	accountsRoute.GET(":address", getAccountInfoHandler)
 	accountsRoute.GET(":address/txs", listAddressTxsHandler)
@@ -285,6 +288,22 @@ func listTxsHandler(c *gin.Context) {
 //	@Router			/txs/{txSeq} [get]
 func getTxHandler(c *gin.Context) {
 	api.Wrap(getStorageTx)(c)
+}
+
+// listMinersHandler godoc
+//
+//	@Summary		Miner list
+//	@Description	Query miners
+//	@Tags			miner
+//	@Accept			json
+//	@Produce		json
+//	@Param			skip	query		int	false	"The number of skipped records, usually it's pageSize * (pageNumber - 1)"	minimum(0)	default(0)
+//	@Param			limit	query		int	false	"The number of records displayed on the page"								minimum(1)	maximum(100)	default(10)
+//	@Success		200		{object}	api.BusinessError{Data=MinerList}
+//	@Failure		600		{object}	api.BusinessError
+//	@Router			/miners [get]
+func listMinersHandler(c *gin.Context) {
+	api.Wrap(listMiners)(c)
 }
 
 // listRewardsHandler godoc

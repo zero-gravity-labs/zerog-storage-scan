@@ -182,6 +182,31 @@ definitions:
         description: Synchronization height of submit log on storage node
         type: integer
     type: object
+  storage.Miner:
+    description: Miner information
+    properties:
+      amount:
+        description: The total reward amount
+        type: number
+      miner:
+        description: Miner address
+        type: string
+      timestamp:
+        description: The block time when the latest reward event emits
+        type: integer
+    type: object
+  storage.MinerList:
+    description: Miner  list
+    properties:
+      list:
+        description: Miner list
+        items:
+          $ref: '#/definitions/storage.Miner'
+        type: array
+      total:
+        description: The total number of miner returned
+        type: integer
+    type: object
   storage.MinerRewardStat:
     description: Stat miner reward information
     properties:
@@ -665,6 +690,45 @@ paths:
       summary: Account's storage transaction list
       tags:
       - account
+  /miners:
+    get:
+      consumes:
+      - application/json
+      description: Query miners
+      parameters:
+      - default: 0
+        description: The number of skipped records, usually it's pageSize * (pageNumber
+          - 1)
+        in: query
+        minimum: 0
+        name: skip
+        type: integer
+      - default: 10
+        description: The number of records displayed on the page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                Data:
+                  $ref: '#/definitions/storage.MinerList'
+              type: object
+        "600":
+          description: ""
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+      summary: Miner list
+      tags:
+      - miner
   /rewards:
     get:
       consumes:

@@ -220,6 +220,66 @@ const docTemplatestorage = `{
                 }
             }
         },
+        "/miners": {
+            "get": {
+                "description": "Query miners",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "miner"
+                ],
+                "summary": "Miner list",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "The number of skipped records, usually it's pageSize * (pageNumber - 1)",
+                        "name": "skip",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "The number of records displayed on the page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "Data": {
+                                            "$ref": "#/definitions/storage.MinerList"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    }
+                }
+            }
+        },
         "/rewards": {
             "get": {
                 "description": "Query storage rewards",
@@ -1534,6 +1594,41 @@ const docTemplatestorage = `{
                 },
                 "logSyncHeight": {
                     "description": "Synchronization height of submit log on storage node",
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.Miner": {
+            "description": "Miner information",
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "The total reward amount",
+                    "type": "number"
+                },
+                "miner": {
+                    "description": "Miner address",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "description": "The block time when the latest reward event emits",
+                    "type": "integer"
+                }
+            }
+        },
+        "storage.MinerList": {
+            "description": "Miner  list",
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "Miner list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storage.Miner"
+                    }
+                },
+                "total": {
+                    "description": "The total number of miner returned",
                     "type": "integer"
                 }
             }

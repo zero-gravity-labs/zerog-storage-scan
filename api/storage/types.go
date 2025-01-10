@@ -245,6 +245,21 @@ type Reward struct {
 	Timestamp   int64           `json:"timestamp"`   // The block time when reward event emits
 }
 
+// MinerList model info
+// @Description Miner  list
+type MinerList struct {
+	Total int64   `json:"total"` // The total number of miner returned
+	List  []Miner `json:"list"`  // Miner list
+}
+
+// Miner model info
+// @Description Miner information
+type Miner struct {
+	Miner       string          `json:"miner"`     // Miner address
+	TotalReward decimal.Decimal `json:"amount"`    // The total reward amount
+	Timestamp   int64           `json:"timestamp"` // The block time when the latest reward event emits
+}
+
 type AddressInfo struct {
 	address   string
 	addressId uint64
